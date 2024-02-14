@@ -1,0 +1,127 @@
+@startuml
+class User {
+  +id: int
+  +role: str
+}
+
+class AuthorizedUser {
+  +email: str
+  +password: str
+  +full_name: str | None
+  +nickname: str
+}
+
+class Patient {
+  +gender: str
+  +age: int
+  +skin_type: str
+  +about: str | None
+  +phone: int | None
+  +profile_photo_path: str | None
+}
+
+class Symptom {
+  +id: int
+  +name: str
+}
+
+class Trigger {
+  +id: int
+  +name: str
+}
+
+class Diagnosis {
+  +id: int
+  +name: str
+}
+
+class PatientMedicalHistory {
+  +id: int
+  +title: str
+  +history: str | None
+  +patient: Patient
+  +diagnosis: Diagnosis
+  +symptoms: list[Symptom]
+  +triggers: list[Trigger]
+  {method} +add_symptoms(symptoms: Iterable[Symptom]): void
+  {method} +remove_symptoms(symptoms: Iterable[Symptom]): void
+  {method} +add_triggers(triggers: Iterable[Trigger]): void
+  {method} +remove_triggers(triggers: Iterable[Trigger]): void
+}
+
+class TreatmentResult {
+  +id: int
+  +name: str
+}
+
+class ItemUsageResult {
+  +id: int
+  +name: str
+}
+
+class ItemCategory {
+  +id: int
+  +name: str
+}
+
+class ItemType {
+  +id: int
+  +name: str
+}
+
+class TreatmentItem {
+  +id: int
+  +sku: str
+  +title: str
+  +description: str | None
+  +price: float
+  +category: ItemCategory
+  +type: ItemType
+}
+
+class TreatmentItemFeedback {
+  +id: int
+  +item: TreatmentItem
+  +item_usage_result: ItemUsageResult
+  +item_rating: float
+  +usage_start: datetime | None
+  +usage_end: datetime | None
+  +usage_period: int | None
+  +feedback_text: str | None
+  +advantages: str | None
+  +disadvantages: str | None
+}
+
+class CompletedTreatmentProtocol {
+  +id: int
+  +patient_medical_history: PatientMedicalHistory
+  +item_feedbacks: list[TreatmentItemFeedback]
+  +treatment_result: TreatmentResult
+  +treatment_start: datetime | None
+  +treatment_end: datetime | None
+  +treatment_period: int | None
+  +feedback_text: str | None
+  +treatment_cost: float
+  {method} +sort_items_by_rating(order: Literal['asc', 'desc'] = 'desc'): void
+}
+
+User --|> AuthorizedUser
+
+AuthorizedUser --|> Patient
+
+Patient --|> PatientMedicalHistory
+
+PatientMedicalHistory --o Symptom
+PatientMedicalHistory --o Trigger
+PatientMedicalHistory --|> Diagnosis
+
+TreatmentItem --|> ItemCategory
+TreatmentItem --|> ItemType
+
+TreatmentItemFeedback --|> TreatmentItem
+TreatmentItemFeedback --|> ItemUsageResult
+
+CompletedTreatmentProtocol --|> PatientMedicalHistory
+CompletedTreatmentProtocol --|> TreatmentResult
+
+@enduml

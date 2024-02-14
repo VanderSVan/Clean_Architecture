@@ -1,0 +1,173 @@
+@startuml
+hide empty fields
+hide circle
+skinparam monochrome true
+
+class User {
+  +id : int
+  ..
+  +role : str
+  ..
+  +email : str
+  ..
+  +password : str
+  ..
+  +name : str
+  ..
+  +nickname : str
+}
+
+class Patient {
+  +id : int
+  ..
+  +user_id : int
+  ..
+  +age : int | None
+  ..
+  +skin_type_id : int | None
+  ..
+  +about : str | None
+  ..
+  +phone : int | None
+  ..
+  +profile_photo_path : str | None
+}
+
+class Album {
+  +id : int
+  ..
+  +name : str
+  ..
+  +about : text | None
+  ..
+  +source_path : str
+  ..
+  +patient_medical_history_id : int [FK]
+}
+
+class Photo {
+  +id : int
+  ..
+  +name : str | None
+  ..
+  +about : text | None
+  ..
+  +source_path : str
+  ..
+  +album_id : int [FK]
+}
+
+class Symptom {
+  +id : int
+  ..
+  +name : str
+}
+
+class Diagnosis {
+  +id : int
+  ..
+  +name : str
+}
+
+class TreatmentItem {
+  +id : Integer
+  ..
+  +name : str
+  ..
+  +category : str | None
+  ..
+  +type : str
+  ..
+  +price : decimal
+}
+
+
+class Trigger {
+  +id : int
+  ..
+  +name : str
+}
+
+class ResultType {
+  +id : int
+  ..
+  +name : str
+}
+
+class SkinType {
+  +id : int
+  ..
+  +name : str
+}
+
+class PatientMedicalHistory {
+  +id : int
+  ..
+  +title : str
+  ..
+  +history : text | None
+  ..
+  +patient_id : int [FK]
+  ..
+  +diagnosis_id : int [FK]
+}
+note top of PatientMedicalHistory : История болезни
+
+class SymptomCombination{
+  +id : int
+  ..
+  +symptom_id : int [FK]
+  ..
+  +patient_medical_history_id : int [FK]
+}
+
+class TriggerCombination{
+  +id : int
+  ..
+  +trigger_id : int [FK]
+  ..
+  +patient_medical_history_id : int [FK]
+}
+
+class CompletedTreatmentProtocol {
+  +id : int
+  ..
+  +start : datetime | None
+  ..
+  +end : datetime | None
+  ..
+  +about : text | None
+  ..
+  +usage_period : int
+  ..
+  +patient_medical_history_id : int [FK]
+  ..
+  +treatment_item_id : int [FK]
+  ..
+  +treatment_item_rating : float
+  ..
+  +result_id : int [FK]
+}
+note top of CompletedTreatmentProtocol : Завершенный протокол лечения
+
+
+Patient::user_id --> User::id
+Patient::skin_type_id --> SkinType::id
+
+Album::patient_medical_history_id --> PatientMedicalHistory::id
+
+Photo::album_id --> Album::id
+
+SymptomCombination::symptom_id --> Symptom::id
+SymptomCombination::patient_medical_history_id --> PatientMedicalHistory::id
+
+TriggerCombination::trigger_id --> Trigger::id
+TriggerCombination::patient_medical_history_id --> PatientMedicalHistory::id
+
+PatientMedicalHistory::patient_id --> Patient::id
+PatientMedicalHistory::diagnosis_id --> Diagnosis::id
+
+CompletedTreatmentProtocol::patient_medical_history_id --> PatientMedicalHistory::id
+CompletedTreatmentProtocol::treatment_item_id --> TreatmentItem::id
+CompletedTreatmentProtocol::result_id --> ResultType::id
+@enduml
