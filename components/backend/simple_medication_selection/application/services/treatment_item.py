@@ -20,7 +20,7 @@ class TreatmentItem:
     @register_method
     @validate_call
     def get(self, treatment_item_code: str) -> entities.TreatmentItem:
-        treatment_item = self.treatment_items_repo.get_by_code(code=treatment_item_code)
+        treatment_item: entities.TreatmentItem = self.treatment_items_repo.get_by_code(treatment_item_code)
 
         if not treatment_item:
             raise errors.TreatmentItemNotFound(code=treatment_item_code)
@@ -32,7 +32,7 @@ class TreatmentItem:
     def create(self, new_treatment_item_info: dtos.TreatmentItemCreateSchema) -> entities.TreatmentItem:
         treatment_item: entities.TreatmentItem = self.treatment_items_repo.get_by_code(new_treatment_item_info.code)
         if treatment_item:
-            raise errors.TreatmentItemAlreadyExists(name=new_treatment_item_info.title)
+            raise errors.TreatmentItemAlreadyExists(code=new_treatment_item_info.code)
 
         item_category: entities.ItemCategory = self.item_categories_repo.get_by_id(new_treatment_item_info.category_id)
         if not item_category:

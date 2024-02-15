@@ -1,7 +1,7 @@
 # Domain слой
 import inspect
 from dataclasses import dataclass, field, is_dataclass
-from typing import Iterable, Literal, Union, TypeAlias, Optional
+from typing import Iterable, Literal, Union, TypeAlias
 from decimal import Decimal
 
 
@@ -79,6 +79,7 @@ class TreatmentItem:
     """
     Данные о продукте или процедуре, которые использовалась во время лечения.
     """
+    code: str | None = None
     title: str
     price: Decimal | None = None
     description: str | None = None
@@ -86,7 +87,7 @@ class TreatmentItem:
     type_id: int
 
     def __post_init__(self):
-        self.code = self.generate_code(self.category_id, self.type_id, self.title)
+        self.code = self.generate_code(self.category_id, self.type_id, self.title) if not self.code else self.code
 
     @classmethod
     def generate_code(cls, category_id: int, type_id: int, title: str) -> str:
@@ -136,9 +137,3 @@ _ENTITIES: tuple = tuple(
 
 # Создает объединение типов
 Entity: TypeAlias = Union[_ENTITIES]
-
-
-if __name__ == '__main__':
-    from typing import get_args, get_origin
-    print(dir(TreatmentItem))
-    print(get_origin(TreatmentItem.__annotations__.get('category')))
