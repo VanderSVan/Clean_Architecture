@@ -1,7 +1,7 @@
 # Domain слой
 import inspect
 from dataclasses import dataclass, field, is_dataclass
-from typing import Iterable, Literal, Union, TypeAlias
+from typing import Iterable, Union, TypeAlias
 from decimal import Decimal
 
 
@@ -42,15 +42,15 @@ class Diagnosis:
 
 
 @dataclass(kw_only=True)
-class PatientMedicalHistory:
+class MedicalBook:
     """
-    История пациента с указанием симптомов и диагноза.
+    Медицинская карта пациента.
     """
     id: int
     title: str
     history: str | None
-    patient: Patient
-    diagnosis: Diagnosis
+    patient_id: int
+    diagnosis_id: int
     symptoms: list[Symptom] = field(default_factory=list)
 
     def add_symptoms(self, symptoms: Iterable[Symptom]) -> None:
@@ -95,35 +95,17 @@ class TreatmentItem:
 
 
 @dataclass(kw_only=True)
-class TreatmentItemFeedback:
+class ItemReview:
     """
     Отзыв о продукте или процедуре.
     """
     id: int
-    item: TreatmentItem  # продукт или процедура
+    item_id: int  # продукт или процедура `TreatmentItem`
+    patient_medical_history_id: int  # медицинская карта пациента
     is_helped: bool  # помог / не помог
-    item_rating: int  # 1 - 10
+    item_rating: float  # 1 - 10
     item_count: int  # какое количество процедур или продуктов потребовалось
     usage_period: int | None  # период использования в секундах
-
-
-@dataclass(kw_only=True)
-class CompletedTreatmentProtocol:
-    """
-    Полный протокол лечения пациента.
-    """
-    id: int
-    patient_medical_history: PatientMedicalHistory
-    item_feedbacks: list[TreatmentItemFeedback]
-    is_treatment_help: bool
-
-    @property
-    def treatment_cost(self) -> float:
-        return sum(feedback.item.price * feedback.item_count for feedback in self.item_feedbacks)
-
-    def sort_items_by_rating(self, order: Literal['asc', 'desc'] = 'desc') -> None:
-        reverse = True if order == 'desc' else False
-        self.item_feedbacks.sort(key=lambda item_feedback: item_feedback.item_rating, reverse=reverse)
 
 
 # Хранит все сущности в текущем модуле, формируя кортеж
