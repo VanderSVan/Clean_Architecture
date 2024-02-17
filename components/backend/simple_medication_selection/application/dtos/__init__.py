@@ -22,9 +22,9 @@ from .item_type import (
     ItemTypeUpdateSchema,
     ItemTypeDeleteSchema,
 )
-from .treatment_item import (
-    TreatmentItemCreateSchema,
-    TreatmentItemGetSchema,
-    TreatmentItemUpdateSchema,
-    TreatmentItemDeleteSchema,
+from .item import (
+    ItemCreateSchema,
+    ItemGetSchema,
+    ItemUpdateSchema,
+    ItemDeleteSchema,
 )

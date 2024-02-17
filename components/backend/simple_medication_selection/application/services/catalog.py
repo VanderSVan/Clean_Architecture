@@ -12,7 +12,7 @@ class TreatmentItemCatalog:
                  items_repo: interfaces.TreatmentItemsRepo,
                  item_categories_repo: interfaces.ItemCategoriesRepo,
                  item_types_repo: interfaces.ItemTypesRepo,
-                 item_reviews_repo: interfaces.TreatmentItemReviewsRepo,
+                 item_reviews_repo: interfaces.ItemReviewsRepo,
                  symptoms_repo: interfaces.SymptomsRepo,
                  diagnoses_repo: interfaces.DiagnosesRepo
                  ) -> None:
@@ -26,7 +26,7 @@ class TreatmentItemCatalog:
     @register_method
     @validate_call
     def get_item(self, item_code: str) -> entities.TreatmentItem:
-        item: entities.TreatmentItem = self.items_repo.get_by_code(item_code)
+        item: entities.TreatmentItem = self.items_repo.get_by_id(item_code)
 
         if not item:
             raise errors.TreatmentItemNotFound(code=item_code)
@@ -62,7 +62,10 @@ class TreatmentItemCatalog:
                                     limit: int | None = 10,
                                     offset: int = 0
                                     ) -> list[entities.TreatmentItem] | list[None]:
-        return self.reviews_repo.find_by_helped_status(helped, limit, offset)
+        reviews: list[entities.ItemReview] = (
+            self.reviews_repo.find_by_helped_status(helped, limit, offset)
+        )
+        return [review.item for review in reviews]
 
     @register_method
     @validate_call
@@ -77,10 +80,13 @@ class TreatmentItemCatalog:
         if not symptom:
             raise errors.SymptomNotFound(id=symptom_id)
 
-        return self.reviews_repo.find_by_symptom_id_and_helped_status(symptom_id,
-                                                                      helped,
-                                                                      limit,
-                                                                      offset)
+        reviews: list[entities.ItemReview] = (
+            self.reviews_repo.find_by_symptom_id_and_helped_status(symptom_id,
+                                                                   helped,
+                                                                   limit,
+                                                                   offset)
+        )
+        return [review.item for review in reviews]
 
     @register_method
     @validate_call
@@ -95,10 +101,13 @@ class TreatmentItemCatalog:
         if not diagnosis:
             raise errors.DiagnosisNotFound(id=diagnosis_id)
 
-        return self.reviews_repo.find_by_diagnosis_id_and_helped_status(diagnosis_id,
-                                                                        helped,
-                                                                        limit,
-                                                                        offset)
+        reviews: list[entities.ItemReview] = (
+            self.reviews_repo.find_by_diagnosis_id_and_helped_status(diagnosis_id,
+                                                                     helped,
+                                                                     limit,
+                                                                     offset)
+        )
+        return [review.item for review in reviews]
 
     @register_method
     @validate_call
@@ -134,7 +143,7 @@ class TreatmentItemCatalog:
                  new_item_info: dtos.TreatmentItemCreateSchema
                  ) -> entities.TreatmentItem:
 
-        item: entities.TreatmentItem = self.items_repo.get_by_code(new_item_info.code)
+        item: entities.TreatmentItem = self.items_repo.get_by_id(new_item_info.code)
         if item:
             raise errors.TreatmentItemAlreadyExists(code=new_item_info.code)
 
@@ -158,7 +167,7 @@ class TreatmentItemCatalog:
                     new_item_info: dtos.TreatmentItemUpdateSchema
                     ) -> entities.TreatmentItem:
 
-        item: entities.TreatmentItem = self.items_repo.get_by_code(new_item_info.code)
+        item: entities.TreatmentItem = self.items_repo.get_by_id(new_item_info.code)
         if not item:
             raise errors.TreatmentItemNotFound(code=new_item_info.code)
 
@@ -182,7 +191,7 @@ class TreatmentItemCatalog:
                     item_info: dtos.TreatmentItemDeleteSchema
                     ) -> entities.TreatmentItem:
 
-        item: entities.TreatmentItem = self.items_repo.get_by_code(item_info.code)
+        item: entities.TreatmentItem = self.items_repo.get_by_id(item_info.code)
         if not item:
             raise errors.TreatmentItemNotFound(code=item_info.code)
 

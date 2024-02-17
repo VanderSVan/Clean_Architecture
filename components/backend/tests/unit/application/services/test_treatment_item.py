@@ -46,24 +46,24 @@ class TestGet:
     ])
     def test__get_existing_treatment_item(self, entity, service, treatment_items_repo):
         # Setup
-        treatment_items_repo.get_by_code.return_value = entity
+        treatment_items_repo.get_by_id.return_value = entity
 
         # Call
         result = service.get(treatment_item_code='Продукт 1-2-3')
 
         # Assert
-        assert treatment_items_repo.method_calls == [call.get_by_code('Продукт 1-2-3')]
+        assert treatment_items_repo.method_calls == [call.get_by_id('Продукт 1-2-3')]
         assert result == entity
 
     def test__get_non_existing_treatment_item(self, service, treatment_items_repo):
         # Setup
-        treatment_items_repo.get_by_code.return_value = None
+        treatment_items_repo.get_by_id.return_value = None
 
         # Call and Assert
         with pytest.raises(errors.TreatmentItemNotFound):
             service.get(treatment_item_code="Продукт 1-1-1")
 
-        assert treatment_items_repo.method_calls == [call.get_by_code("Продукт 1-1-1")]
+        assert treatment_items_repo.method_calls == [call.get_by_id("Продукт 1-1-1")]
 
 
 class TestCreate:
@@ -81,7 +81,7 @@ class TestCreate:
                                         item_categories_repo,
                                         item_types_repo):
         # Setup
-        treatment_items_repo.get_by_code.return_value = None
+        treatment_items_repo.get_by_id.return_value = None
         item_categories_repo.get_by_id.return_value = (
             entities.ItemCategory(id=1, name='Аптечные продукты')
         )
@@ -92,7 +92,7 @@ class TestCreate:
         result = service.create(new_treatment_item_info=dto)
 
         # Assert
-        assert treatment_items_repo.method_calls == [call.get_by_code(dto.code),
+        assert treatment_items_repo.method_calls == [call.get_by_id(dto.code),
                                                      call.add(saved_entity)]
         assert item_categories_repo.method_calls == [call.get_by_id(dto.category_id)]
         assert item_types_repo.method_calls == [call.get_by_id(dto.type_id)]
@@ -103,7 +103,7 @@ class TestCreate:
     ])
     def test__create_existing_treatment_item(self, dto, service, treatment_items_repo):
         # Setup
-        treatment_items_repo.get_by_code.return_value = entities.TreatmentItem(
+        treatment_items_repo.get_by_id.return_value = entities.TreatmentItem(
             code="Продукт 1-1-1", title="Продукт 1", category_id=1, type_id=1
         )
 
@@ -111,7 +111,7 @@ class TestCreate:
         with pytest.raises(errors.TreatmentItemAlreadyExists):
             service.create(new_treatment_item_info=dto)
 
-        assert treatment_items_repo.method_calls == [call.get_by_code(dto.code)]
+        assert treatment_items_repo.method_calls == [call.get_by_id(dto.code)]
 
     @pytest.mark.parametrize("dto", [
         dtos.TreatmentItemCreateSchema(title='Продукт 1', category_id=1, type_id=10),
@@ -122,7 +122,7 @@ class TestCreate:
                                            treatment_items_repo,
                                            item_categories_repo):
         # Setup
-        treatment_items_repo.get_by_code.return_value = None
+        treatment_items_repo.get_by_id.return_value = None
         item_categories_repo.get_by_id.return_value = None
 
         # Call and Assert
@@ -140,7 +140,7 @@ class TestCreate:
                                        treatment_items_repo,
                                        item_types_repo):
         # Setup
-        treatment_items_repo.get_by_code.return_value = None
+        treatment_items_repo.get_by_id.return_value = None
         item_types_repo.get_by_id.return_value = None
 
         # Call and Assert
@@ -164,7 +164,7 @@ class TestUpdate:
                                     item_categories_repo,
                                     item_types_repo):
         # Setup
-        treatment_items_repo.get_by_code.return_value = entities.TreatmentItem(
+        treatment_items_repo.get_by_id.return_value = entities.TreatmentItem(
             code="Продукт 1-1-1", title="Продукт 1", category_id=1, type_id=1
         )
         item_categories_repo.get_by_id.return_value = (
@@ -176,7 +176,7 @@ class TestUpdate:
         result = service.update(new_treatment_item_info=dto)
 
         # Assert
-        assert treatment_items_repo.method_calls == [call.get_by_code(dto.code)]
+        assert treatment_items_repo.method_calls == [call.get_by_id(dto.code)]
         assert item_categories_repo.method_calls == [call.get_by_id(dto.category_id)]
         assert item_types_repo.method_calls == [call.get_by_id(dto.type_id)]
         assert result == entities.TreatmentItem(code="Продукт 2-3-11",
@@ -195,13 +195,13 @@ class TestUpdate:
                                                  service,
                                                  treatment_items_repo):
         # Setup
-        treatment_items_repo.get_by_code.return_value = None
+        treatment_items_repo.get_by_id.return_value = None
 
         # Call and Assert
         with pytest.raises(errors.TreatmentItemNotFound):
             service.update(new_treatment_item_info=dto)
 
-        assert treatment_items_repo.method_calls == [call.get_by_code(dto.code)]
+        assert treatment_items_repo.method_calls == [call.get_by_id(dto.code)]
 
     @pytest.mark.parametrize("dto", [
         dtos.TreatmentItemUpdateSchema(code="Продукт 1-1-1",
@@ -215,7 +215,7 @@ class TestUpdate:
                                            treatment_items_repo,
                                            item_categories_repo):
         # Setup
-        treatment_items_repo.get_by_code.return_value = entities.TreatmentItem(
+        treatment_items_repo.get_by_id.return_value = entities.TreatmentItem(
             code="Продукт 1-1-1", title="Продукт 1", category_id=1, type_id=10
         )
         item_categories_repo.get_by_id.return_value = None
@@ -239,7 +239,7 @@ class TestUpdate:
                                       item_categories_repo,
                                       item_types_repo):
         # Setup
-        treatment_items_repo.get_by_code.return_value = entities.TreatmentItem(
+        treatment_items_repo.get_by_id.return_value = entities.TreatmentItem(
             code="Продукт 1-1-1", title="Продукт 1", category_id=1, type_id=10
         )
         item_categories_repo.get_by_id.return_value = (
@@ -270,13 +270,13 @@ class TestDelete:
                                     service,
                                     treatment_items_repo):
         # Setup
-        treatment_items_repo.get_by_code.return_value = entity_to_delete
+        treatment_items_repo.get_by_id.return_value = entity_to_delete
 
         # Call
         service.delete(treatment_item_info=dto)
 
         # Assert
-        assert treatment_items_repo.method_calls == [call.get_by_code(dto.code),
+        assert treatment_items_repo.method_calls == [call.get_by_id(dto.code),
                                                      call.remove(entity_to_delete)]
 
     @pytest.mark.parametrize("dto", [
@@ -287,10 +287,10 @@ class TestDelete:
                                                  service,
                                                  treatment_items_repo):
         # Setup
-        treatment_items_repo.get_by_code.return_value = None
+        treatment_items_repo.get_by_id.return_value = None
 
         # Call and Assert
         with pytest.raises(errors.TreatmentItemNotFound):
             service.delete(treatment_item_info=dto)
 
-        assert treatment_items_repo.method_calls == [call.get_by_code(dto.code)]
+        assert treatment_items_repo.method_calls == [call.get_by_id(dto.code)]
