@@ -34,3 +34,9 @@ from .item_review import (
     ItemReviewUpdateSchema,
     ItemReviewDeleteSchema
 )
+from .patient import (
+    PatientCreateSchema,
+    PatientGetSchema,
+    PatientUpdateSchema,
+    PatientDeleteSchema,
+)

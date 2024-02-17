@@ -22,3 +22,7 @@ from .item_review import (
     ItemReviewNotFound,
     ItemReviewAlreadyExists
 )
+from .patient import (
+    PatientNotFound,
+    PatientAlreadyExists
+)
