@@ -6,21 +6,9 @@ from decimal import Decimal
 
 
 @dataclass(kw_only=True)
-class User:
+class Patient:
     id: int
-    role: str
-
-
-@dataclass(kw_only=True)
-class AuthorizedUser(User):
-    email: str
-    password: str
-    full_name: str | None
     nickname: str
-
-
-@dataclass(kw_only=True)
-class Patient(AuthorizedUser):
     gender: str
     age: int
     skin_type: str
