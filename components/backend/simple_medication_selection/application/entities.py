@@ -85,7 +85,7 @@ class MedicalBook:
     Медицинская карта пациента.
     """
     id: int
-    title: str
+    title_history: str
     history: str | None
     patient_id: int
     diagnosis_id: int
