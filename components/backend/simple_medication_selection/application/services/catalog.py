@@ -29,7 +29,7 @@ class TreatmentItemCatalog:
         item: entities.TreatmentItem = self.items_repo.fetch_by_id(item_id)
 
         if not item:
-            raise errors.TreatmentItemNotFound(code=item_id)
+            raise errors.TreatmentItemNotFound(id=item_id)
 
         return item
 
@@ -143,9 +143,9 @@ class TreatmentItemCatalog:
                  new_item_info: dtos.ItemCreateSchema
                  ) -> entities.TreatmentItem:
 
-        item: entities.TreatmentItem = self.items_repo.fetch_by_id(new_item_info.code)
+        item: entities.TreatmentItem = self.items_repo.fetch_by_id(new_item_info.id)
         if item:
-            raise errors.TreatmentItemAlreadyExists(code=new_item_info.code)
+            raise errors.TreatmentItemAlreadyExists(id=new_item_info.id)
 
         category: entities.ItemCategory = self.categories_repo.fetch_by_id(
             new_item_info.category_id)
@@ -167,9 +167,9 @@ class TreatmentItemCatalog:
                     new_item_info: dtos.ItemUpdateSchema
                     ) -> entities.TreatmentItem:
 
-        item: entities.TreatmentItem = self.items_repo.fetch_by_id(new_item_info.code)
+        item: entities.TreatmentItem = self.items_repo.fetch_by_id(new_item_info.id)
         if not item:
-            raise errors.TreatmentItemNotFound(code=new_item_info.code)
+            raise errors.TreatmentItemNotFound(id=new_item_info.id)
 
         if new_item_info.category_id:
             category: entities.ItemCategory = (
@@ -191,8 +191,8 @@ class TreatmentItemCatalog:
                     item_info: dtos.ItemDeleteSchema
                     ) -> entities.TreatmentItem:
 
-        item: entities.TreatmentItem = self.items_repo.fetch_by_id(item_info.code)
+        item: entities.TreatmentItem = self.items_repo.fetch_by_id(item_info.id)
         if not item:
-            raise errors.TreatmentItemNotFound(code=item_info.code)
+            raise errors.TreatmentItemNotFound(id=item_info.id)
 
         return self.items_repo.remove(item)
