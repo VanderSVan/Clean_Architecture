@@ -26,3 +26,7 @@ from .patient import (
     PatientNotFound,
     PatientAlreadyExists
 )
+from .medical_book import (
+    MedicalBookNotFound,
+    MedicalBookAlreadyExists
+)

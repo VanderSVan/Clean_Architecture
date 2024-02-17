@@ -40,3 +40,9 @@ from .patient import (
     PatientUpdateSchema,
     PatientDeleteSchema,
 )
+from .medical_book import (
+    MedicalBookCreateSchema,
+    MedicalBookGetSchema,
+    MedicalBookUpdateSchema,
+    MedicalBookDeleteSchema
+)
