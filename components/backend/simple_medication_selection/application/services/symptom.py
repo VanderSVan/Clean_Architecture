@@ -23,7 +23,7 @@ class Symptom:
 
     @register_method
     @validate_call
-    def create(self, new_symptom_info: dtos.SymptomCreateSchema) -> None:
+    def create(self, new_symptom_info: dtos.SymptomCreateSchema) -> entities.Symptom:
         symptom: entities.Symptom = (
             self.symptoms_repo.fetch_by_name(new_symptom_info.name)
         )
@@ -32,11 +32,11 @@ class Symptom:
             raise errors.SymptomAlreadyExists(name=new_symptom_info.name)
 
         new_symptom: entities.Symptom = new_symptom_info.create_obj(entities.Symptom)
-        self.symptoms_repo.add(new_symptom)
+        return self.symptoms_repo.add(new_symptom)
 
     @register_method
     @validate_call
-    def update(self, new_symptom_info: dtos.SymptomUpdateSchema) -> None:
+    def change(self, new_symptom_info: dtos.SymptomUpdateSchema) -> entities.Symptom:
         symptom: entities.Symptom = self.symptoms_repo.fetch_by_id(new_symptom_info.id)
         if not symptom:
             raise errors.SymptomNotFound(id=new_symptom_info.id)
@@ -44,14 +44,14 @@ class Symptom:
         if new_symptom_info.name == symptom.name:
             raise errors.SymptomAlreadyExists(name=new_symptom_info.name)
 
-        new_symptom_info.populate_obj(symptom)
+        return new_symptom_info.populate_obj(symptom)
 
     @register_method
     @validate_call
-    def delete(self, symptom_info: dtos.SymptomDeleteSchema) -> None:
+    def delete(self, symptom_info: dtos.SymptomDeleteSchema) -> entities.Symptom:
         symptom = self.symptoms_repo.fetch_by_id(symptom_info.id)
 
         if not symptom:
             raise errors.SymptomNotFound(id=symptom_info.id)
 
-        self.symptoms_repo.remove(symptom)
+        return self.symptoms_repo.remove(symptom)

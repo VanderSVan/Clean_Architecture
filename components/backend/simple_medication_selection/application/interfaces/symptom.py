@@ -14,9 +14,9 @@ class SymptomsRepo(ABC):
         ...
 
     @abstractmethod
-    def add(self, symptom: entities.Symptom) -> None:
+    def add(self, symptom: entities.Symptom) -> entities.Symptom:
         ...
 
     @abstractmethod
-    def remove(self, symptom: entities.Symptom) -> None:
+    def remove(self, symptom: entities.Symptom) -> entities.Symptom:
         ...

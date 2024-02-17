@@ -1,4 +1,4 @@
-from unittest.mock import Mock
+from unittest.mock import Mock, call
 
 import pytest
 from simple_medication_selection.application import (dtos, entities, errors,
@@ -21,126 +21,131 @@ def service(repo) -> services.Symptom:
 # ----------------------------------------------------------------------------------------------------------------------
 # TESTS
 # ----------------------------------------------------------------------------------------------------------------------
-@pytest.mark.parametrize("entity", [
-    entities.Symptom(id=1, name='Температура', ),
-])
-def test__get_existing_symptom(entity, service, repo):
-    # Setup
-    repo.get_by_id.return_value = entity
 
-    # Call
-    service.get(symptom_id=entity.id)
+@pytest.mark.parametrize("entity", [entities.Symptom(id=1, name='Температура')])
+class TestGet:
 
-    # Assert
-    repo.get_by_id.assert_called_once_with(entity.id)
+    def test__get_existing_symptom(self, entity, service, repo):
+        # Setup
+        repo.fetch_by_id.return_value = entity
 
+        # Call
+        result = service.get(symptom_id=entity.id)
 
-@pytest.mark.parametrize("entity", [
-    entities.Symptom(id=2, name='Кашель'),
-])
-def test_get_non_existing_symptom(entity, service, repo):
-    # Setup
-    repo.get_by_id.return_value = None
+        # Assert
+        assert repo.method_calls == [call.fetch_by_id(entity.id)]
+        assert result == entity
 
-    # Call and Assert
-    with pytest.raises(errors.SymptomNotFound):
-        service.get(symptom_id=entity.id)
-    repo.get_by_id.assert_called_once_with(entity.id)
+    def test_get_non_existing_symptom(self, entity, service, repo):
+        # Setup
+        repo.fetch_by_id.return_value = None
+
+        # Call and Assert
+        with pytest.raises(errors.SymptomNotFound):
+            service.get(symptom_id=entity.id)
+
+        assert repo.method_calls == [call.fetch_by_id(entity.id)]
 
 
 @pytest.mark.parametrize("entity, dto", [
     (entities.Symptom(name='Температура'), dtos.SymptomCreateSchema(name='Температура'))
 ])
-def test__create_new_symptom(entity, dto, service, repo):
-    # Setup
-    repo.get_by_name.return_value = None
-    repo.add.return_value = None
+class TestCreate:
 
-    # Call
-    service.create(new_symptom_info=dto)
+    def test__create_new_symptom(self, entity, dto, service, repo):
+        # Setup
+        repo.fetch_by_name.return_value = None
+        repo.add.return_value = entity
 
-    # Assert
-    repo.get_by_name.assert_called_once_with(dto.name)
-    repo.add.assert_called_once_with(entity)
+        # Call
+        result = service.create(new_symptom_info=dto)
 
+        # Assert
+        assert repo.method_calls == [call.fetch_by_name(dto.name), call.add(entity)]
+        assert result == entity
 
-@pytest.mark.parametrize("entity, dto", [
-    (entities.Symptom(id=1, name='Температура'), dtos.SymptomCreateSchema(name='Температура')),
-])
-def test__create_existing_symptom(entity, dto, service, repo):
-    # Setup
-    repo.get_by_name.return_value = entity
+    def test__create_existing_symptom(self, entity, dto, service, repo):
+        # Setup
+        repo.fetch_by_name.return_value = entity
 
-    # Call and Assert
-    with pytest.raises(errors.SymptomAlreadyExists):
-        service.create(new_symptom_info=dto)
-    repo.get_by_name.assert_called_once_with(dto.name)
+        # Call and Assert
+        with pytest.raises(errors.SymptomAlreadyExists):
+            service.create(new_symptom_info=dto)
 
-
-@pytest.mark.parametrize("entity, dto", [
-    (entities.Symptom(id=1, name='Температура'), dtos.SymptomUpdateSchema(id=1, name='Кашель')),
-])
-def test__update_existing_symptom(entity, dto, service, repo):
-    # Setup
-    repo.get_by_id.return_value = entity
-
-    # Call
-    service.update(new_symptom_info=dto)
-
-    # Assert
-    repo.get_by_id.assert_called_once_with(dto.id)
+        assert repo.method_calls == [call.fetch_by_name(dto.name)]
 
 
-@pytest.mark.parametrize("entity, dto", [
-    (None, dtos.SymptomUpdateSchema(id=1, name='Кашель'))
-])
-def test__update_non_existing_symptom(entity, dto, service, repo):
-    # Setup
-    repo.get_by_id.return_value = entity
+class TestChange:
+    @pytest.mark.parametrize("entity, dto", [
+        (
+            entities.Symptom(id=1, name='Температура'),
+            dtos.SymptomUpdateSchema(id=1, name='Кашель')
+        ),
+    ])
+    def test__change_existing_symptom(self, entity, dto, service, repo):
+        # Setup
+        repo.fetch_by_id.return_value = entity
 
-    # Call and Assert
-    with pytest.raises(errors.SymptomNotFound):
-        service.update(new_symptom_info=dto)
-    repo.get_by_id.assert_called_once_with(dto.id)
+        # Call
+        result = service.change(new_symptom_info=dto)
+
+        # Assert
+        assert repo.method_calls == [call.fetch_by_id(dto.id)]
+        assert result == entity
+
+    @pytest.mark.parametrize("entity, dto", [
+        (None, dtos.SymptomUpdateSchema(id=1, name='Кашель'))
+    ])
+    def test__change_non_existing_symptom(self, entity, dto, service, repo):
+        # Setup
+        repo.fetch_by_id.return_value = entity
+
+        # Call and Assert
+        with pytest.raises(errors.SymptomNotFound):
+            service.change(new_symptom_info=dto)
+
+        assert repo.method_calls == [call.fetch_by_id(dto.id)]
+
+    @pytest.mark.parametrize("entity, dto", [
+        (entities.Symptom(id=1, name='Температура'),
+         dtos.SymptomUpdateSchema(id=2, name='Температура')),
+    ])
+    def test__change_existing_symptom_with_same_name(self, entity, dto, service, repo):
+        # Setup
+        repo.fetch_by_id.return_value = entity
+
+        # Call and Assert
+        with pytest.raises(errors.SymptomAlreadyExists):
+            service.change(new_symptom_info=dto)
+
+        assert repo.method_calls == [call.fetch_by_id(dto.id)]
 
 
-@pytest.mark.parametrize("entity, dto", [
-    (entities.Symptom(id=1, name='Температура'), dtos.SymptomUpdateSchema(id=1, name='Температура')),
-])
-def test__update_existing_symptom_with_same_name(entity, dto, service, repo):
-    # Setup
-    repo.get_by_id.return_value = entity
+class TestDelete:
+    @pytest.mark.parametrize("entity, dto", [
+        (entities.Symptom(id=1, name='Температура'), dtos.SymptomDeleteSchema(id=1))
+    ])
+    def test__delete_existing_symptom(self, entity, dto, service, repo):
+        # Setup
+        repo.fetch_by_id.return_value = entity
+        repo.remove.return_value = entity
 
-    # Call and Assert
-    with pytest.raises(errors.SymptomAlreadyExists):
-        service.update(new_symptom_info=dto)
-    repo.get_by_id.assert_called_once_with(dto.id)
+        # Call
+        result = service.delete(symptom_info=dto)
 
+        # Assert
+        assert repo.method_calls == [call.fetch_by_id(dto.id), call.remove(entity)]
+        assert result == entity
 
-@pytest.mark.parametrize("entity, dto", [
-    (entities.Symptom(id=1, name='Температура'), dtos.SymptomDeleteSchema(id=1))
-])
-def test__delete_existing_symptom(entity, dto, service, repo):
-    # Setup
-    repo.get_by_id.return_value = entity
-    repo.remove.return_value = None
+    @pytest.mark.parametrize("entity, dto", [
+        (None, dtos.SymptomDeleteSchema(id=1))
+    ])
+    def test__delete_non_existing_symptom(self, entity, dto, service, repo):
+        # Setup
+        repo.fetch_by_id.return_value = entity
 
-    # Call
-    service.delete(symptom_info=dto)
+        # Call and Assert
+        with pytest.raises(errors.SymptomNotFound):
+            service.delete(symptom_info=dto)
 
-    # Assert
-    repo.get_by_id.assert_called_once_with(dto.id)
-    repo.remove.assert_called_once_with(entity)
-
-
-@pytest.mark.parametrize("entity, dto", [
-    (None, dtos.SymptomDeleteSchema(id=1))
-])
-def test__delete_non_existing_symptom(entity, dto, service, repo):
-    # Setup
-    repo.get_by_id.return_value = entity
-
-    # Call and Assert
-    with pytest.raises(errors.SymptomNotFound):
-        service.delete(symptom_info=dto)
-    repo.get_by_id.assert_called_once_with(dto.id)
+        assert repo.method_calls == [call.fetch_by_id(dto.id)]
