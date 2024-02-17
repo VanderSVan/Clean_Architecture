@@ -25,11 +25,11 @@ class TreatmentItemCatalog:
 
     @register_method
     @validate_call
-    def get_item(self, item_code: str) -> entities.TreatmentItem:
-        item: entities.TreatmentItem = self.items_repo.get_by_id(item_code)
+    def get_item(self, item_id: int) -> entities.TreatmentItem:
+        item: entities.TreatmentItem = self.items_repo.fetch_by_id(item_id)
 
         if not item:
-            raise errors.TreatmentItemNotFound(code=item_code)
+            raise errors.TreatmentItemNotFound(code=item_id)
 
         return item
 
@@ -76,7 +76,7 @@ class TreatmentItemCatalog:
                                                 offset: int = 0
                                                 ) -> list[entities.TreatmentItem]:
 
-        symptom = self.symptoms_repo.get_by_id(symptom_id)
+        symptom = self.symptoms_repo.fetch_by_id(symptom_id)
         if not symptom:
             raise errors.SymptomNotFound(id=symptom_id)
 
@@ -97,7 +97,7 @@ class TreatmentItemCatalog:
                                                   offset: int = 0
                                                   ) -> list[entities.TreatmentItem]:
 
-        diagnosis = self.diagnoses_repo.get_by_id(diagnosis_id)
+        diagnosis = self.diagnoses_repo.fetch_by_id(diagnosis_id)
         if not diagnosis:
             raise errors.DiagnosisNotFound(id=diagnosis_id)
 
@@ -117,7 +117,7 @@ class TreatmentItemCatalog:
                                offset: int = 0
                                ) -> list[entities.TreatmentItem] | list[None]:
 
-        category: entities.ItemCategory = self.categories_repo.get_by_id(category_id)
+        category: entities.ItemCategory = self.categories_repo.fetch_by_id(category_id)
         if not category:
             raise errors.ItemCategoryNotFound(id=category_id)
 
@@ -131,7 +131,7 @@ class TreatmentItemCatalog:
                            offset: int = 0
                            ) -> list[entities.TreatmentItem] | list[None]:
 
-        type_: entities.ItemType = self.types_repo.get_by_id(type_id)
+        type_: entities.ItemType = self.types_repo.fetch_by_id(type_id)
         if not type_:
             raise errors.ItemTypeNotFound(id=type_id)
 
@@ -140,19 +140,19 @@ class TreatmentItemCatalog:
     @register_method
     @validate_call
     def add_item(self,
-                 new_item_info: dtos.TreatmentItemCreateSchema
+                 new_item_info: dtos.ItemCreateSchema
                  ) -> entities.TreatmentItem:
 
-        item: entities.TreatmentItem = self.items_repo.get_by_id(new_item_info.code)
+        item: entities.TreatmentItem = self.items_repo.fetch_by_id(new_item_info.code)
         if item:
             raise errors.TreatmentItemAlreadyExists(code=new_item_info.code)
 
-        category: entities.ItemCategory = self.categories_repo.get_by_id(
+        category: entities.ItemCategory = self.categories_repo.fetch_by_id(
             new_item_info.category_id)
         if not category:
             raise errors.ItemCategoryNotFound(id=new_item_info.category_id)
 
-        type_: entities.ItemType = self.types_repo.get_by_id(
+        type_: entities.ItemType = self.types_repo.fetch_by_id(
             new_item_info.type_id)
         if not type_:
             raise errors.ItemTypeNotFound(id=new_item_info.type_id)
@@ -164,22 +164,22 @@ class TreatmentItemCatalog:
     @register_method
     @validate_call
     def change_item(self,
-                    new_item_info: dtos.TreatmentItemUpdateSchema
+                    new_item_info: dtos.ItemUpdateSchema
                     ) -> entities.TreatmentItem:
 
-        item: entities.TreatmentItem = self.items_repo.get_by_id(new_item_info.code)
+        item: entities.TreatmentItem = self.items_repo.fetch_by_id(new_item_info.code)
         if not item:
             raise errors.TreatmentItemNotFound(code=new_item_info.code)
 
         if new_item_info.category_id:
             category: entities.ItemCategory = (
-                self.categories_repo.get_by_id(new_item_info.category_id)
+                self.categories_repo.fetch_by_id(new_item_info.category_id)
             )
             if not category:
                 raise errors.ItemCategoryNotFound(id=new_item_info.category_id)
 
         if new_item_info.type_id:
-            type_: entities.ItemType = self.types_repo.get_by_id(new_item_info.type_id)
+            type_: entities.ItemType = self.types_repo.fetch_by_id(new_item_info.type_id)
             if not type_:
                 raise errors.ItemTypeNotFound(id=new_item_info.type_id)
 
@@ -188,10 +188,10 @@ class TreatmentItemCatalog:
     @register_method
     @validate_call
     def delete_item(self,
-                    item_info: dtos.TreatmentItemDeleteSchema
+                    item_info: dtos.ItemDeleteSchema
                     ) -> entities.TreatmentItem:
 
-        item: entities.TreatmentItem = self.items_repo.get_by_id(item_info.code)
+        item: entities.TreatmentItem = self.items_repo.fetch_by_id(item_info.code)
         if not item:
             raise errors.TreatmentItemNotFound(code=item_info.code)
 

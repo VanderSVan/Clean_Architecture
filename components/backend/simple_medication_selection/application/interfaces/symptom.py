@@ -6,11 +6,11 @@ from .. import entities
 class SymptomsRepo(ABC):
 
     @abstractmethod
-    def get_by_id(self, id_: int) -> entities.Symptom | None:
+    def fetch_by_id(self, id_: int) -> entities.Symptom | None:
         ...
 
     @abstractmethod
-    def get_by_name(self, name: str) -> entities.Symptom | None:
+    def fetch_by_name(self, name: str) -> entities.Symptom | None:
         ...
 
     @abstractmethod

@@ -82,10 +82,10 @@ class TestCreate:
                                         item_types_repo):
         # Setup
         treatment_items_repo.get_by_id.return_value = None
-        item_categories_repo.get_by_id.return_value = (
+        item_categories_repo.fetch_by_id.return_value = (
             entities.ItemCategory(id=1, name='Аптечные продукты')
         )
-        item_types_repo.get_by_id.return_value = entities.ItemType(id=2, name='Сыворотка')
+        item_types_repo.fetch_by_id.return_value = entities.ItemType(id=2, name='Сыворотка')
         treatment_items_repo.add.return_value = saved_entity
 
         # Call
@@ -123,7 +123,7 @@ class TestCreate:
                                            item_categories_repo):
         # Setup
         treatment_items_repo.get_by_id.return_value = None
-        item_categories_repo.get_by_id.return_value = None
+        item_categories_repo.fetch_by_id.return_value = None
 
         # Call and Assert
         with pytest.raises(errors.ItemCategoryNotFound):
@@ -141,7 +141,7 @@ class TestCreate:
                                        item_types_repo):
         # Setup
         treatment_items_repo.get_by_id.return_value = None
-        item_types_repo.get_by_id.return_value = None
+        item_types_repo.fetch_by_id.return_value = None
 
         # Call and Assert
         with pytest.raises(errors.ItemTypeNotFound):
@@ -167,10 +167,10 @@ class TestUpdate:
         treatment_items_repo.get_by_id.return_value = entities.TreatmentItem(
             code="Продукт 1-1-1", title="Продукт 1", category_id=1, type_id=1
         )
-        item_categories_repo.get_by_id.return_value = (
+        item_categories_repo.fetch_by_id.return_value = (
             entities.ItemCategory(id=1, name='Аптечные продукты')
         )
-        item_types_repo.get_by_id.return_value = entities.ItemType(id=10, name='Крем')
+        item_types_repo.fetch_by_id.return_value = entities.ItemType(id=10, name='Крем')
 
         # Call
         result = service.update(new_treatment_item_info=dto)
@@ -218,7 +218,7 @@ class TestUpdate:
         treatment_items_repo.get_by_id.return_value = entities.TreatmentItem(
             code="Продукт 1-1-1", title="Продукт 1", category_id=1, type_id=10
         )
-        item_categories_repo.get_by_id.return_value = None
+        item_categories_repo.fetch_by_id.return_value = None
 
         # Call and Assert
         with pytest.raises(errors.ItemCategoryNotFound):
@@ -242,10 +242,10 @@ class TestUpdate:
         treatment_items_repo.get_by_id.return_value = entities.TreatmentItem(
             code="Продукт 1-1-1", title="Продукт 1", category_id=1, type_id=10
         )
-        item_categories_repo.get_by_id.return_value = (
+        item_categories_repo.fetch_by_id.return_value = (
             entities.ItemCategory(id=1, name='Аптечные продукты')
         )
-        item_types_repo.get_by_id.return_value = None
+        item_types_repo.fetch_by_id.return_value = None
 
         # Call and Assert
         with pytest.raises(errors.ItemTypeNotFound):

@@ -6,11 +6,11 @@ from .. import entities
 class ItemTypesRepo(ABC):
 
     @abstractmethod
-    def get_by_id(self, id_: int) -> entities.ItemType | None:
+    def fetch_by_id(self, id_: int) -> entities.ItemType | None:
         ...
 
     @abstractmethod
-    def get_by_name(self, name: str) -> entities.ItemType | None:
+    def fetch_by_name(self, name: str) -> entities.ItemType | None:
         ...
 
     @abstractmethod

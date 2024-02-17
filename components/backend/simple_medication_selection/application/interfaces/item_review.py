@@ -6,19 +6,19 @@ from .. import entities
 class ItemReviewsRepo(ABC):
 
     @abstractmethod
-    def get_by_id(self, review_id: int) -> entities.ItemReview | None:
+    def fetch_by_id(self, review_id: int) -> entities.ItemReview | None:
         ...
 
     @abstractmethod
-    def get_all(self) -> list[entities.ItemReview] | list[None]:
+    def fetch_all(self) -> list[entities.ItemReview] | list[None]:
         ...
 
     @abstractmethod
-    def get_all_by_item_id(self,
-                           item_id: int,
-                           limit: int | None,
-                           offset: int
-                           ) -> list[entities.ItemReview] | list[None]:
+    def fetch_all_by_item_id(self,
+                             item_id: int,
+                             limit: int | None,
+                             offset: int
+                             ) -> list[entities.ItemReview] | list[None]:
         ...
 
     @abstractmethod

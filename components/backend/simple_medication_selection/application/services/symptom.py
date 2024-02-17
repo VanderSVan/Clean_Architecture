@@ -14,7 +14,7 @@ class Symptom:
     @register_method
     @validate_call
     def get(self, symptom_id: int) -> entities.Symptom:
-        symptom = self.symptoms_repo.get_by_id(symptom_id)
+        symptom = self.symptoms_repo.fetch_by_id(symptom_id)
 
         if not symptom:
             raise errors.SymptomNotFound(id=symptom_id)
@@ -24,7 +24,9 @@ class Symptom:
     @register_method
     @validate_call
     def create(self, new_symptom_info: dtos.SymptomCreateSchema) -> None:
-        symptom: entities.Symptom = self.symptoms_repo.get_by_name(new_symptom_info.name)
+        symptom: entities.Symptom = (
+            self.symptoms_repo.fetch_by_name(new_symptom_info.name)
+        )
 
         if symptom:
             raise errors.SymptomAlreadyExists(name=new_symptom_info.name)
@@ -35,7 +37,7 @@ class Symptom:
     @register_method
     @validate_call
     def update(self, new_symptom_info: dtos.SymptomUpdateSchema) -> None:
-        symptom: entities.Symptom = self.symptoms_repo.get_by_id(new_symptom_info.id)
+        symptom: entities.Symptom = self.symptoms_repo.fetch_by_id(new_symptom_info.id)
         if not symptom:
             raise errors.SymptomNotFound(id=new_symptom_info.id)
 
@@ -47,7 +49,7 @@ class Symptom:
     @register_method
     @validate_call
     def delete(self, symptom_info: dtos.SymptomDeleteSchema) -> None:
-        symptom = self.symptoms_repo.get_by_id(symptom_info.id)
+        symptom = self.symptoms_repo.fetch_by_id(symptom_info.id)
 
         if not symptom:
             raise errors.SymptomNotFound(id=symptom_info.id)
