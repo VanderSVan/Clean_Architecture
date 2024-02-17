@@ -28,3 +28,9 @@ from .item import (
     ItemUpdateSchema,
     ItemDeleteSchema,
 )
+from .item_review import (
+    ItemReviewCreateSchema,
+    ItemReviewGetSchema,
+    ItemReviewUpdateSchema,
+    ItemReviewDeleteSchema
+)

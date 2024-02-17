@@ -14,7 +14,11 @@ from .item_types import (
     ItemTypeNotFound,
     ItemTypeAlreadyExists,
 )
-from .treatment_item import (
+from .item import (
     TreatmentItemNotFound,
     TreatmentItemAlreadyExists
+)
+from .item_review import (
+    ItemReviewNotFound,
+    ItemReviewAlreadyExists
 )

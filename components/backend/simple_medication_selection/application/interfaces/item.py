@@ -6,7 +6,7 @@ from .. import entities
 class TreatmentItemsRepo(ABC):
 
     @abstractmethod
-    def get_by_id(self, code: str) -> entities.TreatmentItem | None:
+    def get_by_id(self, code: int) -> entities.TreatmentItem | None:
         ...
 
     @abstractmethod
