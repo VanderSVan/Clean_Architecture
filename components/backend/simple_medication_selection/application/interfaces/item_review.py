@@ -10,22 +10,42 @@ class ItemReviewsRepo(ABC):
         ...
 
     @abstractmethod
-    def fetch_all(self) -> list[entities.ItemReview] | list[None]:
+    def fetch_all(self,
+                  limit: int,
+                  offset: int
+                  ) -> list[entities.ItemReview] | list[None]:
         ...
 
     @abstractmethod
     def fetch_all_by_item_id(self,
                              item_id: int,
-                             limit: int | None,
+                             limit: int,
                              offset: int
                              ) -> list[entities.ItemReview] | list[None]:
+        ...
+
+    @abstractmethod
+    def fetch_reviews_by_patient_id(self,
+                                    patient_id: int,
+                                    limit: int,
+                                    offset: int
+                                    ) -> list[entities.ItemReview] | list[None]:
+        ...
+
+    @abstractmethod
+    def fetch_patient_reviews_by_item(self,
+                                      patient_id: int,
+                                      item_id: int,
+                                      limit: int,
+                                      offset: int
+                                      ) -> list[entities.ItemReview] | list[None]:
         ...
 
     @abstractmethod
     def find_in_rating_range(self,
                              min_rating: int,
                              max_rating: int | None,
-                             limit: int | None,
+                             limit: int,
                              offset: int
                              ) -> list[entities.ItemReview] | list[None]:
         ...
@@ -33,7 +53,7 @@ class ItemReviewsRepo(ABC):
     @abstractmethod
     def find_by_helped_status(self,
                               is_helped: bool,
-                              limit: int | None,
+                              limit: int,
                               offset: int
                               ) -> list[entities.ItemReview] | list[None]:
         ...
@@ -43,7 +63,7 @@ class ItemReviewsRepo(ABC):
         self,
         symptom_id: int,
         is_helped: bool,
-        limit: int | None,
+        limit: int,
         offset: int
     ) -> list[entities.ItemReview] | list[None]:
         ...
@@ -53,7 +73,7 @@ class ItemReviewsRepo(ABC):
         self,
         diagnosis_id: int,
         is_helped: bool,
-        limit: int | None,
+        limit: int,
         offset: int
     ) -> list[entities.ItemReview] | list[None]:
         ...

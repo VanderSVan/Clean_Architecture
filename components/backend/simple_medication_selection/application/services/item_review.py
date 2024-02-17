@@ -23,10 +23,12 @@ class ItemReviews:
     @validate_call
     def get_patient_review_by_item(self,
                                    patient_id: int,
-                                   item_id: int
-                                   ) -> entities.ItemReview:
+                                   item_id: int,
+                                   limit: int = 10,
+                                   offset: int = 0
+                                   ) -> list[entities.ItemReview] | list[None]:
 
-        patient: entities.Patient = self.patients_repo.get_by_id(patient_id)
+        patient: entities.Patient = self.patients_repo.fetch_by_id(patient_id)
         if not patient:
             raise errors.PatientNotFound(id=patient_id)
 
@@ -34,8 +36,10 @@ class ItemReviews:
         if not item:
             raise errors.TreatmentItemNotFound(id=item_id)
 
-        return self.med_books_repo.get_reviews_by_item_id_and_patient_id(item_id,
-                                                                         patient_id)
+        return self.reviews_repo.fetch_patient_reviews_by_item(patient_id,
+                                                               item_id,                                                               
+                                                               limit,
+                                                               offset)
 
     @register_method
     @validate_call
@@ -43,17 +47,19 @@ class ItemReviews:
                          item_id: int,
                          limit: int,
                          offset: int
-                         ) -> [entities.ItemReview] | list[None]:
+                         ) -> list[entities.ItemReview] | list[None]:
         return self.reviews_repo.fetch_all_by_item_id(item_id, limit, offset)
 
     @register_method
     @validate_call
-    def get_patient_reviews(self, patient_id: int) -> [entities.ItemReview] | list[None]:
-        patient: entities.Patient = self.patients_repo.get_by_id(patient_id)
+    def get_patient_reviews(self,
+                            patient_id: int
+                            ) -> list[entities.ItemReview] | list[None]:
+        patient: entities.Patient = self.patients_repo.fetch_by_id(patient_id)
         if not patient:
             raise errors.PatientNotFound(id=patient_id)
 
-        return self.med_books_repo.get_reviews_by_patient_id(patient_id)
+        return self.reviews_repo.fetch_reviews_by_patient_id(patient_id)
 
     @register_method
     @validate_call
@@ -62,7 +68,8 @@ class ItemReviews:
         if review:
             raise errors.ItemReviewAlreadyExists(id=new_review_info.id)
 
-        item: entities.TreatmentItem = self.items_repo.fetch_by_id(new_review_info.item.id)
+        item: entities.TreatmentItem = self.items_repo.fetch_by_id(
+            new_review_info.item.id)
         if not item:
             raise errors.TreatmentItemNotFound(id=new_review_info.item.id)
 
