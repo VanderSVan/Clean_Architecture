@@ -14,9 +14,9 @@ class DiagnosesRepo(ABC):
         ...
 
     @abstractmethod
-    def add(self, diagnosis: entities.Diagnosis) -> None:
+    def add(self, diagnosis: entities.Diagnosis) -> entities.Diagnosis:
         ...
 
     @abstractmethod
-    def remove(self, diagnosis: entities.Diagnosis) -> None:
+    def remove(self, diagnosis: entities.Diagnosis) -> entities.Diagnosis:
         ...

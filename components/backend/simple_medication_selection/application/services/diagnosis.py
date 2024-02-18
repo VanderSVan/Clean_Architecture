@@ -23,7 +23,10 @@ class Diagnosis:
 
     @register_method
     @validate_call
-    def create(self, new_diagnosis_info: dtos.DiagnosisCreateSchema) -> None:
+    def create(self,
+               new_diagnosis_info: dtos.DiagnosisCreateSchema
+               ) -> entities.Diagnosis:
+
         diagnosis: entities.Diagnosis = (
             self.diagnoses_repo.fetch_by_name(new_diagnosis_info.name)
         )
@@ -34,11 +37,14 @@ class Diagnosis:
         new_diagnosis: entities.Diagnosis = (
             new_diagnosis_info.create_obj(entities.Diagnosis)
         )
-        self.diagnoses_repo.add(new_diagnosis)
+        return self.diagnoses_repo.add(new_diagnosis)
 
     @register_method
     @validate_call
-    def update(self, new_diagnosis_info: dtos.DiagnosisUpdateSchema) -> None:
+    def update(self,
+               new_diagnosis_info: dtos.DiagnosisUpdateSchema
+               ) -> entities.Diagnosis:
+
         diagnosis: entities.Diagnosis = (
             self.diagnoses_repo.fetch_by_id(new_diagnosis_info.id)
         )
@@ -48,14 +54,14 @@ class Diagnosis:
         if new_diagnosis_info.name == diagnosis.name:
             raise errors.DiagnosisAlreadyExists(name=new_diagnosis_info.name)
 
-        new_diagnosis_info.populate_obj(diagnosis)
+        return new_diagnosis_info.populate_obj(diagnosis)
 
     @register_method
     @validate_call
-    def delete(self, diagnosis_info: dtos.DiagnosisDeleteSchema) -> None:
+    def delete(self, diagnosis_info: dtos.DiagnosisDeleteSchema) -> entities.Diagnosis:
         diagnosis = self.diagnoses_repo.fetch_by_id(diagnosis_info.id)
 
         if not diagnosis:
             raise errors.DiagnosisNotFound(id=diagnosis_info.id)
 
-        self.diagnoses_repo.remove(diagnosis)
+        return self.diagnoses_repo.remove(diagnosis)
