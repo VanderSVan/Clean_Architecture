@@ -13,30 +13,32 @@ class ItemType:
 
     @register_method
     @validate_call
-    def get(self, item_type_id: int) -> entities.ItemType:
-        item_type = self.types_repo.fetch_by_id(item_type_id)
+    def get(self, type_id: int) -> entities.ItemType:
+
+        item_type = self.types_repo.fetch_by_id(type_id)
 
         if not item_type:
-            raise errors.ItemTypeNotFound(id=item_type_id)
+            raise errors.ItemTypeNotFound(id=type_id)
 
         return item_type
 
     @register_method
     @validate_call
-    def create(self, new_type_info: dtos.ItemTypeCreateSchema) -> None:
+    def create(self, new_type_info: dtos.ItemTypeCreateSchema) -> entities.ItemType:
+
         item_type: entities.ItemType = (
             self.types_repo.fetch_by_name(new_type_info.name)
         )
-
         if item_type:
             raise errors.ItemTypeAlreadyExists(name=new_type_info.name)
 
         new_type: entities.ItemType = new_type_info.create_obj(entities.ItemType)
-        self.types_repo.add(new_type)
+        return self.types_repo.add(new_type)
 
     @register_method
     @validate_call
-    def update(self, new_type_info: dtos.ItemTypeUpdateSchema) -> None:
+    def change(self, new_type_info: dtos.ItemTypeUpdateSchema) -> entities.ItemType:
+
         item_type: entities.ItemType = self.types_repo.fetch_by_id(new_type_info.id)
         if not item_type:
             raise errors.ItemTypeNotFound(id=new_type_info.id)
@@ -44,14 +46,15 @@ class ItemType:
         if new_type_info.name == item_type.name:
             raise errors.ItemTypeAlreadyExists(name=new_type_info.name)
 
-        new_type_info.populate_obj(item_type)
+        return new_type_info.populate_obj(item_type)
 
     @register_method
     @validate_call
-    def delete(self, item_type_info: dtos.ItemTypeDeleteSchema) -> None:
+    def delete(self, item_type_info: dtos.ItemTypeDeleteSchema) -> entities.ItemType:
+
         item_type = self.types_repo.fetch_by_id(item_type_info.id)
 
         if not item_type:
             raise errors.ItemTypeNotFound(id=item_type_info.id)
 
-        self.types_repo.remove(item_type)
+        return self.types_repo.remove(item_type)

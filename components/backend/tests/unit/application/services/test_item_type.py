@@ -15,147 +15,144 @@ def repo() -> Mock:
 
 @pytest.fixture(scope='function')
 def service(repo) -> services.ItemType:
-    return services.ItemType(item_types_repo=repo)
+    return services.ItemType(types_repo=repo)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
 # TESTS
 # ----------------------------------------------------------------------------------------------------------------------
-@pytest.mark.parametrize("entity", [
-    entities.ItemType(id=1, name='Крем'),
-])
-def test__get_existing_item_type(entity, service, repo):
-    # Setup
-    repo.get_by_id.return_value = entity
+@pytest.mark.parametrize("entity", [entities.ItemType(id=1, name='Крем')])
+class TestGet:
+    def test__get_existing_type(self, entity, service, repo):
+        # Setup
+        repo.fetch_by_id.return_value = entity
 
-    # Call
-    service.get(item_type_id=entity.id)
+        # Call
+        result = service.get(type_id=entity.id)
 
-    # Assert
-    expected_calls_for_repo = [call.get_by_id(entity.id)]
-    assert repo.method_calls == expected_calls_for_repo
+        # Assert
+        assert repo.method_calls == [call.fetch_by_id(entity.id)]
+        assert result == entity
 
+    def test_get_non_existing_type(self, entity, service, repo):
+        # Setup
+        repo.fetch_by_id.return_value = None
 
-@pytest.mark.parametrize("entity", [
-    entities.ItemType(id=2, name='Сыворотка'),
-])
-def test_get_non_existing_item_type(entity, service, repo):
-    # Setup
-    repo.get_by_id.return_value = None
+        # Call and Assert
+        with pytest.raises(errors.ItemTypeNotFound):
+            service.get(type_id=entity.id)
 
-    # Call and Assert
-    with pytest.raises(errors.ItemTypeNotFound):
-        service.get(item_type_id=entity.id)
-
-    expected_calls_for_repo = [call.get_by_id(entity.id)]
-    assert repo.method_calls == expected_calls_for_repo
+        assert repo.method_calls == [call.fetch_by_id(entity.id)]
 
 
-@pytest.mark.parametrize("entity, dto", [
-    (entities.ItemType(name='Крем'), dtos.ItemTypeCreateSchema(name='Крем'))
-])
-def test__create_new_item_type(entity, dto, service, repo):
-    # Setup
-    repo.get_by_name.return_value = None
-    repo.add.return_value = None
+class TestCreate:
+    @pytest.mark.parametrize("entity, dto, created_entity", [
+        (
+            entities.ItemType(name='Крем'),
+            dtos.ItemTypeCreateSchema(name='Крем'),
+            entities.ItemType(id=1, name='Крем')
+        )
+    ])
+    def test__create_new_type(self, entity, dto, created_entity, service, repo):
+        # Setup
+        repo.fetch_by_name.return_value = None
+        repo.add.return_value = created_entity
 
-    # Call
-    service.create(new_item_type_info=dto)
+        # Call
+        result = service.create(new_type_info=dto)
 
-    # Assert
-    expected_calls_for_repo = [call.get_by_name(dto.name), call.add(entity)]
-    assert repo.method_calls == expected_calls_for_repo
+        # Assert
+        assert repo.method_calls == [call.fetch_by_name(dto.name), call.add(entity)]
+        assert result == created_entity
 
+    @pytest.mark.parametrize("existing_entity, dto", [
+        (entities.ItemType(id=1, name='Крем'), dtos.ItemTypeCreateSchema(name='Крем')),
+    ])
+    def test__create_existing_type(self, existing_entity, dto, service, repo):
+        # Setup
+        repo.fetch_by_name.return_value = existing_entity
 
-@pytest.mark.parametrize("entity, dto", [
-    (entities.ItemType(id=1, name='Крем'), dtos.ItemTypeCreateSchema(name='Крем')),
-])
-def test__create_existing_item_type(entity, dto, service, repo):
-    # Setup
-    repo.get_by_name.return_value = entity
+        # Call and Assert
+        with pytest.raises(errors.ItemTypeAlreadyExists):
+            service.create(new_type_info=dto)
 
-    # Call and Assert
-    with pytest.raises(errors.ItemTypeAlreadyExists):
-        service.create(new_item_type_info=dto)
-
-    expected_calls_for_repo = [call.get_by_name(dto.name)]
-    assert repo.method_calls == expected_calls_for_repo
+        assert repo.method_calls == [call.fetch_by_name(dto.name)]
 
 
-@pytest.mark.parametrize("entity, dto", [
-    (
+class TestChange:
+    @pytest.mark.parametrize("existing_entity, dto, updated_entity", [
+        (
             entities.ItemType(id=1, name='Крем'),
-            dtos.ItemTypeUpdateSchema(id=1, name='Сыворотка')
-    ),
-])
-def test__update_existing_item_type(entity, dto, service, repo):
-    # Setup
-    repo.get_by_id.return_value = entity
+            dtos.ItemTypeUpdateSchema(id=1, name='Сыворотка'),
+            entities.ItemType(id=1, name='Сыворотка')
+        ),
+    ])
+    def test__change_existing_type(self, existing_entity, dto, updated_entity, service,
+                                   repo):
+        # Setup
+        repo.fetch_by_id.return_value = existing_entity
 
-    # Call
-    service.update(new_item_type_info=dto)
+        # Call
+        result = service.change(new_type_info=dto)
 
-    # Assert
-    expected_calls_for_repo = [call.get_by_id(dto.id)]
-    assert repo.method_calls == expected_calls_for_repo
+        # Assert
+        assert repo.method_calls == [call.fetch_by_id(dto.id)]
+        assert result == updated_entity
 
+    @pytest.mark.parametrize("dto", [
+        dtos.ItemTypeUpdateSchema(id=1, name='Тоник')
+    ])
+    def test__change_non_existing_type(self, dto, service, repo):
+        # Setup
+        repo.fetch_by_id.return_value = None
 
-@pytest.mark.parametrize("entity, dto", [
-    (None, dtos.ItemTypeUpdateSchema(id=1, name='Тоник'))
-])
-def test__update_non_existing_item_type(entity, dto, service, repo):
-    # Setup
-    repo.get_by_id.return_value = entity
+        # Call and Assert
+        with pytest.raises(errors.ItemTypeNotFound):
+            service.change(new_type_info=dto)
 
-    # Call and Assert
-    with pytest.raises(errors.ItemTypeNotFound):
-        service.update(new_item_type_info=dto)
+        assert repo.method_calls == [call.fetch_by_id(dto.id)]
 
-    expected_calls_for_repo = [call.get_by_id(dto.id)]
-    assert repo.method_calls == expected_calls_for_repo
+    @pytest.mark.parametrize("existing_entity, dto", [
+        (
+            entities.ItemType(id=1, name='Крем'),
+            dtos.ItemTypeUpdateSchema(id=1, name='Крем')
+        ),
+    ])
+    def test__change_existing_type_with_same_name(self, existing_entity, dto, service,
+                                                  repo):
+        # Setup
+        repo.fetch_by_id.return_value = existing_entity
 
+        # Call and Assert
+        with pytest.raises(errors.ItemTypeAlreadyExists):
+            service.change(new_type_info=dto)
 
-@pytest.mark.parametrize("entity, dto", [
-    (entities.ItemType(id=1, name='Крем'), dtos.ItemTypeUpdateSchema(id=1, name='Крем')),
-])
-def test__update_existing_item_type_with_same_name(entity, dto, service, repo):
-    # Setup
-    repo.get_by_id.return_value = entity
-
-    # Call and Assert
-    with pytest.raises(errors.ItemTypeAlreadyExists):
-        service.update(new_item_type_info=dto)
-
-    expected_calls_for_repo = [call.get_by_id(dto.id)]
-    assert repo.method_calls == expected_calls_for_repo
-
-
-@pytest.mark.parametrize("entity, dto", [
-    (entities.ItemType(id=1, name='Крем'), dtos.ItemTypeDeleteSchema(id=1))
-])
-def test__delete_existing_item_type(entity, dto, service, repo):
-    # Setup
-    repo.get_by_id.return_value = entity
-    repo.remove.return_value = None
-
-    # Call
-    service.delete(item_type_info=dto)
-
-    # Assert
-    expected_calls_for_repo = [call.get_by_id(dto.id), call.remove(entity)]
-    assert repo.method_calls == expected_calls_for_repo
+        assert repo.method_calls == [call.fetch_by_id(dto.id)]
 
 
-@pytest.mark.parametrize("entity, dto", [
-    (None, dtos.ItemTypeDeleteSchema(id=1))
-])
-def test__delete_non_existing_item_type(entity, dto, service, repo):
-    # Setup
-    repo.get_by_id.return_value = entity
+class TestDelete:
+    @pytest.mark.parametrize("entity, dto", [
+        (entities.ItemType(id=1, name='Крем'), dtos.ItemTypeDeleteSchema(id=1))
+    ])
+    def test__delete_existing_type(self, entity, dto, service, repo):
+        # Setup
+        repo.fetch_by_id.return_value = entity
+        repo.remove.return_value = entity
 
-    # Call and Assert
-    with pytest.raises(errors.ItemTypeNotFound):
-        service.delete(item_type_info=dto)
+        # Call
+        result = service.delete(item_type_info=dto)
 
-    expected_calls_for_repo = [call.get_by_id(dto.id)]
-    assert repo.method_calls == expected_calls_for_repo
+        # Assert
+        assert repo.method_calls == [call.fetch_by_id(dto.id), call.remove(entity)]
+        assert result == entity
+
+    @pytest.mark.parametrize("dto", [dtos.ItemTypeDeleteSchema(id=1)])
+    def test__delete_non_existing_type(self, dto, service, repo):
+        # Setup
+        repo.fetch_by_id.return_value = None
+
+        # Call and Assert
+        with pytest.raises(errors.ItemTypeNotFound):
+            service.delete(item_type_info=dto)
+
+        assert repo.method_calls == [call.fetch_by_id(dto.id)]

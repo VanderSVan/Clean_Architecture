@@ -6,7 +6,7 @@ from .. import entities
 class ItemTypesRepo(ABC):
 
     @abstractmethod
-    def fetch_by_id(self, id_: int) -> entities.ItemType | None:
+    def fetch_by_id(self, type_id: int) -> entities.ItemType | None:
         ...
 
     @abstractmethod
@@ -14,9 +14,9 @@ class ItemTypesRepo(ABC):
         ...
 
     @abstractmethod
-    def add(self, item_type: entities.ItemType) -> None:
+    def add(self, item_type: entities.ItemType) -> entities.ItemType:
         ...
 
     @abstractmethod
-    def remove(self, item_type: entities.ItemType) -> None:
+    def remove(self, item_type: entities.ItemType) -> entities.ItemType:
         ...
