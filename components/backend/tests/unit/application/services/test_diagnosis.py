@@ -49,7 +49,7 @@ class TestGet:
 
 
 class TestCreate:
-    @pytest.mark.parametrize("entity, dto, returned_entity", [
+    @pytest.mark.parametrize("new_entity, dto, returned_entity", [
         (
             entities.Diagnosis(name='Розацеа'),
             dtos.DiagnosisCreateSchema(name='Розацеа'),
@@ -57,7 +57,7 @@ class TestCreate:
         )
 
     ])
-    def test__create_new_diagnosis(self, entity, dto, returned_entity, service, repo):
+    def test__create_new_diagnosis(self, new_entity, dto, returned_entity, service, repo):
         # Setup
         repo.fetch_by_name.return_value = None
         repo.add.return_value = returned_entity
@@ -66,18 +66,18 @@ class TestCreate:
         result = service.create(new_diagnosis_info=dto)
 
         # Assert
-        assert repo.method_calls == [call.fetch_by_name(dto.name), call.add(entity)]
+        assert repo.method_calls == [call.fetch_by_name(dto.name), call.add(new_entity)]
         assert result == returned_entity
 
-    @pytest.mark.parametrize("entity, dto", [
+    @pytest.mark.parametrize("existing_entity, dto", [
         (
             entities.Diagnosis(id=1, name='Розацеа'),
             dtos.DiagnosisCreateSchema(name='Розацеа')
         ),
     ])
-    def test__create_existing_diagnosis(self, entity, dto, service, repo):
+    def test__create_existing_diagnosis(self, existing_entity, dto, service, repo):
         # Setup
-        repo.fetch_by_name.return_value = entity
+        repo.fetch_by_name.return_value = existing_entity
 
         # Call and Assert
         with pytest.raises(errors.DiagnosisAlreadyExists):
@@ -87,17 +87,17 @@ class TestCreate:
 
 
 class TestChange:
-    @pytest.mark.parametrize("entity, dto, returned_entity", [
+    @pytest.mark.parametrize("existing_entity, dto, returned_entity", [
         (
             entities.Diagnosis(id=1, name='Розацеа'),
             dtos.DiagnosisUpdateSchema(id=1, name='Атопический дерматит'),
             entities.Diagnosis(id=1, name='Атопический дерматит')
         ),
     ])
-    def test__change_existing_diagnosis(self, entity, dto, returned_entity, service,
-                                        repo):
+    def test__change_existing_diagnosis(self, existing_entity, dto, returned_entity,
+                                        service, repo):
         # Setup
-        repo.fetch_by_id.return_value = entity
+        repo.fetch_by_id.return_value = existing_entity
 
         # Call
         result = service.change(new_diagnosis_info=dto)
@@ -119,13 +119,16 @@ class TestChange:
 
         assert repo.method_calls == [call.fetch_by_id(dto.id)]
 
-    @pytest.mark.parametrize("entity, dto", [
-        (entities.Diagnosis(id=1, name='Розацеа'),
-         dtos.DiagnosisUpdateSchema(id=1, name='Розацеа')),
+    @pytest.mark.parametrize("existing_entity, dto", [
+        (
+            entities.Diagnosis(id=1, name='Розацеа'),
+            dtos.DiagnosisUpdateSchema(id=1, name='Розацеа')
+        ),
     ])
-    def test__change_existing_diagnosis_with_same_name(self, entity, dto, service, repo):
+    def test__change_existing_diagnosis_with_same_name(self, existing_entity, dto,
+                                                       service, repo):
         # Setup
-        repo.fetch_by_id.return_value = entity
+        repo.fetch_by_id.return_value = existing_entity
 
         # Call and Assert
         with pytest.raises(errors.DiagnosisAlreadyExists):
@@ -135,20 +138,21 @@ class TestChange:
 
 
 class TestDelete:
-    @pytest.mark.parametrize("entity, dto", [
+    @pytest.mark.parametrize("existing_entity, dto", [
         (entities.Diagnosis(id=1, name='Розацеа'), dtos.DiagnosisDeleteSchema(id=1))
     ])
-    def test__delete_existing_diagnosis(self, entity, dto, service, repo):
+    def test__delete_existing_diagnosis(self, existing_entity, dto, service, repo):
         # Setup
-        repo.fetch_by_id.return_value = entity
-        repo.remove.return_value = entity
+        repo.fetch_by_id.return_value = existing_entity
+        repo.remove.return_value = existing_entity
 
         # Call
         result = service.delete(diagnosis_info=dto)
 
         # Assert
-        assert repo.method_calls == [call.fetch_by_id(dto.id), call.remove(entity)]
-        assert result == entity
+        assert repo.method_calls == [call.fetch_by_id(dto.id),
+                                     call.remove(existing_entity)]
+        assert result == existing_entity
 
     @pytest.mark.parametrize("dto", [
         dtos.DiagnosisDeleteSchema(id=1)
