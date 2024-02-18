@@ -86,7 +86,7 @@ class TestCreate:
         assert repo.method_calls == [call.fetch_by_name(dto.name)]
 
 
-class TestUpdate:
+class TestChange:
     @pytest.mark.parametrize("entity, dto, returned_entity", [
         (
             entities.Diagnosis(id=1, name='Розацеа'),
@@ -94,13 +94,13 @@ class TestUpdate:
             entities.Diagnosis(id=1, name='Атопический дерматит')
         ),
     ])
-    def test__update_existing_diagnosis(self, entity, dto, returned_entity, service,
+    def test__change_existing_diagnosis(self, entity, dto, returned_entity, service,
                                         repo):
         # Setup
         repo.fetch_by_id.return_value = entity
 
         # Call
-        result = service.update(new_diagnosis_info=dto)
+        result = service.change(new_diagnosis_info=dto)
 
         # Assert
         assert repo.method_calls == [call.fetch_by_id(dto.id)]
@@ -109,13 +109,13 @@ class TestUpdate:
     @pytest.mark.parametrize("dto", [
         dtos.DiagnosisUpdateSchema(id=1, name='Псориаз')
     ])
-    def test__update_non_existing_diagnosis(self, dto, service, repo):
+    def test__change_non_existing_diagnosis(self, dto, service, repo):
         # Setup
         repo.fetch_by_id.return_value = None
 
         # Call and Assert
         with pytest.raises(errors.DiagnosisNotFound):
-            service.update(new_diagnosis_info=dto)
+            service.change(new_diagnosis_info=dto)
 
         assert repo.method_calls == [call.fetch_by_id(dto.id)]
 
@@ -123,13 +123,13 @@ class TestUpdate:
         (entities.Diagnosis(id=1, name='Розацеа'),
          dtos.DiagnosisUpdateSchema(id=1, name='Розацеа')),
     ])
-    def test__update_existing_diagnosis_with_same_name(self, entity, dto, service, repo):
+    def test__change_existing_diagnosis_with_same_name(self, entity, dto, service, repo):
         # Setup
         repo.fetch_by_id.return_value = entity
 
         # Call and Assert
         with pytest.raises(errors.DiagnosisAlreadyExists):
-            service.update(new_diagnosis_info=dto)
+            service.change(new_diagnosis_info=dto)
 
         assert repo.method_calls == [call.fetch_by_id(dto.id)]
 

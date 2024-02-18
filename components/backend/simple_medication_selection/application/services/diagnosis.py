@@ -41,7 +41,7 @@ class Diagnosis:
 
     @register_method
     @validate_call
-    def update(self,
+    def change(self,
                new_diagnosis_info: dtos.DiagnosisUpdateSchema
                ) -> entities.Diagnosis:
 
