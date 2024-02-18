@@ -13,49 +13,58 @@ class ItemCategory:
 
     @register_method
     @validate_call
-    def get(self, item_category_id: int) -> entities.ItemCategory:
-        category = self.categories_repo.fetch_by_id(item_category_id)
+    def get(self, category_id: int) -> entities.ItemCategory:
+        category = self.categories_repo.fetch_by_id(category_id)
 
         if not category:
-            raise errors.ItemCategoryNotFound(id=item_category_id)
+            raise errors.ItemCategoryNotFound(id=category_id)
 
         return category
 
     @register_method
     @validate_call
-    def create(self, new_item_category_info: dtos.ItemCategoryCreateSchema) -> None:
+    def create(self,
+               new_category_info: dtos.ItemCategoryCreateSchema
+               ) -> entities.ItemCategory:
+
         category: entities.ItemCategory = (
-            self.categories_repo.fetch_by_name(new_item_category_info.name)
+            self.categories_repo.fetch_by_name(new_category_info.name)
         )
 
         if category:
-            raise errors.ItemCategoryAlreadyExists(name=new_item_category_info.name)
+            raise errors.ItemCategoryAlreadyExists(name=new_category_info.name)
 
         new_item_category: entities.ItemCategory = (
-            new_item_category_info.create_obj(entities.ItemCategory)
+            new_category_info.create_obj(entities.ItemCategory)
         )
-        self.categories_repo.add(new_item_category)
+        return self.categories_repo.add(new_item_category)
 
     @register_method
     @validate_call
-    def update(self, new_item_category_info: dtos.ItemCategoryUpdateSchema) -> None:
+    def change(self,
+               new_category_info: dtos.ItemCategoryUpdateSchema
+               ) -> entities.ItemCategory:
+
         category: entities.ItemCategory = (
-            self.categories_repo.fetch_by_id(new_item_category_info.id)
+            self.categories_repo.fetch_by_id(new_category_info.id)
         )
         if not category:
-            raise errors.ItemCategoryNotFound(id=new_item_category_info.id)
+            raise errors.ItemCategoryNotFound(id=new_category_info.id)
 
-        if new_item_category_info.name == category.name:
-            raise errors.ItemCategoryAlreadyExists(name=new_item_category_info.name)
+        if new_category_info.name == category.name:
+            raise errors.ItemCategoryAlreadyExists(name=new_category_info.name)
 
-        new_item_category_info.populate_obj(category)
+        return new_category_info.populate_obj(category)
 
     @register_method
     @validate_call
-    def delete(self, item_category_info: dtos.ItemCategoryDeleteSchema) -> None:
+    def delete(self,
+               item_category_info: dtos.ItemCategoryDeleteSchema
+               ) -> entities.ItemCategory:
+
         category = self.categories_repo.fetch_by_id(item_category_info.id)
 
         if not category:
             raise errors.ItemCategoryNotFound(id=item_category_info.id)
 
-        self.categories_repo.remove(category)
+        return self.categories_repo.remove(category)
