@@ -7,13 +7,13 @@ from decimal import Decimal
 
 @dataclass(kw_only=True)
 class Patient:
-    id: int
+    id: int | None = None
     nickname: str
     gender: str
     age: int
     skin_type: str
     about: str | None
-    phone: int | None
+    phone: str | None
     profile_photo_path: str | None
 
 

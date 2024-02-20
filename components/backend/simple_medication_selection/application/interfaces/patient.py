@@ -9,15 +9,11 @@ class PatientsRepo(ABC):
         ...
 
     @abstractmethod
-    def fetch_by_nickname(self, name: str) -> entities.Patient | None:
+    def fetch_by_nickname(self, nickname: str) -> entities.Patient | None:
         ...
 
     @abstractmethod
     def add(self, patient: entities.Patient) -> entities.Patient:
-        ...
-
-    @abstractmethod
-    def update(self, patient: entities.Patient) -> entities.Patient:
         ...
 
     @abstractmethod

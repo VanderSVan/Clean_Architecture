@@ -27,7 +27,6 @@ class Patient:
         patient: entities.Patient = (
             self.patients_repo.fetch_by_nickname(new_patient_info.nickname)
         )
-
         if patient:
             raise errors.PatientAlreadyExists(nickname=new_patient_info.nickname)
 
@@ -37,17 +36,17 @@ class Patient:
 
     @register_method
     @validate_call
-    def update(self, new_patient_info: dtos.PatientUpdateSchema) -> entities.Patient:
+    def change(self, new_patient_info: dtos.PatientUpdateSchema) -> entities.Patient:
         patient: entities.Patient = (
             self.patients_repo.fetch_by_nickname(new_patient_info.nickname)
         )
-
         if not patient:
             raise errors.PatientNotFound(id=new_patient_info.id)
 
-        updated_patient: entities.Patient = new_patient_info.update_obj(patient)
+        if patient.nickname == new_patient_info.nickname:
+            raise errors.PatientAlreadyExists(nickname=new_patient_info.nickname)
 
-        return self.patients_repo.update(updated_patient)
+        return new_patient_info.populate_obj(patient)
 
     @register_method
     @validate_call

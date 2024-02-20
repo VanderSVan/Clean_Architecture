@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Annotated
 
-from pydantic import Field, FilePath
+from pydantic import Field
 
 from .base import DTO
 
@@ -27,7 +27,7 @@ class PatientCreateSchema(DTO):
     phone: Annotated[
         str, Field(None, min_length=9, max_length=15, pattern=r'^([\d]+)$')
     ]
-    profile_photo_path: Annotated[FilePath, Field(None)]
+    profile_photo_path: Annotated[str, Field(None)]
 
 
 class PatientGetSchema(DTO):
@@ -40,7 +40,7 @@ class PatientGetSchema(DTO):
     phone: Annotated[
         str, Field(None, min_length=9, max_length=15, pattern=r'^([\d]+)$')
     ]
-    profile_photo_path: Annotated[FilePath, Field(None)]
+    profile_photo_path: Annotated[str, Field(None)]
 
 
 class PatientUpdateSchema(DTO):
@@ -53,7 +53,7 @@ class PatientUpdateSchema(DTO):
     phone: Annotated[
         str, Field(None, min_length=9, max_length=15, pattern=r'^([\d]+)$')
     ]
-    profile_photo_path: Annotated[FilePath, Field(None)]
+    profile_photo_path: Annotated[str, Field(None)]
 
 
 class PatientDeleteSchema(DTO):
