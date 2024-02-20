@@ -10,25 +10,32 @@ class TreatmentItemsRepo(ABC):
         ...
 
     @abstractmethod
-    def find_by_keywords(self,
-                         search: str,
-                         limit: int,
-                         offset: int
-                         ) -> list[entities.TreatmentItem] | list[None]:
+    def fetch_all(self,
+                  limit: int | None,
+                  offset: int
+                  ) -> list[entities.TreatmentItem] | list[None]:
         ...
 
-    def find_by_category_id(self,
-                            category_id: int,
-                            limit: int | None,
-                            offset: int
-                            ) -> list[entities.TreatmentItem] | list[None]:
+    @abstractmethod
+    def fetch_by_keywords(self,
+                          keywords: str,
+                          limit: int | None,
+                          offset: int
+                          ) -> list[entities.TreatmentItem] | list[None]:
         ...
 
-    def find_by_type_id(self,
-                        type_id: int,
-                        limit: int | None,
-                        offset: int
-                        ) -> list[entities.TreatmentItem] | list[None]:
+    def fetch_by_category(self,
+                          category_id: int,
+                          limit: int | None,
+                          offset: int
+                          ) -> list[entities.TreatmentItem] | list[None]:
+        ...
+
+    def fetch_by_type(self,
+                      type_id: int,
+                      limit: int | None,
+                      offset: int
+                      ) -> list[entities.TreatmentItem] | list[None]:
         ...
 
     @abstractmethod

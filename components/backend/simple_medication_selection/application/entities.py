@@ -1,7 +1,7 @@
 # Domain слой
 import inspect
 from dataclasses import dataclass, field, is_dataclass
-from typing import Iterable, Union, TypeAlias
+from typing import Iterable, Union, TypeAlias, Literal
 from decimal import Decimal
 
 
@@ -57,12 +57,12 @@ class TreatmentItem:
 @dataclass(kw_only=True)
 class ItemReview:
     """
-    Отзыв о продукте или процедуре.
+    Отзыв пациента о продукте или процедуре.
     """
     id: int
     item: TreatmentItem  # продукт или процедура `TreatmentItem`
     is_helped: bool  # помог / не помог
-    item_rating: float  # 1 - 10
+    item_rating: float  # От 1 до 10 с шагом 0.5.
     item_count: int  # какое количество процедур или продуктов потребовалось
     usage_period: int | None  # период использования в секундах
 
@@ -87,6 +87,24 @@ class MedicalBook:
     def remove_symptoms(self, symptoms: Iterable[Symptom]) -> None:
         for symptom in symptoms:
             self.symptoms.remove(symptom) if symptom in self.symptoms else None
+
+    def sort_items_by_rating(self, order: Literal['asc', 'desc'] = 'desc') -> None:
+        reverse = True if order == 'desc' else False
+        self.item_reviews.sort(
+            key=lambda item_review: item_review.item_rating, reverse=reverse
+        )
+
+    def get_items_by_helped_status(self,
+                                   is_helped: bool = True,
+                                   *,
+                                   order_by_rating: Literal['asc', 'desc'] = 'desc'
+                                   ) -> list[TreatmentItem]:
+        self.sort_items_by_rating(order_by_rating)
+        return [
+            item_review.item
+            for item_review in self.item_reviews
+            if item_review.is_helped == is_helped
+        ]
 
 
 # Хранит все сущности из текущего модуля, формируя кортеж

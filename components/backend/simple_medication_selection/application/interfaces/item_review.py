@@ -42,40 +42,20 @@ class ItemReviewsRepo(ABC):
         ...
 
     @abstractmethod
-    def find_in_rating_range(self,
-                             min_rating: int,
-                             max_rating: int | None,
-                             limit: int,
-                             offset: int
-                             ) -> list[entities.ItemReview] | list[None]:
+    def fetch_by_rating(self,
+                        min_rating: float,
+                        max_rating: float | None,
+                        limit: int,
+                        offset: int
+                        ) -> list[entities.ItemReview] | list[None]:
         ...
 
     @abstractmethod
-    def find_by_helped_status(self,
-                              is_helped: bool,
-                              limit: int,
-                              offset: int
-                              ) -> list[entities.ItemReview] | list[None]:
-        ...
-
-    @abstractmethod
-    def find_by_symptom_id_and_helped_status(
-        self,
-        symptom_id: int,
-        is_helped: bool,
-        limit: int,
-        offset: int
-    ) -> list[entities.ItemReview] | list[None]:
-        ...
-
-    @abstractmethod
-    def find_by_diagnosis_id_and_helped_status(
-        self,
-        diagnosis_id: int,
-        is_helped: bool,
-        limit: int,
-        offset: int
-    ) -> list[entities.ItemReview] | list[None]:
+    def fetch_by_helped_status(self,
+                               is_helped: bool,
+                               limit: int,
+                               offset: int
+                               ) -> list[entities.ItemReview] | list[None]:
         ...
 
     @abstractmethod
