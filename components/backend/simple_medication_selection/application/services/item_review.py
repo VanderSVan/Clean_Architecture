@@ -7,7 +7,7 @@ decorated_function_registry = DecoratedFunctionRegistry()
 register_method = decorated_function_registry.register_function
 
 
-class ItemReviews:
+class ItemReview:
     def __init__(self,
                  item_reviews_repo: interfaces.ItemReviewsRepo,
                  items_repo: interfaces.TreatmentItemsRepo,
@@ -24,50 +24,40 @@ class ItemReviews:
     def get_patient_review_by_item(self,
                                    patient_id: int,
                                    item_id: int,
+                                   *,
                                    limit: int = 10,
                                    offset: int = 0
                                    ) -> list[entities.ItemReview] | list[None]:
 
-        patient: entities.Patient = self.patients_repo.fetch_by_id(patient_id)
-        if not patient:
-            raise errors.PatientNotFound(id=patient_id)
-
-        item: entities.TreatmentItem = self.items_repo.fetch_by_id(item_id)
-        if not item:
-            raise errors.TreatmentItemNotFound(id=item_id)
-
-        return self.reviews_repo.fetch_patient_reviews_by_item(patient_id,
-                                                               item_id,                                                               
-                                                               limit,
-                                                               offset)
+        return self.reviews_repo.fetch_patient_reviews_by_item(
+            patient_id, item_id, limit, offset
+        )
 
     @register_method
     @validate_call
-    def get_item_reviews(self,
-                         item_id: int,
-                         limit: int,
-                         offset: int
-                         ) -> list[entities.ItemReview] | list[None]:
+    def get_reviews_by_item(self,
+                            item_id: int,
+                            *,
+                            limit: int = 10,
+                            offset: int = 0
+                            ) -> list[entities.ItemReview] | list[None]:
+
         return self.reviews_repo.fetch_all_by_item_id(item_id, limit, offset)
 
     @register_method
     @validate_call
     def get_patient_reviews(self,
-                            patient_id: int
+                            patient_id: int,
+                            *,
+                            limit: int = 10,
+                            offset: int = 0
                             ) -> list[entities.ItemReview] | list[None]:
-        patient: entities.Patient = self.patients_repo.fetch_by_id(patient_id)
-        if not patient:
-            raise errors.PatientNotFound(id=patient_id)
 
-        return self.reviews_repo.fetch_reviews_by_patient_id(patient_id)
+        return self.reviews_repo.fetch_reviews_by_patient_id(patient_id, limit, offset)
 
     @register_method
     @validate_call
     def add(self, new_review_info: dtos.ItemReviewCreateSchema) -> entities.ItemReview:
-        review: entities.ItemReview = self.reviews_repo.fetch_by_id(new_review_info.id)
-        if review:
-            raise errors.ItemReviewAlreadyExists(id=new_review_info.id)
-
         item: entities.TreatmentItem = self.items_repo.fetch_by_id(
             new_review_info.item.id)
         if not item:

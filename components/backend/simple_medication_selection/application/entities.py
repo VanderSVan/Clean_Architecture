@@ -59,7 +59,7 @@ class ItemReview:
     """
     Отзыв пациента о продукте или процедуре.
     """
-    id: int
+    id: int | None = None
     item: TreatmentItem  # продукт или процедура `TreatmentItem`
     is_helped: bool  # помог / не помог
     item_rating: float  # От 1 до 10 с шагом 0.5.

@@ -19,7 +19,7 @@ from .catalog import (
     decorated_function_registry as treatment_item_decorated_function_registry
 )
 from .item_review import (
-    ItemReviews,
+    ItemReview,
     decorated_function_registry as item_review_decorated_function_registry
 )
 from .patient import (
