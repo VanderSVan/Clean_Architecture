@@ -26,3 +26,7 @@ from .patient import (
     Patient,
     decorated_function_registry as patient_decorated_function_registry
 )
+from .medical_book import (
+    MedicalBook,
+    decorated_function_registry as medical_book_decorated_function_registry
+)

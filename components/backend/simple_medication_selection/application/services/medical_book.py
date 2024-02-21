@@ -24,7 +24,6 @@ class MedicalBook:
         medical_book: entities.MedicalBook = (
             self.med_books_repo.fetch_by_id(medical_book_id)
         )
-
         if not medical_book:
             raise errors.MedicalBookNotFound(id=medical_book_id)
 
@@ -34,15 +33,12 @@ class MedicalBook:
     @validate_call
     def get_patient_med_books(self,
                               patient_id: int,
+                              *,
                               limit: int = 10,
                               offset: int = 0
-                              ) -> list[entities.MedicalBook]:
+                              ) -> list[entities.MedicalBook] | list[None]:
 
-        patient: entities.Patient = self.patients_repo.fetch_by_id(patient_id)
-        if not patient:
-            raise errors.PatientNotFound(id=patient_id)
-
-        return self.med_books_repo.fetch_by_patient_id(patient_id, limit, offset)
+        return self.med_books_repo.fetch_by_patient(patient_id, limit, offset)
 
     @register_method
     @validate_call

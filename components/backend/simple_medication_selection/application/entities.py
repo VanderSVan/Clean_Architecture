@@ -12,9 +12,9 @@ class Patient:
     gender: str
     age: int
     skin_type: str
-    about: str | None
-    phone: str | None
-    profile_photo_path: str | None
+    about: str | None = None
+    phone: str | None = None
+    profile_photo_path: str | None = None
 
 
 @dataclass(kw_only=True)
@@ -64,7 +64,7 @@ class ItemReview:
     is_helped: bool  # помог / не помог
     item_rating: float  # От 1 до 10 с шагом 0.5.
     item_count: int  # какое количество процедур или продуктов потребовалось
-    usage_period: int | None  # период использования в секундах
+    usage_period: int | None = None  # период использования в секундах
 
 
 @dataclass(kw_only=True)
@@ -72,9 +72,9 @@ class MedicalBook:
     """
     Медицинская карта пациента.
     """
-    id: int
+    id: int | None = None
     title_history: str
-    history: str | None
+    history: str | None = None
     patient_id: int
     diagnosis_id: int
     symptoms: list[Symptom] = field(default_factory=list)
