@@ -16,12 +16,7 @@ naming_convention = {
     'pk': 'pk_%(table_name)s'
 }
 
-# даем имя схемы только для БД MSSQL, связано с инфраструктурными особенностями
-# metadata = MetaData(naming_convention=naming_convention, schema='app')
-
 metadata = MetaData(naming_convention=naming_convention)
-
-# yapf: disable
 
 symptoms = Table(
     'symptoms',
@@ -29,5 +24,9 @@ symptoms = Table(
     Column('id', Integer, primary_key=True, autoincrement=True),
     Column('name', String, nullable=False, unique=True),
 )
-
-# yapf: enable
+diagnoses = Table(
+    'diagnoses',
+    metadata,
+    Column('id', Integer, primary_key=True, autoincrement=True),
+    Column('name', String, nullable=False, unique=True),
+)
