@@ -3,7 +3,7 @@ import threading
 
 from sqlalchemy.orm import Session, sessionmaker
 
-from .utils import ThreadSafeCounter
+from .thread_counting import ThreadSafeCounter
 
 
 class TransactionContext(ContextDecorator):
