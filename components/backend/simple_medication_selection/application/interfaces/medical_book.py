@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Literal
+from typing import Literal, Sequence
 
 from .. import entities
 
@@ -14,34 +14,37 @@ class MedicalBooksRepo(ABC):
                          patient_id: int,
                          limit: int,
                          offset: int
-                         ) -> list[entities.MedicalBook] | list[None]:
+                         ) -> Sequence[entities.MedicalBook | None]:
         ...
 
+    @abstractmethod
     def fetch_by_symptoms(self,
-                          symptom_ids: list[int],
+                          symptom_ids: Sequence[int],
                           limit: int,
                           offset: int
-                          ) -> list[entities.MedicalBook] | list[None]:
+                          ) -> Sequence[entities.MedicalBook | None]:
         ...
 
-    def fetch_items_by_symptoms_and_helped_status(
+    @abstractmethod
+    def fetch_by_symptoms_and_helped_status(
         self,
-        symptom_ids: list[int],
+        symptom_ids: Sequence[int],
         is_helped: bool,
         order_by_rating: Literal['asc', 'desc'],
         limit: int,
         offset: int
-    ) -> list[entities.TreatmentItem] | list[None]:
+    ) -> Sequence[entities.MedicalBook | None]:
         ...
 
-    def fetch_items_by_diagnosis_and_helped_status(
+    @abstractmethod
+    def fetch_by_diagnosis_and_helped_status(
         self,
         diagnosis_id: int,
         is_helped: bool,
         order_by_rating: Literal['asc', 'desc'],
         limit: int,
         offset: int
-    ) -> list[entities.MedicalBook] | list[None]:
+    ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
