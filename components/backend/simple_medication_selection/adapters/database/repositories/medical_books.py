@@ -1,4 +1,4 @@
-from typing import Sequence, Literal
+from typing import Sequence
 
 from sqlalchemy import select, and_, desc
 
@@ -54,7 +54,6 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         self,
         symptom_ids: list[int],
         is_helped: bool,
-        order_by_rating: Literal['asc', 'desc'] = 'desc',
         limit: int | None = None,
         offset: int | None = None
     ) -> Sequence[entities.MedicalBook | None]:
@@ -70,12 +69,10 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
                     entities.ItemReview.is_helped == is_helped
                 )
             )
-            .order_by(
-                desc(entities.ItemReview.item_rating) if order_by_rating == 'desc'
-                else entities.ItemReview.item_rating
-            )
+            .order_by(desc(entities.MedicalBook.id))
             .limit(limit)
             .offset(offset)
+            .distinct(entities.MedicalBook.id)
         )
         return self.session.execute(query).scalars().all()
 
@@ -83,7 +80,6 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         self,
         diagnosis_id: int,
         is_helped: bool,
-        order_by_rating: Literal['asc', 'desc'] = 'desc',
         limit: int | None = None,
         offset: int | None = None
     ) -> Sequence[entities.MedicalBook | None]:
@@ -97,12 +93,10 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
                     entities.ItemReview.is_helped == is_helped
                 )
             )
-            .order_by(
-                desc(entities.ItemReview.item_rating) if order_by_rating == 'desc'
-                else entities.ItemReview.item_rating
-            )
+            .order_by(desc(entities.MedicalBook.id))
             .limit(limit)
             .offset(offset)
+            .distinct(entities.MedicalBook.id)
         )
         return self.session.execute(query).scalars().all()
 

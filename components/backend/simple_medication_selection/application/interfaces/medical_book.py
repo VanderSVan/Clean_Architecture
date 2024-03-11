@@ -30,7 +30,6 @@ class MedicalBooksRepo(ABC):
         self,
         symptom_ids: Sequence[int],
         is_helped: bool,
-        order_by_rating: Literal['asc', 'desc'],
         limit: int,
         offset: int
     ) -> Sequence[entities.MedicalBook | None]:
@@ -41,7 +40,6 @@ class MedicalBooksRepo(ABC):
         self,
         diagnosis_id: int,
         is_helped: bool,
-        order_by_rating: Literal['asc', 'desc'],
         limit: int,
         offset: int
     ) -> Sequence[entities.MedicalBook | None]:

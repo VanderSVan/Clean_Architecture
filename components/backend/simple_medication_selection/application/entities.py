@@ -1,6 +1,7 @@
 # Domain слой
 import inspect
 from dataclasses import dataclass, field, is_dataclass
+from statistics import mean
 from typing import Iterable, Union, TypeAlias, Literal
 from decimal import Decimal
 
@@ -42,6 +43,19 @@ class ItemType:
 
 
 @dataclass(kw_only=True)
+class ItemReview:
+    """
+    Отзыв пациента о продукте или процедуре.
+    """
+    id: int | None = None
+    item_id: int  # продукт или процедура `TreatmentItem`
+    is_helped: bool  # помог / не помог
+    item_rating: float  # От 1 до 10 с шагом 0.5.
+    item_count: int  # какое количество процедур или продуктов потребовалось
+    usage_period: int | None = None  # период использования в секундах
+
+
+@dataclass(kw_only=True)
 class TreatmentItem:
     """
     Данные о продукте или процедуре, которые использовалась во время лечения.
@@ -52,19 +66,14 @@ class TreatmentItem:
     description: str | None = None
     category_id: int
     type_id: int
+    reviews: list[ItemReview] = field(default_factory=list)
+    avg_rating: float | None = None
 
+    def get_avg_rating(self) -> float | None:
+        if self.reviews and not self.avg_rating:
+            return mean([review.item_rating for review in self.reviews])
 
-@dataclass(kw_only=True)
-class ItemReview:
-    """
-    Отзыв пациента о продукте или процедуре.
-    """
-    id: int | None = None
-    item: TreatmentItem  # продукт или процедура `TreatmentItem`
-    is_helped: bool  # помог / не помог
-    item_rating: float  # От 1 до 10 с шагом 0.5.
-    item_count: int  # какое количество процедур или продуктов потребовалось
-    usage_period: int | None = None  # период использования в секундах
+        return self.avg_rating
 
 
 @dataclass(kw_only=True)

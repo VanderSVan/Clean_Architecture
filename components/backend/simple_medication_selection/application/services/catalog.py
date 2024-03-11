@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Sequence, Optional
 
 from pydantic import validate_call
 
@@ -14,18 +14,10 @@ class TreatmentItemCatalog:
                  items_repo: interfaces.TreatmentItemsRepo,
                  item_categories_repo: interfaces.ItemCategoriesRepo,
                  item_types_repo: interfaces.ItemTypesRepo,
-                 item_reviews_repo: interfaces.ItemReviewsRepo,
-                 medical_books_repo: interfaces.MedicalBooksRepo,
-                 symptoms_repo: interfaces.SymptomsRepo,
-                 diagnoses_repo: interfaces.DiagnosesRepo
                  ) -> None:
         self.items_repo = items_repo
         self.categories_repo = item_categories_repo
         self.types_repo = item_types_repo
-        self.reviews_repo = item_reviews_repo
-        self.med_books_repo = medical_books_repo
-        self.symptoms_repo = symptoms_repo
-        self.diagnoses_repo = diagnoses_repo
 
     @register_method
     @validate_call
@@ -40,42 +32,106 @@ class TreatmentItemCatalog:
     @register_method
     @validate_call
     def find_items(self,
-                   keywords: str | None = None,
+                   keywords: str = '',
                    *,
+                   sort_field: Literal[
+                       'price', 'category_id', 'type_id', 'avg_rating'] = 'avg_rating',
+                   sort_direction: Literal['asc', 'desc'] = 'desc',
                    limit: int = 10,
                    offset: int = 0
-                   ) -> list[entities.TreatmentItem] | list[None]:
-        if keywords:
-            return self.items_repo.fetch_by_keywords(keywords, limit, offset)
+                   ) -> list[dtos.ItemGetSchema | None]:
 
-        return self.items_repo.fetch_all(limit, offset)
+        if keywords:
+            return self.items_repo.fetch_by_keywords(keywords, sort_field,
+                                                     sort_direction, limit, offset)
+
+        return self.items_repo.fetch_all(sort_field, sort_direction, limit, offset)
+
+    @register_method
+    @validate_call
+    def find_items_with_reviews(self,
+                                keywords: str = '',
+                                *,
+                                sort_field: Literal[
+                                    'id', 'title', 'price', 'category_id',
+                                    'type_id', 'avg_rating'] = 'avg_rating',
+                                sort_direction: Literal['asc', 'desc'] = 'desc',
+                                limit: int = 10,
+                                offset: int = 0
+                                ) -> Sequence[entities.TreatmentItem | None]:
+
+        if keywords:
+            return self.items_repo.fetch_by_keywords_with_reviews(keywords, sort_field,
+                                                                  sort_direction, limit,
+                                                                  offset)
+
+        return self.items_repo.fetch_all_with_reviews(sort_field, sort_direction, limit,
+                                                      offset)
+
+    @register_method
+    @validate_call
+    def find_items_by_category(self,
+                               category_id: int,
+                               *,
+                               sort_field: Literal[
+                                   'id', 'title', 'price', 'category_id',
+                                   'type_id', 'avg_rating'] = 'avg_rating',
+                               sort_direction: Literal['asc', 'desc'] = 'desc',
+                               limit: int = 10,
+                               offset: int = 0
+                               ) -> Sequence[Optional[entities.TreatmentItem]]:
+
+        return self.items_repo.fetch_by_category(category_id, sort_field, sort_direction,
+                                                 limit, offset)
+
+    @register_method
+    @validate_call
+    def find_items_by_type(self,
+                           type_id: int,
+                           *,
+                           sort_field: Literal[
+                               'id', 'title', 'price', 'category_id',
+                               'type_id', 'avg_rating'] = 'avg_rating',
+                           sort_direction: Literal['asc', 'desc'] = 'desc',
+                           limit: int = 10,
+                           offset: int = 0
+                           ) -> Sequence[Optional[entities.TreatmentItem]]:
+
+        return self.items_repo.fetch_by_type(type_id, sort_field, sort_direction, limit,
+                                             offset)
 
     @register_method
     @validate_call
     def find_items_by_rating(self,
-                             min_rating: float = 0,
-                             max_rating: float | None = None,
+                             min_rating: float = 0.0,
+                             max_rating: float | None = 10.0,
                              *,
-                             limit: int | None = 10,
+                             sort_field: Literal[
+                                 'id', 'title', 'price', 'category_id',
+                                 'type_id', 'avg_rating'] = 'avg_rating',
+                             sort_direction: Literal['asc', 'desc'] = 'desc',
+                             limit: int = 10,
                              offset: int = 0
-                             ) -> list[entities.TreatmentItem] | list[None]:
-        reviews: list[entities.ItemReview] = (
-            self.reviews_repo.fetch_by_rating(min_rating, max_rating, limit, offset)
-        )
-        return [review.item for review in reviews]
+                             ) -> list[dtos.ItemGetSchema | None]:
+
+        return self.items_repo.fetch_by_rating(min_rating, max_rating, sort_field,
+                                               sort_direction, limit, offset)
 
     @register_method
     @validate_call
     def find_items_by_helped_status(self,
                                     is_helped: bool = True,
                                     *,
-                                    limit: int | None = 10,
+                                    sort_field: Literal[
+                                        'id', 'title', 'price', 'category_id',
+                                        'type_id', 'avg_rating'] = 'avg_rating',
+                                    sort_direction: Literal['asc', 'desc'] = 'desc',
+                                    limit: int = 10,
                                     offset: int = 0
-                                    ) -> list[entities.TreatmentItem] | list[None]:
-        reviews: list[entities.ItemReview] = (
-            self.reviews_repo.fetch_by_helped_status(is_helped, limit, offset)
-        )
-        return [review.item for review in reviews]
+                                    ) -> list[dtos.ItemWithHelpedStatusGetSchema | None]:
+
+        return self.items_repo.fetch_by_helped_status(is_helped, sort_field,
+                                                      sort_direction, limit, offset)
 
     @register_method
     @validate_call
@@ -84,40 +140,17 @@ class TreatmentItemCatalog:
         symptom_ids: list[int],
         is_helped: bool = True,
         *,
-        order_by_rating: Literal['asc', 'desc'] = 'desc',
-        limit: int | None = 10,
+        sort_field: Literal[
+            'id', 'title', 'price', 'category_id',
+            'type_id', 'avg_rating'] = 'avg_rating',
+        sort_direction: Literal['asc', 'desc'] = 'desc',
+        limit: int = 10,
         offset: int = 0
-    ) -> list[entities.TreatmentItem] | list[None]:
-        """
-        В данном методе представлен use case, когда
-        мы следуем подходу 'smart application, stupid repository'.
+    ) -> Sequence[Optional[entities.TreatmentItem]]:
 
-        Этот подход имеет очевидные как плюсы, так и минусы:
-        + Например, в случае смены db/orm, переписать запрос не составит труда.
-        + Не нужно детально описывать, что необходимо получить из db. Следовательно,
-        возможная часть бизнес-логики не попадет в репозитории.
-        + Не нужно составлять огромные запросы.
-        - Но также нужно понимать, что SQL может дать больше возможностей и
-        лучше скорость.
-        - Нужно хранить лишнюю информацию в памяти.
-
-        Какой подход выбрать решает команда разработки.
-
-        P.S. ниже метод `find_items_by_diagnosis_and_helped_status` как раз следует
-        противоположному подходу - 'stupid application, smart repository'.
-        """
-        med_books: list[entities.MedicalBook] = (
-            self.med_books_repo.fetch_by_symptoms(symptom_ids, limit, offset)
+        return self.items_repo.fetch_by_symptoms_and_helped_status(
+            symptom_ids, is_helped, sort_field, sort_direction, limit, offset
         )
-
-        reviews: list[entities.ItemReview] = []
-        for med_book in med_books:
-            reviews.extend(med_book.item_reviews)
-
-        order = True if order_by_rating == 'desc' else False
-        reviews.sort(key=lambda review: review.item_rating, reverse=order)
-
-        return [review.item for review in reviews if review.is_helped == is_helped]
 
     @register_method
     @validate_call
@@ -126,53 +159,17 @@ class TreatmentItemCatalog:
         diagnosis_id: int,
         is_helped: bool = True,
         *,
-        order_by_rating: Literal['asc', 'desc'] = 'desc',
-        limit: int | None = 10,
+        sort_field: Literal[
+            'id', 'title', 'price', 'category_id',
+            'type_id', 'avg_rating'] = 'avg_rating',
+        sort_direction: Literal['asc', 'desc'] = 'desc',
+        limit: int = 10,
         offset: int = 0
-    ) -> list[entities.TreatmentItem] | list[None]:
-        """
-        В данном методе представлен use case, когда
-        мы следуем подходу 'stupid application, smart repository'.
+    ) -> Sequence[Optional[entities.TreatmentItem]]:
 
-        Этот подход имеет очевидные как плюсы, так и минусы:
-        + В памяти не хранится лишняя информация, из db достается уже
-        обработанная необходимая информация.
-        + Чаще всего SQL предоставляет больше возможностей и лучше скорость.
-        - В случае смены db/orm, нам необходимо внимательно переписывать запрос.
-        - Необходимо в application более подробно описывать, что мы хотим получить от
-        репозитория.
-        - Также есть вероятность попадания в репозитории часть бизнес-логики.
-
-        Какой подход выбрать решает команда разработки.
-
-        P.S. выше метод `find_items_by_symptoms_and_helped_status` как раз следует
-        противоположному подходу - 'smart application, stupid repository'.
-        """
-        return self.med_books_repo.fetch_items_by_diagnosis_and_helped_status(
-            diagnosis_id, is_helped, order_by_rating, limit, offset
+        return self.items_repo.fetch_by_diagnosis_and_helped_status(
+            diagnosis_id, is_helped, sort_field, sort_direction, limit, offset
         )
-
-    @register_method
-    @validate_call
-    def find_items_by_category(self,
-                               category_id: int,
-                               *,
-                               limit: int | None = 10,
-                               offset: int = 0
-                               ) -> list[entities.TreatmentItem] | list[None]:
-
-        return self.items_repo.fetch_by_category(category_id, limit, offset)
-
-    @register_method
-    @validate_call
-    def find_items_by_type(self,
-                           type_id: int,
-                           *,
-                           limit: int | None = 10,
-                           offset: int = 0
-                           ) -> list[entities.TreatmentItem] | list[None]:
-
-        return self.items_repo.fetch_by_type(type_id, limit, offset)
 
     @register_method
     @validate_call

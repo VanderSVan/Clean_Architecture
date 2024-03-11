@@ -1,4 +1,3 @@
-from decimal import Decimal
 from unittest.mock import Mock, call
 
 import pytest
@@ -81,10 +80,7 @@ class TestGetPatientMedBooks:
             symptoms=[entities.Symptom(id=1, name='symptom1')],
             item_reviews=[entities.ItemReview(
                 id=1,
-                item=entities.TreatmentItem(
-                    id=1, title="item1", price=Decimal(1000.5),
-                    description="Description", category_id=1, type_id=2
-                ),
+                item_id=1,
                 is_helped=True,
                 item_rating=8,
                 item_count=3,

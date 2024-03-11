@@ -27,6 +27,9 @@ from .item import (
     ItemGetSchema,
     ItemUpdateSchema,
     ItemDeleteSchema,
+    ItemWithHelpedStatusGetSchema,
+    ItemWithHelpedStatusSymptomsGetSchema,
+    ItemWithHelpedStatusDiagnosisGetSchema,
 )
 from .item_review import (
     ItemReviewCreateSchema,

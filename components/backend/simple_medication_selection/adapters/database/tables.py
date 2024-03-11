@@ -71,6 +71,7 @@ treatment_items = Table(
     Column('description', String, nullable=True),
     Column('type_id', Integer, ForeignKey('item_types.id'), nullable=False),
     Column('category_id', Integer, ForeignKey('item_categories.id'), nullable=False),
+    Column('avg_rating', DECIMAL(precision=3, scale=2), nullable=True),
 )
 
 item_reviews = Table(

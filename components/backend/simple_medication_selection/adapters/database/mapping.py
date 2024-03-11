@@ -11,14 +11,16 @@ mapper.map_imperatively(entities.Symptom, tables.symptoms)
 mapper.map_imperatively(entities.Diagnosis, tables.diagnoses)
 mapper.map_imperatively(entities.ItemCategory, tables.item_categories)
 mapper.map_imperatively(entities.ItemType, tables.item_types)
-mapper.map_imperatively(entities.TreatmentItem, tables.treatment_items)
 mapper.map_imperatively(
-    entities.ItemReview,
-    tables.item_reviews,
+    entities.TreatmentItem,
+    tables.treatment_items,
     properties={
-        'item': relationship(entities.TreatmentItem, uselist=False, lazy='joined')
+        'reviews': relationship(
+            entities.ItemReview, lazy='subquery', cascade='save-update, merge'
+        )
     }
 )
+mapper.map_imperatively(entities.ItemReview, tables.item_reviews)
 mapper.map_imperatively(
     entities.MedicalBook,
     tables.medical_books,
@@ -36,10 +38,27 @@ mapper.map_imperatively(
             cascade='save-update, merge'
         ),
         'diagnosis': relationship(
-            entities.Diagnosis, uselist=False, lazy='joined'
+            entities.Diagnosis, uselist=False, lazy='joined', backref='medical_books'
         ),
         'patient': relationship(
             entities.Patient, uselist=False, lazy='joined', backref='medical_books'
         ),
     }
 )
+
+# mapper.map_imperatively(
+#     entities.TreatmentItem,
+#     tables.treatment_items,
+#     properties={
+#         'reviews': relationship(entities.ItemReview, lazy='joined', back_populates='item')
+#     }
+# )
+# mapper.map_imperatively(
+#     entities.ItemReview,
+#     tables.item_reviews,
+#     properties={
+#         'item': relationship(
+#             entities.TreatmentItem, lazy='joined', back_populates='reviews'
+#         )
+#     }
+# )

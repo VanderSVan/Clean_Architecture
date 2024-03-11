@@ -1,5 +1,7 @@
 from itertools import cycle
+from statistics import mean
 from typing import Sequence
+
 import random
 import pytest
 
@@ -63,25 +65,9 @@ REVIEWS_DATA = [
     {'is_helped': True, 'item_rating': 8.0, 'item_count': 4, 'usage_period': 2592000},
     {'is_helped': True, 'item_rating': 7.5, 'item_count': 2, 'usage_period': 2592000},
     {'is_helped': False, 'item_rating': 3.5, 'item_count': 1, 'usage_period': 5184000},
-
-]
-
-MEDICAL_BOOK_SYMPTOMS_DATA = [
-    {'medical_book_id': 1, 'symptom_id': 1},
-    {'medical_book_id': 1, 'symptom_id': 2},
-    {'medical_book_id': 2, 'symptom_id': 1},
-    {'medical_book_id': 2, 'symptom_id': 3},
-    {'medical_book_id': 3, 'symptom_id': 2},
-    {'medical_book_id': 3, 'symptom_id': 3}
-]
-
-MEDICAL_BOOK_ITEM_REVIEWS_DATA = [
-    {'medical_book_id': 1, 'item_review_id': 1},
-    {'medical_book_id': 1, 'item_review_id': 2},
-    {'medical_book_id': 2, 'item_review_id': 1},
-    {'medical_book_id': 2, 'item_review_id': 3},
-    {'medical_book_id': 3, 'item_review_id': 2},
-    {'medical_book_id': 3, 'item_review_id': 3}
+    {'is_helped': True, 'item_rating': 6.0, 'item_count': 3, 'usage_period': 2592000},
+    {'is_helped': True, 'item_rating': 8.0, 'item_count': 4, 'usage_period': 2592000},
+    {'is_helped': True, 'item_rating': 9.0, 'item_count': 5, 'usage_period': 7776000},
 ]
 
 MEDICAL_BOOKS_DATA = [
@@ -101,10 +87,6 @@ MEDICAL_BOOKS_DATA = [
         'title_history': 'История моей болезни 4',
         'history': 'Анамнез болезни 4',
     },
-    {
-        'title_history': 'История моей болезни 5',
-        'history': 'Анамнез болезни 5',
-    }
 ]
 
 
@@ -177,7 +159,7 @@ def insert_reviews(item_ids: list[int], session) -> list[int]:
     """Вставляет данные в таблицу `item_reviews`."""
     updated_reviews_data: list[dict] = [
         {**review, 'item_id': item_id}
-        for review, item_id in zip(REVIEWS_DATA, item_ids)
+        for review, item_id in zip(REVIEWS_DATA, cycle(item_ids))
     ]
     reviews_insert = (
         insert(tables.item_reviews)
@@ -213,7 +195,7 @@ def insert_medical_book_reviews(medical_book_ids: list[int],
     updated_medical_book_reviews_data: list[dict] = [
         {'medical_book_id': medical_book_review, 'item_review_id': review_id}
         for medical_book_review, review_id
-        in zip(medical_book_ids, cycle(review_ids))
+        in zip(cycle(medical_book_ids), review_ids)
     ]
     medical_book_reviews_insert = (
         insert(tables.medical_books_item_reviews)
@@ -231,7 +213,7 @@ def insert_medical_book_symptoms(medical_book_ids: list[int],
     updated_medical_book_symptoms_data: list[dict] = []
 
     for medical_book_id in medical_book_ids:
-        symptom_count = random.randint(len(symptom_ids) - 1, len(symptom_ids))
+        symptom_count = random.randint(len(symptom_ids) - 2, len(symptom_ids))
         symptoms_to_add = shuffled_symptom_ids[:symptom_count]
         updated_medical_book_symptoms_data.extend(
             [
@@ -450,7 +432,7 @@ class TestFetchBySymptomsAndHelpedStatus:
         assert result is not None
         for med_book in result:
             assert isinstance(med_book, entities.MedicalBook)
-            assert all(review.is_helped for review in med_book.item_reviews) is True
+            assert any(review.is_helped for review in med_book.item_reviews) is True
 
     def test__helped_status_is_false(self, repo, session, fill_db):
         # Setup
@@ -466,44 +448,6 @@ class TestFetchBySymptomsAndHelpedStatus:
         for med_book in result:
             assert isinstance(med_book, entities.MedicalBook)
             assert all(review.is_helped for review in med_book.item_reviews) is False
-
-    def test__order_by_rating_is_asc(self, repo, session, fill_db):
-        # Setup
-        symptom_ids: list[int] = fill_db['symptom_ids'][:2]
-
-        # Call
-        result = repo.fetch_by_symptoms_and_helped_status(
-            symptom_ids, True, order_by_rating='asc'
-        )
-
-        # Assert
-        assert result is not None
-        assert all(isinstance(med_book, entities.MedicalBook) for med_book in result)
-        assert result == sorted(
-            result, key=lambda med_book:
-            sum(review.item_rating
-                for review in med_book.item_reviews) / len(med_book.item_reviews),
-            reverse=False
-        )
-
-    def test__order_by_rating_is_desc(self, repo, session, fill_db):
-        # Setup
-        symptom_ids: list[int] = fill_db['symptom_ids'][:2]
-
-        # Call
-        result = repo.fetch_by_symptoms_and_helped_status(
-            symptom_ids, True
-        )
-
-        # Assert
-        assert result is not None
-        assert all(isinstance(med_book, entities.MedicalBook) for med_book in result)
-        assert result == sorted(
-            result, key=lambda med_book:
-            sum(review.item_rating
-                for review in med_book.item_reviews) / len(med_book.item_reviews),
-            reverse=True
-        )
 
     def test__with_limit(self, repo, session, fill_db):
         # Setup
@@ -533,7 +477,7 @@ class TestFetchBySymptomsAndHelpedStatus:
                     entities.ItemReview.is_helped == is_helped
                 )
             )
-            .order_by(desc(entities.ItemReview.item_rating))
+            .order_by(desc(entities.MedicalBook.id))
             .all()
         )
 
@@ -559,7 +503,7 @@ class TestFetchByDiagnosisAndHelpedStatus:
         assert result is not None
         for med_book in result:
             assert isinstance(med_book, entities.MedicalBook)
-            assert all(review.is_helped for review in med_book.item_reviews) is True
+            assert any(review.is_helped for review in med_book.item_reviews) is True
 
     def test__helped_status_is_false(self, repo, session, fill_db):
         # Setup
@@ -573,44 +517,6 @@ class TestFetchByDiagnosisAndHelpedStatus:
         for med_book in result:
             assert isinstance(med_book, entities.MedicalBook)
             assert all(review.is_helped for review in med_book.item_reviews) is False
-
-    def test__order_by_rating_is_asc(self, repo, session, fill_db):
-        # Setup
-        diagnosis_id: int = fill_db['diagnosis_ids'][0]
-
-        # Call
-        result = repo.fetch_by_diagnosis_and_helped_status(
-            diagnosis_id, True, 'asc'
-        )
-
-        # Assert
-        assert result is not None
-        assert all(isinstance(med_book, entities.MedicalBook) for med_book in result)
-        assert result == sorted(
-            result, key=lambda med_book:
-            sum(review.item_rating
-                for review in med_book.item_reviews) / len(med_book.item_reviews),
-            reverse=False
-        )
-
-    def test__order_by_rating_is_desc(self, repo, session, fill_db):
-        # Setup
-        diagnosis_id: int = fill_db['diagnosis_ids'][0]
-
-        # Call
-        result = repo.fetch_by_diagnosis_and_helped_status(
-            diagnosis_id, True
-        )
-
-        # Assert
-        assert result is not None
-        assert all(isinstance(med_book, entities.MedicalBook) for med_book in result)
-        assert result == sorted(
-            result, key=lambda med_book:
-            sum(review.item_rating
-                for review in med_book.item_reviews) / len(med_book.item_reviews),
-            reverse=True
-        )
 
     def test__with_limit(self, repo, session, fill_db):
         # Setup
@@ -637,7 +543,7 @@ class TestFetchByDiagnosisAndHelpedStatus:
                     entities.ItemReview.is_helped == is_helped
                 )
             )
-            .order_by(desc(entities.ItemReview.item_rating))
+            .order_by(desc(entities.MedicalBook.id))
             .all()
         )
 
