@@ -3,7 +3,6 @@ from typing import Annotated
 from pydantic import Field
 
 from simple_medication_selection.application.dtos.base import DTO
-from simple_medication_selection.application import entities
 
 
 class ItemReviewCreateSchema(DTO):
@@ -34,16 +33,3 @@ class ItemReviewUpdateSchema(DTO):
 
 class ItemReviewDeleteSchema(DTO):
     id: Annotated[int, Field(ge=1)]
-
-
-if __name__ == '__main__':
-    review = entities.ItemReview(
-        id=1, item_id=1, is_helped=False, item_rating=4, item_count=2,
-        usage_period=2592000
-    )
-    dto = ItemReviewUpdateSchema(
-        id=1,
-        item_id=10001
-    )
-    dto.populate_obj(review)
-    print(review)
