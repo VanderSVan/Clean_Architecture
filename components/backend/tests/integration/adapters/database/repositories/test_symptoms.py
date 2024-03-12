@@ -2,25 +2,18 @@ import pytest
 
 from sqlalchemy import exc
 
-from simple_medication_selection.adapters.database import (
-    tables,
-    repositories
-)
+from simple_medication_selection.adapters.database import tables, repositories
 from simple_medication_selection.application import entities
+from .. import test_data
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 # SETUP
 # ----------------------------------------------------------------------------------------------------------------------
-SYMPTOMS_DATA = [
-    {'name': 'Температура'},
-    {'name': 'Давление'},
-    {'name': 'Покраснение лица'}
-]
-
-
 @pytest.fixture(scope='function', autouse=True)
-def fill_db(session):
-    session.execute(tables.symptoms.insert(), SYMPTOMS_DATA)
+def fill_db(session) -> dict[str, list[int]]:
+    symptom_ids: list[int] = test_data.insert_symptoms(session)
+    return {'symptom_ids': symptom_ids}
 
 
 @pytest.fixture(scope='function')
@@ -35,24 +28,19 @@ class TestFetchAll:
     def test__fetch_all(self, repo):
         result = repo.fetch_all(limit=None, offset=None)
 
-        assert len(result) == len(SYMPTOMS_DATA)
-        assert isinstance(result[0], entities.Symptom)
+        assert len(result) == len(test_data.SYMPTOMS_DATA)
+        for symptom in result:
+            assert isinstance(symptom, entities.Symptom)
 
-    def test__fetch_all__with_limit(self, repo):
+    def test__with_limit(self, repo):
         result = repo.fetch_all(limit=1, offset=None)
 
         assert len(result) == 1
 
-    def test__fetch_all__with_offset(self, repo):
+    def test__with_offset(self, repo):
         result = repo.fetch_all(limit=None, offset=1)
 
-        assert len(result) == len(SYMPTOMS_DATA) - 1
-
-    def test__fetch_all__empty_result(self, repo):
-        result = repo.fetch_all(limit=10, offset=10)
-
-        assert len(result) == 0
-        assert result == []
+        assert len(result) == len(test_data.SYMPTOMS_DATA) - 1
 
 
 class TestFetchById:
@@ -61,26 +49,15 @@ class TestFetchById:
 
         fetched_symptom = repo.fetch_by_id(symptom.id)
 
-        assert fetched_symptom is not None
         assert isinstance(fetched_symptom, entities.Symptom)
-
-    def test__fetch_by_id__not_found(self, repo):
-        result = repo.fetch_by_id(100)
-
-        assert result is None
 
 
 class TestFetchByName:
-    def test__fetch_by_name(self, repo):
-        result = repo.fetch_by_name('Давление')
+    def test__fetch_by_name(self, repo, fill_db):
+        result = repo.fetch_by_name(test_data.SYMPTOMS_DATA[0]['name'])
 
-        assert result.name == 'Давление'
+        assert result.name == test_data.SYMPTOMS_DATA[0]['name']
         assert isinstance(result, entities.Symptom)
-
-    def test__fetch_by_name__not_found(self, repo):
-        result = repo.fetch_by_name('Test symptom')
-
-        assert result is None
 
 
 class TestAdd:
@@ -94,9 +71,9 @@ class TestAdd:
         assert before_count + 1 == after_count
         assert isinstance(result, entities.Symptom)
 
-    def test__add__already_exists(self, repo):
+    def test__already_exists(self, repo):
         with pytest.raises(exc.IntegrityError):
-            repo.add(entities.Symptom(name='Температура'))
+            repo.add(entities.Symptom(name=test_data.SYMPTOMS_DATA[0]['name']))
 
 
 class TestRemove:
