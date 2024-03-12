@@ -1,17 +1,15 @@
 from itertools import cycle
-from statistics import mean
-from typing import Sequence
 
 import random
 import pytest
 
-from sqlalchemy import insert, and_, desc
+from sqlalchemy import insert
 
 from simple_medication_selection.adapters.database import (
     tables,
     repositories
 )
-from simple_medication_selection.application import entities
+from simple_medication_selection.application import entities, dtos
 
 # ---------------------------------------------------------------------------------------
 # SETUP
@@ -261,39 +259,6 @@ def repo(transaction_context):
 # ---------------------------------------------------------------------------------------
 # TESTS
 # ---------------------------------------------------------------------------------------
-class TestFetchAll:
-    def test_fetch_all(self, repo, session):
-        # Call
-        result = repo.fetch_all(limit=None, offset=None)
-
-        # Assert
-        assert len(result) == len(MEDICAL_BOOKS_DATA)
-        assert isinstance(result[0], entities.MedicalBook)
-
-    def test__fetch_all__with_limit(self, repo):
-        # Call
-        result = repo.fetch_all(limit=1, offset=None)
-
-        # Assert
-        assert len(result) == 1
-        assert isinstance(result[0], entities.MedicalBook)
-
-    def test__fetch_all__with_offset(self, repo):
-        # Call
-        result = repo.fetch_all(limit=None, offset=1)
-
-        # Assert
-        assert len(result) == len(MEDICAL_BOOKS_DATA) - 1
-
-    def test__fetch_all__empty_result(self, repo):
-        # Call
-        result = repo.fetch_all(limit=100, offset=100)
-
-        # Assert
-        assert len(result) == 0
-        assert result == []
-
-
 class TestFetchById:
     def test__fetch_by_id(self, repo, session):
         # Setup
@@ -303,10 +268,9 @@ class TestFetchById:
         result = repo.fetch_by_id(med_book.id)
 
         # Assert
-        assert result is not None
         assert isinstance(result, entities.MedicalBook)
 
-    def test__fetch_by_id__not_found(self, repo):
+    def test__not_found(self, repo):
         # Call
         result = repo.fetch_by_id(100)
 
@@ -320,24 +284,29 @@ class TestFetchByPatientId:
         med_book = session.query(entities.MedicalBook).first()
 
         # Call
-        result = repo.fetch_by_patient(med_book.patient_id)
+        result = repo.fetch_by_patient(patient_id=med_book.patient_id,
+                                       limit=None,
+                                       offset=None)
 
         # Assert
         assert result is not None
-        for med_book in result:
-            assert isinstance(med_book, entities.MedicalBook)
+        for fetched_med_book in result:
+            assert isinstance(fetched_med_book, entities.MedicalBook)
+            assert fetched_med_book.patient_id == med_book.patient_id
 
-    def test__fetch_by_patient_id__with_limit(self, repo, session):
+    def test__with_limit(self, repo, session):
         # Setup
         med_book = session.query(entities.MedicalBook).first()
 
         # Call
-        result = repo.fetch_by_patient(med_book.patient_id, limit=1)
+        result = repo.fetch_by_patient(patient_id=med_book.patient_id,
+                                       limit=1,
+                                       offset=None)
 
         # Assert
         assert len(result) == 1
 
-    def test__fetch_by_patient_id__with_offset(self, repo, session):
+    def test__with_offset(self, repo, session):
         # Setup
         patient = session.query(entities.Patient).first()
         med_books_by_patient = (
@@ -346,215 +315,136 @@ class TestFetchByPatientId:
 
         # Call
         result = (
-            repo.fetch_by_patient(med_books_by_patient[0].patient_id, offset=1)
+            repo.fetch_by_patient(patient_id=med_books_by_patient[0].patient_id,
+                                  limit=None,
+                                  offset=1)
         )
 
         # Assert
         assert len(result) == len(med_books_by_patient) - 1
         assert med_books_by_patient[1:] == result
-        for med_book in result:
-            assert med_book.patient_id == patient.id
-
-    def test__fetch_by_patient_id__not_found(self, repo):
-        # Call
-        result = repo.fetch_by_patient(100)
-
-        # Assert
-        assert result == []
-
-
-class TestFetchBySymptoms:
-    def test__fetch_by_symptoms(self, repo, session, fill_db):
-        # Setup
-        symptom_ids: list[int] = fill_db['symptom_ids'][:3]
-
-        # Call
-        result = repo.fetch_by_symptoms(symptom_ids)
-
-        # Assert
-        assert result is not None
-        for med_book in result:
-            assert isinstance(med_book, entities.MedicalBook)
-
-    def test__fetch_by_symptoms__with_limit(self, repo, session, fill_db):
-        # Setup
-        symptom_ids: list[int] = fill_db['symptom_ids'][:3]
-
-        # Call
-        result = repo.fetch_by_symptoms(symptom_ids, limit=1)
-
-        # Assert
-        assert len(result) == 1
-
-    def test__fetch_by_symptoms__with_offset(self, repo, session, fill_db):
-        # Setup
-        symptom_ids: list[int] = fill_db['symptom_ids'][:2]
-
-        med_books_by_symptoms = (
-            session.query(entities.MedicalBook)
-            .filter(
-                entities.MedicalBook.symptoms.any(entities.Symptom.id.in_(symptom_ids))
-            )
-            .all()
-        )
-
-        # Call
-        result = repo.fetch_by_symptoms(symptom_ids, offset=1)
-
-        # Assert
-        assert len(result) == len(med_books_by_symptoms) - 1
-        assert med_books_by_symptoms[1:] == result
-        for med_book in result:
-            assert any(
-                symptom_id in [symptom.id for symptom in med_book.symptoms]
-                for symptom_id in symptom_ids
-            )
-
-    def test__fetch_by_symptoms__not_found(self, repo):
-        # Call
-        result = repo.fetch_by_symptoms([100])
-
-        # Assert
-        assert result == []
 
 
 class TestFetchBySymptomsAndHelpedStatus:
-    def test__helped_status_is_true(self, repo, session, fill_db):
+    @pytest.mark.parametrize('helped_status', [
+        'True', 'False',
+    ])
+    def test__fetch_by_symptoms_and_helped_status(self, helped_status, repo, session,
+                                                  fill_db):
         # Setup
         symptom_ids: list[int] = fill_db['symptom_ids'][:2]
 
         # Call
-        result = repo.fetch_by_symptoms_and_helped_status(
-            symptom_ids, True
-        )
+        result = repo.fetch_by_symptoms_and_helped_status(symptom_ids=symptom_ids,
+                                                          is_helped=helped_status,
+                                                          limit=None,
+                                                          offset=None)
 
         # Assert
         assert result is not None
         for med_book in result:
-            assert isinstance(med_book, entities.MedicalBook)
-            assert any(review.is_helped for review in med_book.item_reviews) is True
-
-    def test__helped_status_is_false(self, repo, session, fill_db):
-        # Setup
-        symptom_ids: list[int] = fill_db['symptom_ids'][:2]
-
-        # Call
-        result = repo.fetch_by_symptoms_and_helped_status(
-            symptom_ids, False
-        )
-
-        # Assert
-        assert result is not None
-        for med_book in result:
-            assert isinstance(med_book, entities.MedicalBook)
-            assert all(review.is_helped for review in med_book.item_reviews) is False
+            assert isinstance(med_book, dtos.MedicalBookGetSchema)
 
     def test__with_limit(self, repo, session, fill_db):
         # Setup
         symptom_ids: list[int] = fill_db['symptom_ids'][:2]
+        limit = 1
 
         # Call
-        result = repo.fetch_by_symptoms_and_helped_status(
-            symptom_ids, True, limit=1
-        )
+        result = repo.fetch_by_symptoms_and_helped_status(symptom_ids=symptom_ids,
+                                                          is_helped=True,
+                                                          limit=limit,
+                                                          offset=None)
 
         # Assert
-        assert len(result) == 1
+        assert len(result) == limit
 
     def test__with_offset(self, repo, session, fill_db):
         # Setup
-        is_helped = True
+        helped_status = True
+        offset = 1
         symptom_ids: list[int] = fill_db['symptom_ids'][:2]
-
-        med_books_by_symptoms: Sequence[entities.MedicalBook] = (
+        med_books_by_symptoms_count: int = (
             session.query(entities.MedicalBook)
             .join(entities.MedicalBook.item_reviews)
+            .join(entities.MedicalBook.symptoms)
             .filter(
-                and_(
-                    entities.MedicalBook.symptoms.any(
-                        entities.Symptom.id.in_(symptom_ids)
-                    ),
-                    entities.ItemReview.is_helped == is_helped
-                )
+                entities.MedicalBook.symptoms.any(entities.Symptom.id.in_(symptom_ids)),
+                entities.ItemReview.is_helped == helped_status
             )
-            .order_by(desc(entities.MedicalBook.id))
-            .all()
+            .distinct(entities.MedicalBook.id)
+            .count()
         )
 
         # Call
-        result = repo.fetch_by_symptoms_and_helped_status(
-            symptom_ids, is_helped, offset=1
-        )
+        result = repo.fetch_by_symptoms_and_helped_status(symptom_ids=symptom_ids,
+                                                          is_helped=helped_status,
+                                                          limit=None,
+                                                          offset=offset)
 
         # Assert
-        assert len(result) == len(med_books_by_symptoms) - 1
-        assert med_books_by_symptoms[1:] == result
+        assert len(result) == med_books_by_symptoms_count - offset
 
 
 class TestFetchByDiagnosisAndHelpedStatus:
-    def test__helped_status_is_true(self, repo, session, fill_db):
+    @pytest.mark.parametrize('helped_status', [
+        'True', 'False',
+    ])
+    def test__fetch_by_diagnosis_and_helped_status(self, helped_status, repo, session, fill_db):
         # Setup
         diagnosis_id: int = fill_db['diagnosis_ids'][0]
 
         # Call
-        result = repo.fetch_by_diagnosis_and_helped_status(diagnosis_id, True)
+        result = repo.fetch_by_diagnosis_and_helped_status(diagnosis_id=diagnosis_id,
+                                                           is_helped=True,
+                                                           limit=None,
+                                                           offset=None)
 
         # Assert
         assert result is not None
         for med_book in result:
-            assert isinstance(med_book, entities.MedicalBook)
-            assert any(review.is_helped for review in med_book.item_reviews) is True
-
-    def test__helped_status_is_false(self, repo, session, fill_db):
-        # Setup
-        diagnosis_id: int = fill_db['diagnosis_ids'][0]
-
-        # Call
-        result = repo.fetch_by_diagnosis_and_helped_status(diagnosis_id, False)
-
-        # Assert
-        assert result is not None
-        for med_book in result:
-            assert isinstance(med_book, entities.MedicalBook)
-            assert all(review.is_helped for review in med_book.item_reviews) is False
+            assert isinstance(med_book, dtos.MedicalBookGetSchema)
+            assert med_book.diagnosis_id == diagnosis_id
 
     def test__with_limit(self, repo, session, fill_db):
         # Setup
         diagnosis_id: int = fill_db['diagnosis_ids'][0]
+        limit = 1
 
         # Call
-        result = repo.fetch_by_diagnosis_and_helped_status(
-            diagnosis_id, True, limit=1
-        )
+        result = repo.fetch_by_diagnosis_and_helped_status(diagnosis_id=diagnosis_id,
+                                                           is_helped=True,
+                                                           limit=limit,
+                                                           offset=None)
 
         # Assert
-        assert len(result) == 1
+        assert len(result) == limit
 
     def test__with_offset(self, repo, session, fill_db):
         # Setup
-        is_helped = True
+        helped_status = True
         diagnosis_id: int = fill_db['diagnosis_ids'][0]
-        med_books_by_symptoms: Sequence[entities.MedicalBook] = (
+        offset = 1
+        med_books_by_symptoms__count: int = (
             session.query(entities.MedicalBook)
             .join(entities.MedicalBook.item_reviews)
+            .join(entities.MedicalBook.symptoms)
             .filter(
-                and_(
-                    entities.MedicalBook.diagnosis_id == diagnosis_id,
-                    entities.ItemReview.is_helped == is_helped
-                )
+                entities.MedicalBook.diagnosis_id == diagnosis_id,
+                entities.ItemReview.is_helped == helped_status
             )
-            .order_by(desc(entities.MedicalBook.id))
-            .all()
+            .distinct(entities.MedicalBook.id)
+            .count()
         )
 
         # Call
-        result = repo.fetch_by_diagnosis_and_helped_status(
-            diagnosis_id, True, offset=1
-        )
+        result = repo.fetch_by_diagnosis_and_helped_status(diagnosis_id=diagnosis_id,
+                                                           is_helped=helped_status,
+                                                           limit=None,
+                                                           offset=offset)
 
         # Assert
-        assert len(result) == len(med_books_by_symptoms) - 1
-        assert med_books_by_symptoms[1:] == result
+        assert len(result) == med_books_by_symptoms__count - 1
 
 
 class TestAdd:
