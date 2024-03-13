@@ -1,6 +1,6 @@
 from typing import Sequence, Literal
 
-from sqlalchemy import select, desc, asc
+from sqlalchemy import select, desc, asc, between
 
 from simple_medication_selection.application import interfaces, entities
 from .base import BaseRepository
@@ -17,8 +17,8 @@ class ItemReviewsRepo(BaseRepository, interfaces.ItemReviewsRepo):
     def fetch_all(self,
                   order_field: str,
                   order_direction: Literal['asc', 'desc'],
-                  limit: int,
-                  offset: int
+                  limit: int | None,
+                  offset: int | None
                   ) -> Sequence[entities.ItemReview | None]:
         query = (
             select(entities.ItemReview)
@@ -36,8 +36,8 @@ class ItemReviewsRepo(BaseRepository, interfaces.ItemReviewsRepo):
                           item_id: int,
                           order_field: str,
                           order_direction: Literal['asc', 'desc'],
-                          limit: int,
-                          offset: int
+                          limit: int | None,
+                          offset: int | None
                           ) -> Sequence[entities.ItemReview | None]:
         query = (
             select(entities.ItemReview)
@@ -56,12 +56,13 @@ class ItemReviewsRepo(BaseRepository, interfaces.ItemReviewsRepo):
                                  patient_id: int,
                                  order_field: str,
                                  order_direction: Literal['asc', 'desc'],
-                                 limit: int,
-                                 offset: int
+                                 limit: int | None,
+                                 offset: int | None
                                  ) -> Sequence[entities.ItemReview | None]:
         query = (
             select(entities.ItemReview)
-            .where(entities.ItemReview.patient_id == patient_id)
+            .join(entities.MedicalBook.item_reviews)
+            .where(entities.MedicalBook.patient_id == patient_id)
             .limit(limit)
             .offset(offset)
             .order_by(
@@ -77,14 +78,15 @@ class ItemReviewsRepo(BaseRepository, interfaces.ItemReviewsRepo):
                                       item_id: int,
                                       order_field: str,
                                       order_direction: Literal['asc', 'desc'],
-                                      limit: int,
-                                      offset: int
+                                      limit: int | None,
+                                      offset: int | None
                                       ) -> Sequence[entities.ItemReview | None]:
         query = (
             select(entities.ItemReview)
+            .join(entities.MedicalBook.item_reviews)
             .where(
-                entities.ItemReview.patient_id == patient_id,
-                   entities.ItemReview.item_id == item_id
+                entities.MedicalBook.patient_id == patient_id,
+                entities.ItemReview.item_id == item_id
             )
             .limit(limit)
             .offset(offset)
@@ -98,15 +100,15 @@ class ItemReviewsRepo(BaseRepository, interfaces.ItemReviewsRepo):
 
     def fetch_by_rating(self,
                         min_rating: float,
-                        max_rating: float | None,
+                        max_rating: float,
                         order_field: str,
                         order_direction: Literal['asc', 'desc'],
-                        limit: int,
-                        offset: int
+                        limit: int | None,
+                        offset: int | None
                         ) -> Sequence[entities.ItemReview | None]:
         query = (
             select(entities.ItemReview)
-            .where(entities.ItemReview.rating.between(min_rating, max_rating))
+            .where(between(entities.ItemReview.item_rating, min_rating, max_rating))
             .limit(limit)
             .offset(offset)
             .order_by(
@@ -121,8 +123,8 @@ class ItemReviewsRepo(BaseRepository, interfaces.ItemReviewsRepo):
                                is_helped: bool,
                                order_field: str,
                                order_direction: Literal['asc', 'desc'],
-                               limit: int,
-                               offset: int
+                               limit: int | None,
+                               offset: int | None
                                ) -> Sequence[entities.ItemReview | None]:
         query = (
             select(entities.ItemReview)

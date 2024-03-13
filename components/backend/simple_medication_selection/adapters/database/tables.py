@@ -69,8 +69,12 @@ treatment_items = Table(
     Column('title', String, nullable=False),
     Column('price', Float, nullable=True),
     Column('description', String, nullable=True),
-    Column('type_id', Integer, ForeignKey('item_types.id'), nullable=False),
-    Column('category_id', Integer, ForeignKey('item_categories.id'), nullable=False),
+    Column('type_id', Integer,
+           ForeignKey('item_types.id', ondelete='CASCADE', onupdate='CASCADE'),
+           nullable=False),
+    Column('category_id', Integer,
+           ForeignKey('item_categories.id', ondelete='CASCADE', onupdate='CASCADE'),
+           nullable=False),
     Column('avg_rating', DECIMAL(precision=3, scale=2), nullable=True),
 )
 
@@ -78,7 +82,9 @@ item_reviews = Table(
     'item_reviews',
     metadata,
     Column('id', Integer, primary_key=True, autoincrement=True),
-    Column('item_id', Integer, ForeignKey('treatment_items.id'), nullable=False),
+    Column('item_id', Integer,
+           ForeignKey('treatment_items.id', ondelete='CASCADE', onupdate='CASCADE'),
+           nullable=False),
     Column('is_helped', Boolean, nullable=False),
     Column('item_rating', DECIMAL(precision=2, scale=1), nullable=False),
     Column('item_count', Integer, nullable=False),
@@ -88,17 +94,26 @@ item_reviews = Table(
 medical_books_symptoms = Table(
     'medical_books_symptoms',
     metadata,
-    Column('medical_book_id', ForeignKey('medical_books.id'), primary_key=True,
+    Column('medical_book_id',
+           ForeignKey('medical_books.id', ondelete='CASCADE', onupdate='CASCADE'),
+           primary_key=True,
            nullable=False),
-    Column('symptom_id', ForeignKey('symptoms.id'), primary_key=True, nullable=False)
+    Column('symptom_id',
+           ForeignKey('symptoms.id', ondelete='CASCADE', onupdate='CASCADE'),
+           primary_key=True,
+           nullable=False)
 )
 
 medical_books_item_reviews = Table(
     'medical_books_item_reviews',
     metadata,
-    Column('medical_book_id', ForeignKey('medical_books.id'), primary_key=True,
+    Column('medical_book_id',
+           ForeignKey('medical_books.id', ondelete='CASCADE', onupdate='CASCADE'),
+           primary_key=True,
            nullable=False),
-    Column('item_review_id', ForeignKey('item_reviews.id'), primary_key=True,
+    Column('item_review_id',
+           ForeignKey('item_reviews.id', ondelete='CASCADE', onupdate='CASCADE'),
+           primary_key=True,
            nullable=False)
 )
 
@@ -108,6 +123,8 @@ medical_books = Table(
     Column('id', Integer, primary_key=True, autoincrement=True),
     Column('title_history', String(255), nullable=False),
     Column('history', Text, nullable=True),
-    Column('patient_id', Integer, ForeignKey('patients.id')),
-    Column('diagnosis_id', Integer, ForeignKey('diagnoses.id')),
+    Column('patient_id', Integer,
+           ForeignKey('patients.id', ondelete='CASCADE', onupdate='CASCADE')),
+    Column('diagnosis_id', Integer,
+           ForeignKey('diagnoses.id',  ondelete='CASCADE', onupdate='CASCADE')),
 )
