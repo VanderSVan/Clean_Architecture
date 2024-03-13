@@ -994,7 +994,7 @@ class TestRemove:
         review_to_remove: entities.ItemReview = session.query(entities.ItemReview).first()
 
         # Call
-        repo.remove(review_to_remove)
+        result = repo.remove(review_to_remove)
 
         # Setup
         after_count = session.execute(
@@ -1003,6 +1003,7 @@ class TestRemove:
 
         # Assert
         assert before_count - 1 == after_count
+        assert isinstance(result, entities.ItemReview)
 
     def test__cascade_delete_effect_for_item(self, repo, session, fill_db):
         # Setup
