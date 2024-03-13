@@ -32,7 +32,3 @@ class MedicalBookUpdateSchema(DTO):
     diagnosis_id: Annotated[int, Field(ge=1)] = Field(None)
     symptoms: list[SymptomGetSchema] = Field(None)
     item_reviews: list[ItemReviewGetSchema] = Field(None)
-
-
-class MedicalBookDeleteSchema(DTO):
-    id: Annotated[int, Field(ge=1)]

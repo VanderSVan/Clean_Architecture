@@ -42,5 +42,4 @@ from .medical_book import (
     MedicalBookCreateSchema,
     MedicalBookGetSchema,
     MedicalBookUpdateSchema,
-    MedicalBookDeleteSchema
 )

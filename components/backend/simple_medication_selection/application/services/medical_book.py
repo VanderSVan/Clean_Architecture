@@ -1,3 +1,5 @@
+from typing import Sequence
+
 from pydantic import validate_call
 
 from simple_medication_selection.application import dtos, entities, interfaces, errors
@@ -36,7 +38,7 @@ class MedicalBook:
                               *,
                               limit: int = 10,
                               offset: int = 0
-                              ) -> list[entities.MedicalBook] | list[None]:
+                              ) -> Sequence[entities.MedicalBook | None]:
 
         return self.med_books_repo.fetch_by_patient(patient_id, limit, offset)
 
@@ -92,14 +94,12 @@ class MedicalBook:
 
         return new_med_book_info.populate_obj(medical_book)
 
-    def delete(self,
-               medical_book_info: dtos.MedicalBookDeleteSchema
-               ) -> entities.MedicalBook:
+    def delete(self, med_book_id: int) -> entities.MedicalBook:
 
         medical_book: entities.MedicalBook = (
-            self.med_books_repo.fetch_by_id(medical_book_info.id)
+            self.med_books_repo.fetch_by_id(med_book_id)
         )
         if not medical_book:
-            raise errors.MedicalBookNotFound(id=medical_book_info.id)
+            raise errors.MedicalBookNotFound(id=med_book_id)
 
         return self.med_books_repo.remove(medical_book)

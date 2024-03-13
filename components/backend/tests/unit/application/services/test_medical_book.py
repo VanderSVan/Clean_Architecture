@@ -273,23 +273,23 @@ class TestChange:
 
 
 class TestDelete:
-    @pytest.mark.parametrize("existing_entity, dto, removed_entity", [
+    @pytest.mark.parametrize("existing_entity, removed_entity", [
         (
             entities.MedicalBook(id=1, title_history='title', history='history',
                                  patient_id=1, diagnosis_id=1),
-            dtos.MedicalBookDeleteSchema(id=1),
             entities.MedicalBook(id=1, title_history='title', history='history',
                                  patient_id=1, diagnosis_id=1)
         )
     ])
-    def test__delete_med_book(self, existing_entity, dto, removed_entity, service,
+    def test__delete_med_book(self, existing_entity, removed_entity, service,
                               med_books_repo, patients_repo, diagnoses_repo):
         # Setup
+        med_book_id = 1
         med_books_repo.fetch_by_id.return_value = existing_entity
         med_books_repo.remove.return_value = removed_entity
 
         # Call
-        result = service.delete(medical_book_info=dto)
+        result = service.delete(med_book_id=med_book_id)
 
         # Assert
         assert med_books_repo.method_calls == [call.fetch_by_id(existing_entity.id),
@@ -298,18 +298,16 @@ class TestDelete:
         assert diagnoses_repo.method_calls == []
         assert result == removed_entity
 
-    @pytest.mark.parametrize("dto", [
-        dtos.MedicalBookDeleteSchema(id=10001)
-    ])
-    def test__medical_book_not_found(self, dto, service, med_books_repo, patients_repo,
+    def test__medical_book_not_found(self, service, med_books_repo, patients_repo,
                                      diagnoses_repo):
         # Setup
+        med_book_id = 10001
         med_books_repo.fetch_by_id.return_value = None
 
         # Call and Assert
         with pytest.raises(errors.MedicalBookNotFound):
-            service.delete(medical_book_info=dto)
+            service.delete(med_book_id=med_book_id)
 
-        assert med_books_repo.method_calls == [call.fetch_by_id(dto.id)]
+        assert med_books_repo.method_calls == [call.fetch_by_id(med_book_id)]
         assert patients_repo.method_calls == []
         assert diagnoses_repo.method_calls == []
