@@ -8,7 +8,6 @@ from .diagnosis import (
     DiagnosisCreateSchema,
     DiagnosisGetSchema,
     DiagnosisUpdateSchema,
-    DiagnosisDeleteSchema,
 )
 from .item_category import (
     ItemCategoryCreateSchema,

@@ -1,13 +1,13 @@
 from unittest.mock import Mock, call
 
 import pytest
-from simple_medication_selection.application import (dtos, entities, errors,
-                                                     interfaces, services)
+from simple_medication_selection.application import (dtos, entities, errors, interfaces,
+                                                     services)
 
 
-# ----------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------
 # SETUP
-# ----------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------
 @pytest.fixture(scope='function')
 def repo() -> Mock:
     return Mock(interfaces.DiagnosesRepo)
@@ -18,9 +18,9 @@ def service(repo) -> services.Diagnosis:
     return services.Diagnosis(diagnoses_repo=repo)
 
 
-# ----------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------
 # TESTS
-# ----------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------
 @pytest.mark.parametrize("entity", [
     entities.Diagnosis(id=1, name='Розацеа', ),
 ])
@@ -138,31 +138,31 @@ class TestChange:
 
 
 class TestDelete:
-    @pytest.mark.parametrize("existing_entity, dto", [
-        (entities.Diagnosis(id=1, name='Розацеа'), dtos.DiagnosisDeleteSchema(id=1))
+    @pytest.mark.parametrize("existing_entity", [
+        entities.Diagnosis(id=1, name='Розацеа')
     ])
-    def test__delete_existing_diagnosis(self, existing_entity, dto, service, repo):
+    def test__delete_existing_diagnosis(self, existing_entity, service,
+                                        repo):
         # Setup
+        diagnosis_id = 1
         repo.fetch_by_id.return_value = existing_entity
         repo.remove.return_value = existing_entity
 
         # Call
-        result = service.delete(diagnosis_info=dto)
+        result = service.delete(diagnosis_id=diagnosis_id)
 
         # Assert
-        assert repo.method_calls == [call.fetch_by_id(dto.id),
+        assert repo.method_calls == [call.fetch_by_id(diagnosis_id),
                                      call.remove(existing_entity)]
         assert result == existing_entity
 
-    @pytest.mark.parametrize("dto", [
-        dtos.DiagnosisDeleteSchema(id=1)
-    ])
-    def test__delete_non_existing_diagnosis(self, dto, service, repo):
+    def test__delete_non_existing_diagnosis(self, service, repo):
         # Setup
+        diagnosis_id = 1
         repo.fetch_by_id.return_value = None
 
         # Call and Assert
         with pytest.raises(errors.DiagnosisNotFound):
-            service.delete(diagnosis_info=dto)
+            service.delete(diagnosis_id=diagnosis_id)
 
-        assert repo.method_calls == [call.fetch_by_id(dto.id)]
+        assert repo.method_calls == [call.fetch_by_id(diagnosis_id)]

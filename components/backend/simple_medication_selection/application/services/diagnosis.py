@@ -58,10 +58,10 @@ class Diagnosis:
 
     @register_method
     @validate_call
-    def delete(self, diagnosis_info: dtos.DiagnosisDeleteSchema) -> entities.Diagnosis:
-        diagnosis = self.diagnoses_repo.fetch_by_id(diagnosis_info.id)
+    def delete(self, diagnosis_id: int) -> entities.Diagnosis:
+        diagnosis = self.diagnoses_repo.fetch_by_id(diagnosis_id)
 
         if not diagnosis:
-            raise errors.DiagnosisNotFound(id=diagnosis_info.id)
+            raise errors.DiagnosisNotFound(id=diagnosis_id)
 
         return self.diagnoses_repo.remove(diagnosis)
