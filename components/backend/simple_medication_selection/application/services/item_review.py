@@ -1,3 +1,5 @@
+from typing import Literal, Sequence
+
 from pydantic import validate_call
 
 from simple_medication_selection.application import dtos, entities, interfaces, errors
@@ -17,39 +19,59 @@ class ItemReview:
 
     @register_method
     @validate_call
-    def get_patient_review_by_item(self,
-                                   patient_id: int,
-                                   item_id: int,
-                                   *,
-                                   limit: int = 10,
-                                   offset: int = 0
-                                   ) -> list[entities.ItemReview] | list[None]:
+    def get_patient_reviews_by_item(self,
+                                    patient_id: int,
+                                    item_id: int,
+                                    *,
+                                    sort_field: Literal[
+                                        'id', 'item_id', 'is_helped', 'item_rating',
+                                        'item_count', 'usage_period'
+                                    ] = 'item_rating',
+                                    sort_direction: Literal['asc', 'desc'] = 'desc',
+                                    limit: int = 10,
+                                    offset: int = 0
+                                    ) -> Sequence[entities.ItemReview | None]:
 
-        return self.reviews_repo.fetch_patient_reviews_by_item(
-            patient_id, item_id, limit, offset
-        )
+        return self.reviews_repo.fetch_patient_reviews_by_item(patient_id,
+                                                               item_id,
+                                                               sort_field,
+                                                               sort_direction,
+                                                               limit,
+                                                               offset)
 
     @register_method
     @validate_call
     def get_reviews_by_item(self,
                             item_id: int,
                             *,
+                            sort_field: Literal[
+                                'id', 'item_id', 'is_helped', 'item_rating',
+                                'item_count', 'usage_period'
+                            ] = 'item_rating',
+                            sort_direction: Literal['asc', 'desc'] = 'desc',
                             limit: int = 10,
                             offset: int = 0
-                            ) -> list[entities.ItemReview] | list[None]:
+                            ) -> Sequence[entities.ItemReview | None]:
 
-        return self.reviews_repo.fetch_all_by_item_id(item_id, limit, offset)
+        return self.reviews_repo.fetch_all_by_item(item_id, sort_field, sort_direction,
+                                                   limit, offset)
 
     @register_method
     @validate_call
     def get_patient_reviews(self,
                             patient_id: int,
                             *,
+                            sort_field: Literal[
+                                'id', 'item_id', 'is_helped', 'item_rating',
+                                'item_count', 'usage_period'
+                            ] = 'item_rating',
+                            sort_direction: Literal['asc', 'desc'] = 'desc',
                             limit: int = 10,
                             offset: int = 0
-                            ) -> list[entities.ItemReview] | list[None]:
+                            ) -> Sequence[entities.ItemReview | None]:
 
-        return self.reviews_repo.fetch_reviews_by_patient_id(patient_id, limit, offset)
+        return self.reviews_repo.fetch_reviews_by_patient(patient_id, sort_field,
+                                                          sort_direction, limit, offset)
 
     @register_method
     @validate_call
