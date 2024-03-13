@@ -154,38 +154,36 @@ class TestChange:
 
 
 class TestDelete:
-    @pytest.mark.parametrize("existing_entity, dto, removed_entity", [
+    @pytest.mark.parametrize("existing_entity, removed_entity", [
         (
             entities.Patient(id=1, nickname="SomeGirl", gender="female", age=18,
                              skin_type="сухая", about="About Girl", phone='1234567890'),
-            dtos.PatientDeleteSchema(id=1),
             entities.Patient(id=1, nickname="SomeGirl", gender="female", age=18,
                              skin_type="сухая", about="About Girl", phone='1234567890')
         )
     ])
-    def test__delete_existing_patient(self, existing_entity, dto, removed_entity,
-                                      service, repo):
+    def test__delete_existing_patient(self, existing_entity, removed_entity, service,
+                                      repo):
         # Setup
+        patient_id = 1
         repo.fetch_by_id.return_value = existing_entity
         repo.remove.return_value = removed_entity
 
         # Call
-        result = service.delete(dto)
+        result = service.delete(patient_id=patient_id)
 
         # Assert
         assert repo.method_calls == [call.fetch_by_id(existing_entity.id),
                                      call.remove(removed_entity)]
         assert result == removed_entity
 
-    @pytest.mark.parametrize("dto", [
-        dtos.PatientDeleteSchema(id=1)
-    ])
-    def test__delete_non_existing_patient(self, dto, service, repo):
+    def test__delete_non_existing_patient(self, service, repo):
         # Setup
+        patient_id = 1
         repo.fetch_by_id.return_value = None
 
         # Call and Assert
         with pytest.raises(errors.PatientNotFound):
-            service.delete(patient_info=dto)
+            service.delete(patient_id=patient_id)
 
-        assert repo.method_calls == [call.fetch_by_id(dto.id)]
+        assert repo.method_calls == [call.fetch_by_id(patient_id)]

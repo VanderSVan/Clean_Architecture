@@ -48,7 +48,3 @@ class PatientUpdateSchema(DTO):
     about: Annotated[str, Field(min_length=1, max_length=3000)] = Field(None)
     phone: Annotated[
         str, Field(min_length=9, max_length=15, pattern=r'^([\d]+)$')] = Field(None)
-
-
-class PatientDeleteSchema(DTO):
-    id: Annotated[int, Field(ge=1)]

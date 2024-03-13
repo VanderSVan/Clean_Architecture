@@ -36,7 +36,6 @@ from .patient import (
     PatientCreateSchema,
     PatientGetSchema,
     PatientUpdateSchema,
-    PatientDeleteSchema,
 )
 from .medical_book import (
     MedicalBookCreateSchema,

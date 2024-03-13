@@ -50,10 +50,10 @@ class Patient:
 
     @register_method
     @validate_call
-    def delete(self, patient_info: dtos.PatientDeleteSchema) -> entities.Patient:
-        patient = self.patients_repo.fetch_by_id(patient_info.id)
+    def delete(self, patient_id: int) -> entities.Patient:
+        patient = self.patients_repo.fetch_by_id(patient_id)
 
         if not patient:
-            raise errors.PatientNotFound(id=patient_info.id)
+            raise errors.PatientNotFound(id=patient_id)
 
         return self.patients_repo.remove(patient)
