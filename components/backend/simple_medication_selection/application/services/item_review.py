@@ -102,9 +102,9 @@ class ItemReview:
 
     @register_method
     @validate_call
-    def delete(self, review_info: dtos.ItemReviewDeleteSchema) -> entities.ItemReview:
-        review: entities.ItemReview = self.reviews_repo.fetch_by_id(review_info.id)
+    def delete(self, review_id: int) -> entities.ItemReview:
+        review: entities.ItemReview = self.reviews_repo.fetch_by_id(review_id)
         if not review:
-            raise errors.ItemReviewNotFound(id=review_info.id)
+            raise errors.ItemReviewNotFound(id=review_id)
 
         return self.reviews_repo.remove(review)

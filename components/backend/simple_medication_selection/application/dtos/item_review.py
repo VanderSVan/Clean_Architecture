@@ -29,7 +29,3 @@ class ItemReviewUpdateSchema(DTO):
     item_rating: Annotated[float, Field(ge=1, le=10, multiple_of=0.5)] = Field(None)
     item_count: Annotated[int, Field(ge=1)] = Field(None)
     usage_period: Annotated[int, Field(ge=1)] = Field(None)
-
-
-class ItemReviewDeleteSchema(DTO):
-    id: Annotated[int, Field(ge=1)]

@@ -32,7 +32,6 @@ from .item_review import (
     ItemReviewCreateSchema,
     ItemReviewGetSchema,
     ItemReviewUpdateSchema,
-    ItemReviewDeleteSchema
 )
 from .patient import (
     PatientCreateSchema,

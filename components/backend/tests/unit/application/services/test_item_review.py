@@ -254,27 +254,27 @@ class TestChange:
 
 
 class TestDelete:
-    @pytest.mark.parametrize("existing_entity, dto, removed_entity", [
+    @pytest.mark.parametrize("existing_entity, removed_entity", [
         (
             entities.ItemReview(
                 id=1, item_id=1, is_helped=False, item_rating=4, item_count=2,
                 usage_period=2592000
             ),
-            dtos.ItemReviewDeleteSchema(id=1),
             entities.ItemReview(
                 id=1, item_id=1, is_helped=False, item_rating=4, item_count=2,
                 usage_period=2592000
             ),
         )
     ])
-    def test__delete_review(self, existing_entity, dto, removed_entity, service,
-                            reviews_repo, items_repo):
+    def test__delete_review(self, existing_entity, removed_entity, service, reviews_repo,
+                            items_repo):
         # Setup
+        review_id = 1
         reviews_repo.fetch_by_id.return_value = existing_entity
         reviews_repo.remove.return_value = removed_entity
 
         # Call
-        result = service.delete(review_info=dto)
+        result = service.delete(review_id=review_id)
 
         # Assert
         assert reviews_repo.method_calls == [call.fetch_by_id(existing_entity.id),
@@ -282,16 +282,14 @@ class TestDelete:
         assert items_repo.method_calls == []
         assert result == removed_entity
 
-    @pytest.mark.parametrize("dto", [
-        dtos.ItemReviewDeleteSchema(id=1)
-    ])
-    def test__review_not_found(self, dto, service, reviews_repo, items_repo):
+    def test__review_not_found(self, service, reviews_repo, items_repo):
         # Setup
+        review_id = 1
         reviews_repo.fetch_by_id.return_value = None
 
         # Call and Assert
         with pytest.raises(errors.ItemReviewNotFound):
-            service.delete(review_info=dto)
+            service.delete(review_id=review_id)
 
-        assert reviews_repo.method_calls == [call.fetch_by_id(dto.id)]
+        assert reviews_repo.method_calls == [call.fetch_by_id(review_id)]
         assert items_repo.method_calls == []
