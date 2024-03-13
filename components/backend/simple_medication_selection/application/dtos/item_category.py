@@ -17,7 +17,3 @@ class ItemCategoryGetSchema(DTO):
 class ItemCategoryUpdateSchema(DTO):
     id: Annotated[int, Field(ge=1)]
     name: Annotated[str, Field(min_length=1, max_length=100)] = Field(None)
-
-
-class ItemCategoryDeleteSchema(DTO):
-    id: Annotated[int, Field(ge=1)]

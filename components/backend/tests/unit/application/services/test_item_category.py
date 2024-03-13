@@ -137,32 +137,30 @@ class TestChange:
 
 
 class TestDelete:
-    @pytest.mark.parametrize("existing_entity, dto", [
-        (entities.ItemCategory(id=1, name='Аптечные продукты'),
-         dtos.ItemCategoryDeleteSchema(id=1))
+    @pytest.mark.parametrize("existing_entity", [
+        entities.ItemCategory(id=1, name='Аптечные продукты')
     ])
-    def test__delete_existing_category(self, existing_entity, dto, service, repo):
+    def test__delete_existing_category(self, existing_entity, service, repo):
         # Setup
+        category_id = 1
         repo.fetch_by_id.return_value = existing_entity
         repo.remove.return_value = existing_entity
 
         # Call
-        result = service.delete(item_category_info=dto)
+        result = service.delete(category_id=category_id)
 
         # Assert
-        assert repo.method_calls == [call.fetch_by_id(dto.id),
+        assert repo.method_calls == [call.fetch_by_id(category_id),
                                      call.remove(existing_entity)]
         assert result == existing_entity
 
-    @pytest.mark.parametrize("dto", [
-        dtos.ItemCategoryDeleteSchema(id=1)
-    ])
-    def test__delete_non_existing_category(self, dto, service, repo):
+    def test__delete_non_existing_category(self, service, repo):
         # Setup
+        category_id = 1
         repo.fetch_by_id.return_value = None
 
         # Call and Assert
         with pytest.raises(errors.ItemCategoryNotFound):
-            service.delete(item_category_info=dto)
+            service.delete(category_id=category_id)
 
-        assert repo.method_calls == [call.fetch_by_id(dto.id)]
+        assert repo.method_calls == [call.fetch_by_id(category_id)]

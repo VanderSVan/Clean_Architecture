@@ -13,7 +13,6 @@ from .item_category import (
     ItemCategoryCreateSchema,
     ItemCategoryGetSchema,
     ItemCategoryUpdateSchema,
-    ItemCategoryDeleteSchema,
 )
 from .item_type import (
     ItemTypeCreateSchema,

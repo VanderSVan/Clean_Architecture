@@ -58,13 +58,11 @@ class ItemCategory:
 
     @register_method
     @validate_call
-    def delete(self,
-               item_category_info: dtos.ItemCategoryDeleteSchema
-               ) -> entities.ItemCategory:
+    def delete(self, category_id: int) -> entities.ItemCategory:
 
-        category = self.categories_repo.fetch_by_id(item_category_info.id)
+        category = self.categories_repo.fetch_by_id(category_id)
 
         if not category:
-            raise errors.ItemCategoryNotFound(id=item_category_info.id)
+            raise errors.ItemCategoryNotFound(id=category_id)
 
         return self.categories_repo.remove(category)
