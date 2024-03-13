@@ -50,7 +50,3 @@ class ItemUpdateSchema(DTO):
     description: Annotated[str, Field(min_length=1, max_length=1000)] = Field(None)
     category_id: Annotated[int, Field(ge=1)] = Field(None)
     type_id: Annotated[int, Field(ge=1)] = Field(None)
-
-
-class ItemDeleteSchema(DTO):
-    id: Annotated[int, Field(ge=1)]

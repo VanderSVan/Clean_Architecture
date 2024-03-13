@@ -552,36 +552,34 @@ class TestChangeItem:
 
 
 class TestDeleteItem:
-    @pytest.mark.parametrize("existing_entity, dto, removed_entity", [
+    @pytest.mark.parametrize("existing_entity, removed_entity", [
         (
             entities.TreatmentItem(id=1, title="Продукт 1", category_id=1, type_id=10),
-            dtos.ItemDeleteSchema(id=1),
             entities.TreatmentItem(id=1, title="Продукт 1", category_id=1, type_id=10),
         )
     ])
-    def test__delete_treatment_item(self, existing_entity, dto, removed_entity, service,
+    def test__delete_treatment_item(self, existing_entity, removed_entity, service,
                                     items_repo):
         # Setup
+        item_id = 1
         items_repo.fetch_by_id.return_value = existing_entity
         items_repo.remove.return_value = removed_entity
 
         # Call
-        result = service.delete_item(item_info=dto)
+        result = service.delete_item(item_id=item_id)
 
         # Assert
-        assert items_repo.method_calls == [call.fetch_by_id(dto.id),
+        assert items_repo.method_calls == [call.fetch_by_id(item_id),
                                            call.remove(removed_entity)]
         assert result == removed_entity
 
-    @pytest.mark.parametrize("dto", [
-        dtos.ItemDeleteSchema(id=1)
-    ])
-    def test__item_does_not_exist(self, dto, service, items_repo):
+    def test__item_does_not_exist(self, service, items_repo):
         # Setup
+        item_id = 1
         items_repo.fetch_by_id.return_value = None
 
         # Call and Assert
         with pytest.raises(errors.TreatmentItemNotFound):
-            service.delete_item(item_info=dto)
+            service.delete_item(item_id=item_id)
 
-        assert items_repo.method_calls == [call.fetch_by_id(dto.id)]
+        assert items_repo.method_calls == [call.fetch_by_id(item_id)]

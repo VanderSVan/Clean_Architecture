@@ -216,10 +216,10 @@ class TreatmentItemCatalog:
 
     @register_method
     @validate_call
-    def delete_item(self, item_info: dtos.ItemDeleteSchema) -> entities.TreatmentItem:
+    def delete_item(self, item_id: int) -> entities.TreatmentItem:
 
-        item: entities.TreatmentItem = self.items_repo.fetch_by_id(item_info.id)
+        item: entities.TreatmentItem = self.items_repo.fetch_by_id(item_id)
         if not item:
-            raise errors.TreatmentItemNotFound(id=item_info.id)
+            raise errors.TreatmentItemNotFound(id=item_id)
 
         return self.items_repo.remove(item)

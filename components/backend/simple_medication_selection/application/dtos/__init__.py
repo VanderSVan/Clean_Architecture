@@ -25,7 +25,6 @@ from .item import (
     ItemCreateSchema,
     ItemGetSchema,
     ItemUpdateSchema,
-    ItemDeleteSchema,
     ItemWithHelpedStatusGetSchema,
     ItemWithHelpedStatusSymptomsGetSchema,
     ItemWithHelpedStatusDiagnosisGetSchema,
