@@ -134,31 +134,30 @@ class TestChange:
 
 
 class TestDelete:
-    @pytest.mark.parametrize("existing_entity, dto", [
-        (entities.Symptom(id=1, name='Температура'), dtos.SymptomDeleteSchema(id=1))
+    @pytest.mark.parametrize("existing_entity", [
+        entities.Symptom(id=1, name='Температура')
     ])
-    def test__delete_existing_symptom(self, existing_entity, dto, service, repo):
+    def test__delete_existing_symptom(self, existing_entity, service, repo):
         # Setup
+        symptom_id = 1
         repo.fetch_by_id.return_value = existing_entity
         repo.remove.return_value = existing_entity
 
         # Call
-        result = service.delete(symptom_info=dto)
+        result = service.delete(symptom_id=symptom_id)
 
         # Assert
-        assert repo.method_calls == [call.fetch_by_id(dto.id),
+        assert repo.method_calls == [call.fetch_by_id(symptom_id),
                                      call.remove(existing_entity)]
         assert result == existing_entity
 
-    @pytest.mark.parametrize("dto", [
-        dtos.SymptomDeleteSchema(id=1)
-    ])
-    def test__delete_non_existing_symptom(self, dto, service, repo):
+    def test__delete_non_existing_symptom(self, service, repo):
         # Setup
+        symptom_id = 1
         repo.fetch_by_id.return_value = None
 
         # Call and Assert
         with pytest.raises(errors.SymptomNotFound):
-            service.delete(symptom_info=dto)
+            service.delete(symptom_id=symptom_id)
 
-        assert repo.method_calls == [call.fetch_by_id(dto.id)]
+        assert repo.method_calls == [call.fetch_by_id(symptom_id)]

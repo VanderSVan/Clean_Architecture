@@ -2,7 +2,6 @@ from .symptom import (
     SymptomCreateSchema,
     SymptomGetSchema,
     SymptomUpdateSchema,
-    SymptomDeleteSchema,
 )
 from .diagnosis import (
     DiagnosisCreateSchema,

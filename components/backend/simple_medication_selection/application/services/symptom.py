@@ -48,10 +48,10 @@ class Symptom:
 
     @register_method
     @validate_call
-    def delete(self, symptom_info: dtos.SymptomDeleteSchema) -> entities.Symptom:
-        symptom = self.symptoms_repo.fetch_by_id(symptom_info.id)
+    def delete(self, symptom_id: int) -> entities.Symptom:
+        symptom = self.symptoms_repo.fetch_by_id(symptom_id)
 
         if not symptom:
-            raise errors.SymptomNotFound(id=symptom_info.id)
+            raise errors.SymptomNotFound(id=symptom_id)
 
         return self.symptoms_repo.remove(symptom)
