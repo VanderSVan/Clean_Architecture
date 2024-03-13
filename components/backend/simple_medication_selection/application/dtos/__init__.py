@@ -18,7 +18,6 @@ from .item_type import (
     ItemTypeCreateSchema,
     ItemTypeGetSchema,
     ItemTypeUpdateSchema,
-    ItemTypeDeleteSchema,
 )
 from .item import (
     ItemCreateSchema,

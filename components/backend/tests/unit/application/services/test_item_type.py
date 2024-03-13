@@ -131,28 +131,30 @@ class TestChange:
 
 
 class TestDelete:
-    @pytest.mark.parametrize("existing_entity, dto", [
-        (entities.ItemType(id=1, name='Крем'), dtos.ItemTypeDeleteSchema(id=1))
+    @pytest.mark.parametrize("existing_entity", [
+        entities.ItemType(id=1, name='Крем')
     ])
-    def test__delete_existing_type(self, existing_entity, dto, service, repo):
+    def test__delete_existing_type(self, existing_entity, service, repo):
         # Setup
+        type_id = 1
         repo.fetch_by_id.return_value = existing_entity
         repo.remove.return_value = existing_entity
 
         # Call
-        result = service.delete(item_type_info=dto)
+        result = service.delete(type_id=type_id)
 
         # Assert
-        assert repo.method_calls == [call.fetch_by_id(dto.id), call.remove(existing_entity)]
+        assert repo.method_calls == [call.fetch_by_id(type_id),
+                                     call.remove(existing_entity)]
         assert result == existing_entity
 
-    @pytest.mark.parametrize("dto", [dtos.ItemTypeDeleteSchema(id=1)])
-    def test__delete_non_existing_type(self, dto, service, repo):
+    def test__delete_non_existing_type(self, service, repo):
         # Setup
+        type_id = 1
         repo.fetch_by_id.return_value = None
 
         # Call and Assert
         with pytest.raises(errors.ItemTypeNotFound):
-            service.delete(item_type_info=dto)
+            service.delete(type_id=type_id)
 
-        assert repo.method_calls == [call.fetch_by_id(dto.id)]
+        assert repo.method_calls == [call.fetch_by_id(type_id)]

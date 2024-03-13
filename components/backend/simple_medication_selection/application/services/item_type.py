@@ -50,11 +50,11 @@ class ItemType:
 
     @register_method
     @validate_call
-    def delete(self, item_type_info: dtos.ItemTypeDeleteSchema) -> entities.ItemType:
+    def delete(self, type_id: int) -> entities.ItemType:
 
-        item_type = self.types_repo.fetch_by_id(item_type_info.id)
+        item_type = self.types_repo.fetch_by_id(type_id)
 
         if not item_type:
-            raise errors.ItemTypeNotFound(id=item_type_info.id)
+            raise errors.ItemTypeNotFound(id=type_id)
 
         return self.types_repo.remove(item_type)
