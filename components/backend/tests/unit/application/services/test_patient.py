@@ -25,8 +25,7 @@ def service(repo) -> services.Patient:
 class TestGet:
     @pytest.mark.parametrize("returned_entity", [
         entities.Patient(id=1, nickname="SomeGirl", gender="female", age=18,
-                         skin_type="сухая", about="About Girl", phone='1234567890',
-                         profile_photo_path="src/some_path/to/image.png")
+                         skin_type="сухая", about="About Girl", phone='1234567890')
     ])
     def test__get_patient(self, returned_entity, service, repo):
         # Setup
@@ -54,15 +53,12 @@ class TestCreate:
     @pytest.mark.parametrize("new_entity, dto, created_entity", [
         (
             entities.Patient(nickname="SomeGirl", gender="female", age=18,
-                             skin_type="жирная", about="About Girl", phone='1234567890',
-                             profile_photo_path="src/some_path/to/image.png"),
+                             skin_type="жирная", about="About Girl", phone='1234567890'),
             dtos.PatientCreateSchema(nickname="SomeGirl", gender="female", age=18,
                                      skin_type="жирная", about="About Girl",
-                                     phone='1234567890',
-                                     profile_photo_path="src/some_path/to/image.png"),
+                                     phone='1234567890'),
             entities.Patient(id=1, nickname="SomeGirl", gender="female", age=18,
-                             skin_type="жирная", about="About Girl", phone='1234567890',
-                             profile_photo_path="src/some_path/to/image.png")
+                             skin_type="жирная", about="About Girl", phone='1234567890')
         )
     ])
     def test__create_new_patient(self, new_entity, dto, created_entity, service, repo):
@@ -81,12 +77,10 @@ class TestCreate:
     @pytest.mark.parametrize("existing_entity, dto", [
         (
             entities.Patient(id=1, nickname="SomeGirl", gender="male", age=18,
-                             skin_type="жирная", about="About Girl", phone='1234567890',
-                             profile_photo_path="src/some_path/to/image.png"),
+                             skin_type="жирная", about="About Girl", phone='1234567890'),
             dtos.PatientCreateSchema(nickname="SomeGirl", gender="male", age=28,
                                      skin_type="комбинированная", about="About Girl",
-                                     phone='9874561230',
-                                     profile_photo_path="src/some_path/to/image_2.png"),
+                                     phone='9874561230'),
         )
     ])
     def test__patient_already_exists(self, existing_entity, dto, service, repo):
@@ -104,15 +98,12 @@ class TestChange:
     @pytest.mark.parametrize("existing_entity, dto, updated_entity", [
         (
             entities.Patient(id=1, nickname="SomeGirl", gender="female", age=18,
-                             skin_type="жирная", about="About Girl", phone='1234567890',
-                             profile_photo_path="src/some_path/to/image.png"),
+                             skin_type="жирная", about="About Girl", phone='1234567890'),
             dtos.PatientUpdateSchema(id=1, nickname="SomeMan", gender="male", age=18,
                                      skin_type="жирная", about="About Man",
-                                     phone='1234567890',
-                                     profile_photo_path="src/some_path/to/image.png"),
+                                     phone='1234567890'),
             entities.Patient(id=1, nickname="SomeMan", gender="male", age=18,
-                             skin_type="жирная", about="About Man", phone='1234567890',
-                             profile_photo_path="src/some_path/to/image.png")
+                             skin_type="жирная", about="About Man", phone='1234567890')
         )
     ])
     def test__change_existing_patient(self, existing_entity, dto, updated_entity,
@@ -130,8 +121,7 @@ class TestChange:
     @pytest.mark.parametrize("dto", [
         dtos.PatientUpdateSchema(id=1, nickname="SomeMan", gender="male", age=18,
                                  skin_type="жирная", about="About Man",
-                                 phone='1234567890',
-                                 profile_photo_path="src/some_path/to/image.png")
+                                 phone='1234567890')
     ])
     def test__patient_does_not_exist(self, dto, service, repo):
         # Setup
@@ -146,12 +136,10 @@ class TestChange:
     @pytest.mark.parametrize("existing_entity, dto", [
         (
             entities.Patient(id=1, nickname="SomeMan", gender="male", age=38,
-                             skin_type="жирная", about="About Man", phone='85245691730',
-                             profile_photo_path="src/some_path/to/image_3.png"),
+                             skin_type="жирная", about="About Man", phone='85245691730'),
             dtos.PatientUpdateSchema(id=1, nickname="SomeMan", gender="male", age=18,
                                      skin_type="жирная", about="About Man2",
-                                     phone='1234567890',
-                                     profile_photo_path="src/some_path/to/image_4.png")
+                                     phone='1234567890')
         )
     ])
     def test__nickname_already_exists(self, existing_entity, dto, service, repo):
@@ -169,12 +157,10 @@ class TestDelete:
     @pytest.mark.parametrize("existing_entity, dto, removed_entity", [
         (
             entities.Patient(id=1, nickname="SomeGirl", gender="female", age=18,
-                             skin_type="сухая", about="About Girl", phone='1234567890',
-                             profile_photo_path="src/some_path/to/image.png"),
+                             skin_type="сухая", about="About Girl", phone='1234567890'),
             dtos.PatientDeleteSchema(id=1),
             entities.Patient(id=1, nickname="SomeGirl", gender="female", age=18,
-                             skin_type="сухая", about="About Girl", phone='1234567890',
-                             profile_photo_path="src/some_path/to/image.png")
+                             skin_type="сухая", about="About Girl", phone='1234567890')
         )
     ])
     def test__delete_existing_patient(self, existing_entity, dto, removed_entity,

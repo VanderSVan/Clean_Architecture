@@ -31,7 +31,6 @@ patients = Table(
     Column('skin_type', String, nullable=False),
     Column('about', Text, nullable=True),
     Column('phone', String(15), nullable=True),
-    Column('profile_photo_path', String(500)),
 )
 
 symptoms = Table(

@@ -15,7 +15,6 @@ class Patient:
     skin_type: str
     about: str | None = None
     phone: str | None = None
-    profile_photo_path: str | None = None
 
 
 @dataclass(kw_only=True)
