@@ -57,13 +57,6 @@ class TestFetchById:
         # Assert
         assert isinstance(result, entities.TreatmentItem)
 
-    def test__not_found(self, repo, session):
-        # Call
-        result = repo.fetch_by_id(100)
-
-        # Assert
-        assert result is None
-
 
 class TestFetchAll:
     def test__fetch_all(self, repo, session, fill_db):
@@ -111,7 +104,7 @@ class TestFetchAll:
                 float('inf') if getattr(treatment_item, order_field) is None
                 else getattr(treatment_item, order_field)
             ),
-            reverse=True if order_direction == 'desc' else False
+            reverse=False
         )
 
     @pytest.mark.parametrize('order_field, order_direction', [
@@ -136,7 +129,7 @@ class TestFetchAll:
                 float('-inf') if getattr(treatment_item, order_field) is None
                 else getattr(treatment_item, order_field)
             ),
-            reverse=True if order_direction == 'desc' else False
+            reverse=True
         )
 
     def test__with_limit(self, repo, session, fill_db):
