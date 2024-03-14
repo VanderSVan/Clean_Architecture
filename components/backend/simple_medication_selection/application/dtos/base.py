@@ -23,7 +23,7 @@ class DTO(BaseSchema):
         """
         self._set_exclude_unset(kwargs)
 
-        dto_data: dict = self.model_dump(**kwargs)
+        dto_data: dict = self.dict(**kwargs)
         obj_data: dict = self._populate_nested_obj_if_exists(obj, dto_data)
 
         return self._populate_obj(obj, obj_data)
@@ -40,7 +40,7 @@ class DTO(BaseSchema):
         """
         self._set_exclude_unset(kwargs)
 
-        dto_data: dict = self.model_dump(**kwargs)
+        dto_data: dict = self.dict(**kwargs)
         cls_data: dict = self._create_nested_objs_if_exists(dto_data, cls)
 
         return cls(**cls_data)

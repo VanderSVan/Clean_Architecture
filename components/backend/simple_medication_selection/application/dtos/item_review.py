@@ -1,31 +1,29 @@
-from typing import Annotated
-
 from pydantic import Field
 
 from simple_medication_selection.application.dtos.base import DTO
 
 
 class ItemReviewCreateSchema(DTO):
-    item_id: Annotated[int, Field(ge=1)]
+    item_id: int = Field(..., ge=1)
     is_helped: bool
-    item_rating: Annotated[float, Field(ge=1, le=10, multiple_of=0.5)]
-    item_count: Annotated[int, Field(ge=1)]
-    usage_period: Annotated[int, Field(ge=1)] = Field(None)
+    item_rating: float = Field(..., ge=1, le=10, multiple_of=0.5)
+    item_count: int = Field(..., ge=1)
+    usage_period: int = Field(None, ge=1)
 
 
 class ItemReviewGetSchema(DTO):
-    id: Annotated[int, Field(ge=1)]
-    item_id: Annotated[int, Field(ge=1)]
+    id: int = Field(..., ge=1)
+    item_id: int = Field(..., ge=1)
     is_helped: bool
-    item_rating: Annotated[float, Field(ge=1, le=10, multiple_of=0.5)]
-    item_count: Annotated[int, Field(ge=1)]
-    usage_period: Annotated[int, Field(ge=1)]
+    item_rating: float = Field(..., ge=1, le=10, multiple_of=0.5)
+    item_count: int = Field(..., ge=1)
+    usage_period: int = Field(..., ge=1)
 
 
 class ItemReviewUpdateSchema(DTO):
-    id: Annotated[int, Field(ge=1)]
-    item_id: Annotated[int, Field(ge=1)] = Field(None)
+    id: int = Field(..., ge=1)
+    item_id: int = Field(None, ge=1)
     is_helped: bool = Field(None)
-    item_rating: Annotated[float, Field(ge=1, le=10, multiple_of=0.5)] = Field(None)
-    item_count: Annotated[int, Field(ge=1)] = Field(None)
-    usage_period: Annotated[int, Field(ge=1)] = Field(None)
+    item_rating: float = Field(None, ge=1, le=10, multiple_of=0.5)
+    item_count: int = Field(None, ge=1)
+    usage_period: int = Field(None, ge=1)

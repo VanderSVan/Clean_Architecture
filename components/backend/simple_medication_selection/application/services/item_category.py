@@ -1,4 +1,4 @@
-from pydantic import validate_call
+from pydantic import validate_arguments
 
 from simple_medication_selection.application import dtos, entities, interfaces, errors
 from ..utils import DecoratedFunctionRegistry
@@ -12,7 +12,7 @@ class ItemCategory:
         self.categories_repo = categories_repo
 
     @register_method
-    @validate_call
+    @validate_arguments
     def get(self, category_id: int) -> entities.ItemCategory:
         category = self.categories_repo.fetch_by_id(category_id)
 
@@ -22,7 +22,7 @@ class ItemCategory:
         return category
 
     @register_method
-    @validate_call
+    @validate_arguments
     def create(self,
                new_category_info: dtos.ItemCategoryCreateSchema
                ) -> entities.ItemCategory:
@@ -40,7 +40,7 @@ class ItemCategory:
         return self.categories_repo.add(new_item_category)
 
     @register_method
-    @validate_call
+    @validate_arguments
     def change(self,
                new_category_info: dtos.ItemCategoryUpdateSchema
                ) -> entities.ItemCategory:
@@ -57,7 +57,7 @@ class ItemCategory:
         return new_category_info.populate_obj(category)
 
     @register_method
-    @validate_call
+    @validate_arguments
     def delete(self, category_id: int) -> entities.ItemCategory:
 
         category = self.categories_repo.fetch_by_id(category_id)

@@ -1,4 +1,4 @@
-from .base import DTO
+from simple_medication_selection.application.dtos.base import DTO
 
 from pydantic import Field
 
@@ -14,4 +14,4 @@ class SymptomGetSchema(DTO):
 
 class SymptomUpdateSchema(DTO):
     id: int = Field(..., ge=1)
-    name: str = Field(..., min_length=1, max_length=100)
+    name: str = Field(None, min_length=1, max_length=100)
