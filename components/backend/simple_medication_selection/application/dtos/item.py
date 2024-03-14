@@ -1,29 +1,28 @@
 from decimal import Decimal
-from typing import Annotated
 
-from pydantic import Field, field_validator
+from pydantic import Field, validator
 
 from .base import DTO
 
 
 class ItemCreateSchema(DTO):
-    title: Annotated[str, Field(min_length=1, max_length=255)]
-    price: Annotated[Decimal, Field(max_digits=12, decimal_places=2)] = Field(None)
-    description: Annotated[str, Field(min_length=1, max_length=1000)] = Field(None)
-    category_id: int = Annotated[int, Field(ge=1)]
-    type_id: int = Annotated[int, Field(ge=1)]
+    title: str = Field(..., min_length=1, max_length=255)
+    price: Decimal = Field(None, max_digits=12, decimal_places=2)
+    description: str = Field(None, min_length=1, max_length=1000)
+    category_id: int = Field(..., ge=1)
+    type_id: int = Field(..., ge=1)
 
 
 class ItemGetSchema(DTO):
-    id: Annotated[int, Field(ge=1)]
-    title: Annotated[str, Field(min_length=1, max_length=255)]
-    price: Annotated[Decimal, Field(max_digits=12, decimal_places=2, ge=0)] | None
-    description: Annotated[str, Field(min_length=1, max_length=1000)] | None
-    category_id: Annotated[int, Field(ge=1)]
-    type_id: Annotated[int, Field(ge=1)]
-    avg_rating: Annotated[float, Field(ge=1, le=10)] | None
+    id: int = Field(..., ge=1)
+    title: str = Field(..., min_length=1, max_length=255)
+    price: Decimal = Field(None, max_digits=12, decimal_places=2, ge=0)
+    description: str = Field(None, min_length=1, max_length=1000)
+    category_id: int = Field(..., ge=1)
+    type_id: int = Field(..., ge=1)
+    avg_rating: float = Field(None, ge=1, le=10)
 
-    @field_validator('avg_rating', mode='after')
+    @validator('avg_rating', pre=True)
     def round_avg_rating(cls, value):
         if value:
             return round(value, 2)
@@ -40,13 +39,13 @@ class ItemWithHelpedStatusSymptomsGetSchema(ItemGetSchema):
 
 class ItemWithHelpedStatusDiagnosisGetSchema(ItemGetSchema):
     is_helped: bool
-    diagnosis_id: Annotated[int, Field(ge=1)]
+    diagnosis_id: int = Field(..., ge=1)
 
 
 class ItemUpdateSchema(DTO):
-    id: Annotated[int, Field(ge=1)]
-    title: Annotated[str, Field(min_length=1, max_length=255)] = Field(None)
-    price: Annotated[Decimal, Field(max_digits=12, decimal_places=2)] = Field(None)
-    description: Annotated[str, Field(min_length=1, max_length=1000)] = Field(None)
-    category_id: Annotated[int, Field(ge=1)] = Field(None)
-    type_id: Annotated[int, Field(ge=1)] = Field(None)
+    id: int = Field(..., ge=1)
+    title: str = Field(None, min_length=1, max_length=255)
+    price: Decimal = Field(None, max_digits=12, decimal_places=2)
+    description: str = Field(None, min_length=1, max_length=1000)
+    category_id: int = Field(None, ge=1)
+    type_id: int = Field(None, ge=1)

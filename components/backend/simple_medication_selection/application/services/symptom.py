@@ -1,4 +1,4 @@
-from pydantic import validate_call
+from pydantic import validate_arguments
 
 from simple_medication_selection.application import dtos, entities, interfaces, errors
 from ..utils import DecoratedFunctionRegistry
@@ -12,7 +12,7 @@ class Symptom:
         self.symptoms_repo = symptoms_repo
 
     @register_method
-    @validate_call
+    @validate_arguments
     def get(self, symptom_id: int) -> entities.Symptom:
         symptom = self.symptoms_repo.fetch_by_id(symptom_id)
 
@@ -22,7 +22,7 @@ class Symptom:
         return symptom
 
     @register_method
-    @validate_call
+    @validate_arguments
     def create(self, new_symptom_info: dtos.SymptomCreateSchema) -> entities.Symptom:
         symptom: entities.Symptom = (
             self.symptoms_repo.fetch_by_name(new_symptom_info.name)
@@ -35,7 +35,7 @@ class Symptom:
         return self.symptoms_repo.add(new_symptom)
 
     @register_method
-    @validate_call
+    @validate_arguments
     def change(self, new_symptom_info: dtos.SymptomUpdateSchema) -> entities.Symptom:
         symptom: entities.Symptom = self.symptoms_repo.fetch_by_id(new_symptom_info.id)
         if not symptom:
@@ -47,7 +47,7 @@ class Symptom:
         return new_symptom_info.populate_obj(symptom)
 
     @register_method
-    @validate_call
+    @validate_arguments
     def delete(self, symptom_id: int) -> entities.Symptom:
         symptom = self.symptoms_repo.fetch_by_id(symptom_id)
 

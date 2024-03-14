@@ -1,6 +1,6 @@
 from typing import Literal, Sequence
 
-from pydantic import validate_call
+from pydantic import validate_arguments
 
 from simple_medication_selection.application import dtos, entities, interfaces, errors
 from simple_medication_selection.application.utils import DecoratedFunctionRegistry
@@ -18,7 +18,7 @@ class ItemReview:
         self.items_repo = items_repo
 
     @register_method
-    @validate_call
+    @validate_arguments
     def get_patient_reviews_by_item(self,
                                     patient_id: int,
                                     item_id: int,
@@ -40,7 +40,7 @@ class ItemReview:
                                                                offset)
 
     @register_method
-    @validate_call
+    @validate_arguments
     def get_reviews_by_item(self,
                             item_id: int,
                             *,
@@ -57,7 +57,7 @@ class ItemReview:
                                                    limit, offset)
 
     @register_method
-    @validate_call
+    @validate_arguments
     def get_patient_reviews(self,
                             patient_id: int,
                             *,
@@ -74,7 +74,7 @@ class ItemReview:
                                                           sort_direction, limit, offset)
 
     @register_method
-    @validate_call
+    @validate_arguments
     def add(self, new_review_info: dtos.ItemReviewCreateSchema) -> entities.ItemReview:
         item: entities.TreatmentItem = self.items_repo.fetch_by_id(
             new_review_info.item_id)
@@ -85,7 +85,7 @@ class ItemReview:
         return self.reviews_repo.add(new_review)
 
     @register_method
-    @validate_call
+    @validate_arguments
     def change(self, new_review_info: dtos.ItemReviewUpdateSchema) -> entities.ItemReview:
         review: entities.ItemReview = self.reviews_repo.fetch_by_id(new_review_info.id)
         if not review:
@@ -101,7 +101,7 @@ class ItemReview:
         return new_review_info.populate_obj(review)
 
     @register_method
-    @validate_call
+    @validate_arguments
     def delete(self, review_id: int) -> entities.ItemReview:
         review: entities.ItemReview = self.reviews_repo.fetch_by_id(review_id)
         if not review:

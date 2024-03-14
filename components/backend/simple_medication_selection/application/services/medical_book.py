@@ -1,6 +1,6 @@
 from typing import Sequence
 
-from pydantic import validate_call
+from pydantic import validate_arguments
 
 from simple_medication_selection.application import dtos, entities, interfaces, errors
 from simple_medication_selection.application.utils import DecoratedFunctionRegistry
@@ -20,7 +20,7 @@ class MedicalBook:
         self.diagnoses_repo = diagnoses_repo
 
     @register_method
-    @validate_call
+    @validate_arguments
     def get(self, medical_book_id: int) -> entities.MedicalBook:
 
         medical_book: entities.MedicalBook = (
@@ -32,7 +32,7 @@ class MedicalBook:
         return medical_book
 
     @register_method
-    @validate_call
+    @validate_arguments
     def get_patient_med_books(self,
                               patient_id: int,
                               *,
@@ -43,7 +43,7 @@ class MedicalBook:
         return self.med_books_repo.fetch_by_patient(patient_id, limit, offset)
 
     @register_method
-    @validate_call
+    @validate_arguments
     def add(self,
             new_med_book_info: dtos.MedicalBookCreateSchema
             ) -> entities.MedicalBook:
@@ -67,7 +67,7 @@ class MedicalBook:
         return self.med_books_repo.add(medical_book)
 
     @register_method
-    @validate_call
+    @validate_arguments
     def change(self,
                new_med_book_info: dtos.MedicalBookUpdateSchema
                ) -> entities.MedicalBook:

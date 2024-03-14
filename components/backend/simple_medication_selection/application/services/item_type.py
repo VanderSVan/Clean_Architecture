@@ -1,4 +1,4 @@
-from pydantic import validate_call
+from pydantic import validate_arguments
 
 from simple_medication_selection.application import dtos, entities, interfaces, errors
 from ..utils import DecoratedFunctionRegistry
@@ -12,7 +12,7 @@ class ItemType:
         self.types_repo = types_repo
 
     @register_method
-    @validate_call
+    @validate_arguments
     def get(self, type_id: int) -> entities.ItemType:
 
         item_type = self.types_repo.fetch_by_id(type_id)
@@ -23,7 +23,7 @@ class ItemType:
         return item_type
 
     @register_method
-    @validate_call
+    @validate_arguments
     def create(self, new_type_info: dtos.ItemTypeCreateSchema) -> entities.ItemType:
 
         item_type: entities.ItemType = (
@@ -36,7 +36,7 @@ class ItemType:
         return self.types_repo.add(new_type)
 
     @register_method
-    @validate_call
+    @validate_arguments
     def change(self, new_type_info: dtos.ItemTypeUpdateSchema) -> entities.ItemType:
 
         item_type: entities.ItemType = self.types_repo.fetch_by_id(new_type_info.id)
@@ -49,7 +49,7 @@ class ItemType:
         return new_type_info.populate_obj(item_type)
 
     @register_method
-    @validate_call
+    @validate_arguments
     def delete(self, type_id: int) -> entities.ItemType:
 
         item_type = self.types_repo.fetch_by_id(type_id)

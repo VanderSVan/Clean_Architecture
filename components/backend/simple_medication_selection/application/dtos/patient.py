@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import Annotated
 
 from pydantic import Field
 
@@ -19,32 +18,29 @@ class SkinTypeEnum(str, Enum):
 
 
 class PatientCreateSchema(DTO):
-    nickname: Annotated[str, Field(min_length=1, max_length=255)]
-    gender: Annotated[GenderEnum, Field(...)]
-    age: Annotated[int, Field(ge=10, le=120)]
-    skin_type: Annotated[SkinTypeEnum, Field(...)]
-    about: Annotated[str, Field(min_length=1, max_length=3000)] = Field(None)
-    phone: Annotated[
-        str, Field(min_length=9, max_length=15, pattern=r'^([\d]+)$')] = Field(None)
+    nickname: str = Field(..., min_length=1, max_length=255)
+    gender: GenderEnum = Field(...)
+    age: int = Field(..., ge=10, le=120)
+    skin_type: SkinTypeEnum = Field(...)
+    about: str = Field(None, min_length=1, max_length=3000)
+    phone: str = Field(None, min_length=9, max_length=15, pattern=r'^([\d]+)$')
 
 
 class PatientGetSchema(DTO):
-    id: Annotated[int, Field(ge=1)]
-    nickname: Annotated[str, Field(min_length=1, max_length=255)]
-    gender: Annotated[GenderEnum, Field(...)]
-    age: Annotated[int, Field(ge=10, le=120)]
-    skin_type: Annotated[SkinTypeEnum, Field(...)]
-    about: Annotated[str, Field(min_length=1, max_length=3000)] = Field(None)
-    phone: Annotated[
-        str, Field(min_length=9, max_length=15, pattern=r'^([\d]+)$')] = Field(None)
+    id: int = Field(..., ge=1)
+    nickname: str = Field(..., min_length=1, max_length=255)
+    gender: GenderEnum = Field(...)
+    age: int = Field(..., ge=10, le=120)
+    skin_type: SkinTypeEnum = Field(...)
+    about: str = Field(None, min_length=1, max_length=3000)
+    phone: str = Field(None, min_length=9, max_length=15, pattern=r'^([\d]+)$')
 
 
 class PatientUpdateSchema(DTO):
-    id: Annotated[int, Field(ge=1)]
-    nickname: Annotated[str, Field(min_length=1, max_length=255)] = Field(None)
-    gender: Annotated[GenderEnum, Field(None)] = Field(None)
-    age: Annotated[int, Field(ge=10, le=120)]
-    skin_type: Annotated[SkinTypeEnum, Field(None)] = Field(None)
-    about: Annotated[str, Field(min_length=1, max_length=3000)] = Field(None)
-    phone: Annotated[
-        str, Field(min_length=9, max_length=15, pattern=r'^([\d]+)$')] = Field(None)
+    id: int = Field(..., ge=1)
+    nickname: str = Field(None, min_length=1, max_length=255)
+    gender: GenderEnum = Field(None)
+    age: int = Field(..., ge=10, le=120)
+    skin_type: SkinTypeEnum = Field(None)
+    about: str = Field(None, min_length=1, max_length=3000)
+    phone: str = Field(None, min_length=9, max_length=15, pattern=r'^([\d]+)$')

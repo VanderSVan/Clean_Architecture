@@ -1,6 +1,6 @@
 from typing import Literal, Sequence, Optional
 
-from pydantic import validate_call
+from pydantic import validate_arguments
 
 from simple_medication_selection.application import dtos, entities, interfaces, errors
 from simple_medication_selection.application.utils import DecoratedFunctionRegistry
@@ -20,7 +20,7 @@ class TreatmentItemCatalog:
         self.types_repo = item_types_repo
 
     @register_method
-    @validate_call
+    @validate_arguments
     def get_item(self, item_id: int) -> entities.TreatmentItem:
         item: entities.TreatmentItem = self.items_repo.fetch_by_id(item_id)
 
@@ -30,7 +30,7 @@ class TreatmentItemCatalog:
         return item
 
     @register_method
-    @validate_call
+    @validate_arguments
     def find_items(self,
                    keywords: str = '',
                    *,
@@ -48,7 +48,7 @@ class TreatmentItemCatalog:
         return self.items_repo.fetch_all(sort_field, sort_direction, limit, offset)
 
     @register_method
-    @validate_call
+    @validate_arguments
     def find_items_with_reviews(self,
                                 keywords: str = '',
                                 *,
@@ -69,7 +69,7 @@ class TreatmentItemCatalog:
                                                       offset)
 
     @register_method
-    @validate_call
+    @validate_arguments
     def find_items_by_category(self,
                                category_id: int,
                                *,
@@ -85,7 +85,7 @@ class TreatmentItemCatalog:
                                                  limit, offset)
 
     @register_method
-    @validate_call
+    @validate_arguments
     def find_items_by_type(self,
                            type_id: int,
                            *,
@@ -101,7 +101,7 @@ class TreatmentItemCatalog:
                                              offset)
 
     @register_method
-    @validate_call
+    @validate_arguments
     def find_items_by_rating(self,
                              min_rating: float = 0.0,
                              max_rating: float | None = 10.0,
@@ -118,7 +118,7 @@ class TreatmentItemCatalog:
                                                sort_direction, limit, offset)
 
     @register_method
-    @validate_call
+    @validate_arguments
     def find_items_by_helped_status(self,
                                     is_helped: bool = True,
                                     *,
@@ -134,7 +134,7 @@ class TreatmentItemCatalog:
                                                       sort_direction, limit, offset)
 
     @register_method
-    @validate_call
+    @validate_arguments
     def find_items_by_symptoms_and_helped_status(
         self,
         symptom_ids: list[int],
@@ -153,7 +153,7 @@ class TreatmentItemCatalog:
         )
 
     @register_method
-    @validate_call
+    @validate_arguments
     def find_items_by_diagnosis_and_helped_status(
         self,
         diagnosis_id: int,
@@ -172,7 +172,7 @@ class TreatmentItemCatalog:
         )
 
     @register_method
-    @validate_call
+    @validate_arguments
     def add_item(self, new_item_info: dtos.ItemCreateSchema) -> entities.TreatmentItem:
 
         category: entities.ItemCategory = self.categories_repo.fetch_by_id(
@@ -191,7 +191,7 @@ class TreatmentItemCatalog:
         return self.items_repo.add(new_item)
 
     @register_method
-    @validate_call
+    @validate_arguments
     def change_item(self,
                     new_item_info: dtos.ItemUpdateSchema
                     ) -> entities.TreatmentItem:
@@ -215,7 +215,7 @@ class TreatmentItemCatalog:
         return new_item_info.populate_obj(item)
 
     @register_method
-    @validate_call
+    @validate_arguments
     def delete_item(self, item_id: int) -> entities.TreatmentItem:
 
         item: entities.TreatmentItem = self.items_repo.fetch_by_id(item_id)
