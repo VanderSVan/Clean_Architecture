@@ -37,7 +37,7 @@ symptoms = Table(
     'symptoms',
     metadata,
     Column('id', Integer, primary_key=True, autoincrement=True),
-    Column('name', String, nullable=False, unique=True),
+    Column('name', String(255), nullable=False, unique=True),
 )
 
 diagnoses = Table(

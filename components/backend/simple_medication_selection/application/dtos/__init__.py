@@ -1,6 +1,6 @@
 from .symptom import (
     SymptomCreateSchema,
-    SymptomGetSchema,
+    SymptomSchema,
     SymptomUpdateSchema,
 )
 from .diagnosis import (

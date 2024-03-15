@@ -1,3 +1,5 @@
+from typing import Sequence, Literal
+
 from pydantic import validate_arguments
 
 from simple_medication_selection.application import dtos, entities, interfaces, errors
@@ -20,6 +22,23 @@ class Symptom:
             raise errors.SymptomNotFound(id=symptom_id)
 
         return symptom
+
+    @register_method
+    @validate_arguments
+    def find_symptoms(self,
+                      keywords: str = '',
+                      *,
+                      sort_field: Literal['id', 'name'] = 'name',
+                      sort_direction: Literal['asc', 'desc'] = 'asc',
+                      limit: int = 10,
+                      offset: int = 0
+                      ) -> Sequence[entities.Symptom | None]:
+
+        if keywords:
+            return self.symptoms_repo.search_by_name(keywords, sort_field,
+                                                     sort_direction, limit, offset)
+
+        return self.symptoms_repo.fetch_all(sort_field, sort_direction, limit, offset)
 
     @register_method
     @validate_arguments
