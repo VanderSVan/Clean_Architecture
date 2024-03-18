@@ -1,9 +1,9 @@
-from .base import AppError
+from .base import Error
 
 
-class ItemReviewNotFound(AppError):
-    msg_template = 'Item review with id {id} not found'
+class ItemReviewNotFound(Error):
+    message_template = 'Item review with id {id} not found'
 
 
-class ItemReviewAlreadyExists(AppError):
-    msg_template = 'Item review with id {id} already exists'
+class ItemReviewAlreadyExists(Error):
+    message_template = 'Item review with id {id} already exists'

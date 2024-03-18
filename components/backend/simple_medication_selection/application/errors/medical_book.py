@@ -1,9 +1,9 @@
-from .base import AppError
+from .base import Error
 
 
-class MedicalBookNotFound(AppError):
-    msg_template = 'Medical book with id {id} not found.'
+class MedicalBookNotFound(Error):
+    message_template = 'Medical book with id {id} not found.'
 
 
-class MedicalBookAlreadyExists(AppError):
-    msg_template = 'Medical book with id {id} already exists.'
+class MedicalBookAlreadyExists(Error):
+    message_template = 'Medical book with id {id} already exists.'

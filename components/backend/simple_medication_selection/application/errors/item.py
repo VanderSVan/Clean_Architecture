@@ -1,9 +1,9 @@
-from .base import AppError
+from .base import Error
 
 
-class TreatmentItemNotFound(AppError):
-    msg_template = 'Treatment item with id {id} not found'
+class TreatmentItemNotFound(Error):
+    message_template = 'Treatment item with id {id} not found'
 
 
-class TreatmentItemAlreadyExists(AppError):
-    msg_template = 'Treatment item with id {id} already exists'
+class TreatmentItemAlreadyExists(Error):
+    message_template = 'Treatment item with id {id} already exists'
