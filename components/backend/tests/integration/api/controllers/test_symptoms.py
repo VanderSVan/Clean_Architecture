@@ -4,7 +4,7 @@ import pytest
 from falcon import testing
 
 from simple_medication_selection.application import services, entities
-from simple_medication_selection.adapters.med_selection_api.app import create_app
+from simple_medication_selection.adapters.api.app import create_app
 
 # ---------------------------------------------------------------------------------------
 # SETUP
