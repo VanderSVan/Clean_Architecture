@@ -1,6 +1,6 @@
 # Domain слой
 import inspect
-from dataclasses import dataclass, field, is_dataclass
+from dataclasses import dataclass, field, is_dataclass, asdict
 from statistics import mean
 from typing import Iterable, Union, TypeAlias, Literal
 from decimal import Decimal
@@ -68,11 +68,29 @@ class TreatmentItem:
     reviews: list[ItemReview] = field(default_factory=list)
     avg_rating: float | None = None
 
+    def __hash__(self):
+        return hash((self.id, self.title, self.price))
+
+    def __eq__(self, other):
+        if not isinstance(other, TreatmentItem):
+            return False
+        return (self.id == other.id and
+                self.title == other.title and
+                self.price == other.price)
+
     def get_avg_rating(self) -> float | None:
         if self.reviews and not self.avg_rating:
             return mean([review.item_rating for review in self.reviews])
 
         return self.avg_rating
+
+    def to_dict_with_float_price(self) -> dict:
+        data = asdict(self)
+
+        if data['price'] is not None:
+            data['price'] = float(data['price'])
+
+        return data
 
 
 @dataclass(kw_only=True)

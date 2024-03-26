@@ -16,7 +16,7 @@ mapper.map_imperatively(
     tables.treatment_items,
     properties={
         'reviews': relationship(
-            entities.ItemReview, lazy='subquery', cascade='save-update, merge'
+            entities.ItemReview, lazy='subquery', cascade='all, delete-orphan'
         )
     }
 )
@@ -45,20 +45,3 @@ mapper.map_imperatively(
         ),
     }
 )
-
-# mapper.map_imperatively(
-#     entities.TreatmentItem,
-#     tables.treatment_items,
-#     properties={
-#         'reviews': relationship(entities.ItemReview, lazy='joined', back_populates='item')
-#     }
-# )
-# mapper.map_imperatively(
-#     entities.ItemReview,
-#     tables.item_reviews,
-#     properties={
-#         'item': relationship(
-#             entities.TreatmentItem, lazy='joined', back_populates='reviews'
-#         )
-#     }
-# )

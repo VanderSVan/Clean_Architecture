@@ -1,8 +1,9 @@
 from unittest.mock import Mock, call
 
 import pytest
-from simple_medication_selection.application import (dtos, entities, errors, interfaces,
-                                                     services)
+from simple_medication_selection.application import (
+    dtos, entities, errors, interfaces, services, schemas
+)
 
 
 # ---------------------------------------------------------------------------------------
@@ -68,355 +69,546 @@ class TestGetItem:
 
 
 class TestFindItems:
-    @pytest.mark.parametrize("keyword, result_output", [
-        (
-            "Продукт",
-            [dtos.ItemGetSchema(id=2, title="Продукт 2", price=None, description=None,
-                                category_id=2, type_id=3, avg_rating=7.5),
-             dtos.ItemGetSchema(id=3, title="Продукт 3", price=1500.00,
-                                description="Some description", category_id=3, type_id=4,
-                                avg_rating=8.0),
-             dtos.ItemGetSchema(id=4, title="Продукт 4", price=2000.00, description=None,
-                                category_id=4, type_id=5, avg_rating=None)]
-        )
+
+    @pytest.mark.parametrize("result_output", [
+        [
+            dtos.TreatmentItem(id=3, title="Продукт 3", price=5000,
+                               description='Описание 3', category_id=2, type_id=3,
+                               avg_rating=8.5),
+            dtos.TreatmentItem(id=1, title="Продукт 1", price=7500.50,
+                               description="Описание 1", category_id=1, type_id=2,
+                               avg_rating=7.75)
+        ]
     ])
-    def test__with_keywords(self, keyword, result_output, service, items_repo):
+    def test__with_keywords(self, result_output, service, items_repo):
         # Setup
-        items_repo.fetch_by_keywords.return_value = result_output
-        default_sort_field = 'avg_rating'
-        default_sort_direction = 'desc'
-        default_limit = 10
-        default_offset = 0
+        items_repo.fetch_all.return_value = result_output
+        filter_params = schemas.FindTreatmentItems(keywords="Продукт")
 
         # Call
-        result = service.find_items(keywords="Продукт")
+        result = service.find_items(filter_params=filter_params)
+
+        # Assert
+        assert items_repo.method_calls == [call.fetch_all(filter_params, False)]
+        assert result == result_output
+
+    @pytest.mark.parametrize("helped_status, result_output", [
+        (
+            True,
+            [
+                dtos.TreatmentItem(id=3, title="Продукт 3", price=5000,
+                                          description='Описание 3', category_id=2,
+                                          type_id=3, avg_rating=8.5),
+                dtos.TreatmentItem(id=1, title="Продукт 1", price=7500.50,
+                                          description="Описание 1", category_id=1,
+                                          type_id=2, avg_rating=7.75)
+            ],
+        ),
+        (
+            False,
+            [
+                dtos.TreatmentItem(id=2, title="Процедура 1", price=3000.55,
+                                          description='Описание 2', category_id=2,
+                                          type_id=3, avg_rating=5),
+                dtos.TreatmentItem(id=1, title="Продукт 5", price=None,
+                                          description="Описание 5", category_id=1,
+                                          type_id=2, avg_rating=3.5)
+            ],
+        )
+    ])
+    def test__with_helped_status(self, helped_status, result_output, service, items_repo):
+        # Setup
+        items_repo.fetch_by_helped_status.return_value = result_output
+        filter_params = schemas.FindTreatmentItems(is_helped=True)
+
+        # Call
+        result = service.find_items(filter_params=filter_params)
 
         # Assert
         assert items_repo.method_calls == [
-            call.fetch_by_keywords("Продукт", default_sort_field, default_sort_direction,
-                                   default_limit, default_offset)
+            call.fetch_by_helped_status(filter_params, False)
         ]
         assert result == result_output
 
-    @pytest.mark.parametrize("result_output", [
+    @pytest.mark.parametrize("diagnosis_id, result_output", [
         (
-            [dtos.ItemGetSchema(id=1, title="Процедура 1", price=None, description=None,
-                                category_id=1, type_id=2, avg_rating=7.5),
-             dtos.ItemGetSchema(id=2, title="Продукт 2", price=1500.00,
-                                description="Some description", category_id=2,
-                                type_id=3, avg_rating=8.0),
-             dtos.ItemGetSchema(id=3, title="Продукт 3", price=2000.00, description=None,
-                                category_id=3, type_id=4, avg_rating=None)]
+            1,
+            [
+                dtos.TreatmentItem(id=3, title="Продукт 3", price=5000,
+                                       description='Описание 3', category_id=2,
+                                       type_id=3, avg_rating=8.5),
+                dtos.TreatmentItem(id=1, title="Продукт 1", price=7500.50,
+                                       description="Описание 1", category_id=1,
+                                       type_id=2, avg_rating=7.75)
+            ],
         )
     ])
-    def test__without_keywords(self, result_output, service, items_repo):
+    def test_with_diagnosis(self, diagnosis_id, result_output, service, items_repo):
         # Setup
-        items_repo.fetch_all.return_value = result_output
-        default_sort_field = 'avg_rating'
-        default_sort_direction = 'desc'
-        default_limit = 10
-        default_offset = 0
+        items_repo.fetch_by_diagnosis.return_value = result_output
+        filter_params = schemas.FindTreatmentItems(diagnosis_id=1)
 
         # Call
-        result = service.find_items()
+        result = service.find_items(filter_params=filter_params)
 
         # Assert
-        assert items_repo.method_calls == [
-            call.fetch_all(default_sort_field, default_sort_direction, default_limit,
-                           default_offset)
-        ]
+        assert items_repo.method_calls == [call.fetch_by_diagnosis(filter_params, False)]
+        assert result == result_output
+
+    @pytest.mark.parametrize("symptom_ids, result_output", [
+        (
+            [1, 2, 3],
+            [
+                dtos.TreatmentItem(id=3, title="Продукт 3", price=5000,
+                                   description='Описание 3', category_id=2, type_id=2,
+                                   avg_rating=8.5),
+                dtos.TreatmentItem(id=1, title="Продукт 1", price=7500.50,
+                                   description="Описание 1", category_id=1, type_id=3,
+                                   avg_rating=7.75)
+            ]
+        )
+    ])
+    def test__with_symptoms(self, symptom_ids, result_output, service, items_repo):
+        # Setup
+        items_repo.fetch_by_symptoms.return_value = result_output
+        filter_params = schemas.FindTreatmentItems(symptom_ids=[1, 2, 3])
+
+        # Call
+        result = service.find_items(filter_params=filter_params)
+
+        # Assert
+        assert items_repo.method_calls == [call.fetch_by_symptoms(filter_params, False)]
+        assert result == result_output
+
+    @pytest.mark.parametrize("min_rating, max_rating, result_output", [
+        (
+            1.5,
+            9.5,
+            [
+                dtos.TreatmentItem(id=3, title="Продукт 3", price=5000,
+                                   description='Описание 3', category_id=2, type_id=3,
+                                   avg_rating=8.5),
+                dtos.TreatmentItem(id=1, title="Продукт 1", price=7500.50,
+                                   description="Описание 1", category_id=1, type_id=2,
+                                   avg_rating=7.75)
+            ]
+        )
+    ])
+    def test__with_rating(self, min_rating, max_rating, result_output, service,
+                          items_repo):
+        # Setup
+        items_repo.fetch_all.return_value = result_output
+        filter_params = schemas.FindTreatmentItems(min_rating=min_rating,
+                                                   max_rating=max_rating)
+
+        # Call
+        result = service.find_items(filter_params=filter_params)
+
+        # Assert
+        assert items_repo.method_calls == [call.fetch_all(filter_params, False)]
+        assert result == result_output
+
+    @pytest.mark.parametrize("min_price, max_price, result_output", [
+        (
+            1000,
+            10000,
+            [
+                dtos.TreatmentItem(id=3, title="Продукт 3", price=5000,
+                                   description='Описание 3', category_id=2, type_id=3,
+                                   avg_rating=8.5),
+                dtos.TreatmentItem(id=1, title="Продукт 1", price=7500.50,
+                                   description="Описание 1", category_id=1, type_id=2,
+                                   avg_rating=7.75)
+            ]
+        )
+    ])
+    def test__with_price(self, min_price, max_price, result_output, service, items_repo):
+        # Setup
+        items_repo.fetch_all.return_value = result_output
+        filter_params = schemas.FindTreatmentItems(min_price=min_price,
+                                                   max_price=max_price)
+
+        # Call
+        result = service.find_items(filter_params=filter_params)
+
+        # Assert
+        assert items_repo.method_calls == [call.fetch_all(filter_params, False)]
+        assert result == result_output
+
+    @pytest.mark.parametrize("category_id, result_output", [
+        (
+            1,
+            [
+                dtos.TreatmentItem(id=3, title="Продукт 3", price=5000,
+                                   description='Описание 3', category_id=1, type_id=3,
+                                   avg_rating=8.5),
+                dtos.TreatmentItem(id=1, title="Продукт 1", price=7500.50,
+                                   description="Описание 1", category_id=1, type_id=2,
+                                   avg_rating=7.75)
+            ]
+        )
+    ])
+    def test__with_category(self, category_id, result_output, service, items_repo):
+        # Setup
+        items_repo.fetch_all.return_value = result_output
+        filter_params = schemas.FindTreatmentItems(category_id=1)
+
+        # Call
+        result = service.find_items(filter_params=filter_params)
+
+        # Assert
+        assert items_repo.method_calls == [call.fetch_all(filter_params, False)]
+        assert result == result_output
+
+    @pytest.mark.parametrize("type_id, result_output", [
+        (
+            1,
+            [
+                dtos.TreatmentItem(id=3, title="Продукт 3", price=5000,
+                                   description='Описание 3', category_id=2, type_id=1,
+                                   avg_rating=8.5),
+                dtos.TreatmentItem(id=1, title="Продукт 1", price=7500.50,
+                                   description="Описание 1", category_id=1, type_id=1,
+                                   avg_rating=7.75)
+            ]
+        )
+    ])
+    def test__with_type(self, type_id, result_output, service, items_repo):
+        # Setup
+        items_repo.fetch_all.return_value = result_output
+        filter_params = schemas.FindTreatmentItems(type_id=1)
+
+        # Call
+        result = service.find_items(filter_params=filter_params)
+
+        # Assert
+        assert items_repo.method_calls == [call.fetch_all(filter_params, False)]
+        assert result == result_output
+
+    @pytest.mark.parametrize("sort_field, sort_direction, result_output", [
+        (
+            "title",
+            'asc',
+            [
+                dtos.TreatmentItem(id=3, title="Продукт 1", price=5000,
+                                   description='Описание 1', category_id=2, type_id=1,
+                                   avg_rating=8.5),
+                dtos.TreatmentItem(id=1, title="Продукт 3", price=7500.50,
+                                   description="Описание 3", category_id=1, type_id=10,
+                                   avg_rating=7.75)
+            ]
+        )
+    ])
+    def test__with_sort(self, sort_field, sort_direction, result_output, service,
+                        items_repo):
+        # Setup
+        items_repo.fetch_all.return_value = result_output
+        filter_params = schemas.FindTreatmentItems(sort_field=sort_field,
+                                                   sort_direction=sort_direction)
+
+        # Call
+        result = service.find_items(filter_params=filter_params)
+
+        # Assert
+        assert items_repo.method_calls == [call.fetch_all(filter_params, False)]
+        assert result == result_output
+
+    @pytest.mark.parametrize("offset, limit, result_output", [
+        (
+            1,
+            1,
+            [dtos.TreatmentItem(id=1, title="Продукт 3", price=7500.50,
+                                description="Описание 3", category_id=1, type_id=10,
+                                avg_rating=7.75)]
+        )
+    ])
+    def test__with_offset_and_limit(self, offset, limit, result_output, service,
+                                    items_repo):
+        # Setup
+        items_repo.fetch_all.return_value = result_output
+        filter_params = schemas.FindTreatmentItems(offset=offset, limit=limit)
+
+        # Call
+        result = service.find_items(filter_params=filter_params)
+
+        # Assert
+        assert items_repo.method_calls == [call.fetch_all(filter_params, False)]
         assert result == result_output
 
 
 class TestFindItemsWithReviews:
-    @pytest.mark.parametrize("keyword, result_output", [
-        (
-            "Продукт",
-            [entities.TreatmentItem(id=2, title="Продукт 2", category_id=2, type_id=3,
-                                    avg_rating=7.75,
-                                    reviews=[
-                                        entities.ItemReview(id=1,
-                                                            item_id=2,
-                                                            is_helped=True,
-                                                            item_rating=8.0,
-                                                            item_count=5,
-                                                            usage_period=7776000),
-                                        entities.ItemReview(id=2,
-                                                            item_id=2,
-                                                            is_helped=True,
-                                                            item_rating=7.5,
-                                                            item_count=2,
-                                                            usage_period=2592000),
-                                    ]),
-             entities.TreatmentItem(id=3, title="Продукт 3", category_id=3, type_id=4),
-             entities.TreatmentItem(id=4, title="Продукт 4", category_id=4, type_id=5)]
-        )
-    ])
-    def test__with_keywords(self, keyword, result_output, service, items_repo):
-        # Setup
-        items_repo.fetch_by_keywords_with_reviews.return_value = result_output
-        default_sort_field = 'avg_rating'
-        default_sort_direction = 'desc'
-        default_limit = 10
-        default_offset = 0
-
-        # Call
-        result = service.find_items_with_reviews(keywords="Продукт")
-
-        # Assert
-        assert items_repo.method_calls == [
-            call.fetch_by_keywords_with_reviews("Продукт", default_sort_field,
-                                                default_sort_direction,
-                                                default_limit, default_offset)
-        ]
-        assert result == result_output
 
     @pytest.mark.parametrize("result_output", [
-        (
-            [entities.TreatmentItem(id=1, title="Процедура 1", category_id=1, type_id=2,
-                                    avg_rating=6.25,
-                                    reviews=[
-                                        entities.ItemReview(id=1,
-                                                            item_id=1,
-                                                            is_helped=True,
-                                                            item_rating=8.0,
-                                                            item_count=5,
-                                                            usage_period=7776000),
-                                        entities.ItemReview(id=2,
-                                                            item_id=1,
-                                                            is_helped=True,
-                                                            item_rating=7.5,
-                                                            item_count=2,
-                                                            usage_period=2592000),
-                                    ]),
-             entities.TreatmentItem(id=2, title="Продукт 2", category_id=2, type_id=3),
-             entities.TreatmentItem(id=3, title="Продукт 3", category_id=3, type_id=4)]
-        )
+        [
+            dtos.TreatmentItem(id=3, title="Продукт 3", price=5000,
+                               description='Описание 3', category_id=2, type_id=3,
+                               avg_rating=8.5),
+            dtos.TreatmentItem(id=1, title="Продукт 1", price=7500.50,
+                               description="Описание 1", category_id=1, type_id=2,
+                               avg_rating=7.75)
+        ]
     ])
-    def test__without_keywords(self, result_output, service, items_repo):
+    def test__with_keywords(self, result_output, service, items_repo):
         # Setup
-        items_repo.fetch_all_with_reviews.return_value = result_output
-        default_sort_field = 'avg_rating'
-        default_sort_direction = 'desc'
-        default_limit = 10
-        default_offset = 0
+        items_repo.fetch_all.return_value = result_output
+        filter_params = schemas.FindTreatmentItems(keywords="Продукт")
 
         # Call
-        result = service.find_items_with_reviews()
+        result = service.find_items_with_reviews(filter_params=filter_params)
 
         # Assert
-        assert items_repo.method_calls == [
-            call.fetch_all_with_reviews(default_sort_field, default_sort_direction,
-                                        default_limit, default_offset)
-        ]
+        assert items_repo.method_calls == [call.fetch_all(filter_params, True)]
         assert result == result_output
 
-
-class TestFindItemsByCategory:
-    @pytest.mark.parametrize("repo_output", [
-        (
-            [entities.TreatmentItem(id=1, title="Продукт 1", category_id=1, type_id=2)],
-            [entities.TreatmentItem(id=2, title="Продукт 2", category_id=1, type_id=3)]
-        )
-    ])
-    def test__find_items_by_category(self, repo_output, service, items_repo):
-        # Setup
-        items_repo.fetch_by_category.return_value = repo_output
-        category_id = 1
-        default_sort_field = 'avg_rating'
-        default_sort_direction = 'desc'
-        default_limit = 10
-        default_offset = 0
-
-        # Call
-        result = service.find_items_by_category(category_id=category_id)
-
-        # Assert
-        assert items_repo.method_calls == [
-            call.fetch_by_category(category_id, default_sort_field,
-                                   default_sort_direction, default_limit,
-                                   default_offset)
-        ]
-        assert result == repo_output
-
-
-class TestFindItemsByType:
-    @pytest.mark.parametrize("repo_output", [
-        (
-            [entities.TreatmentItem(id=1, title="Продукт 1", category_id=1, type_id=2)],
-            [entities.TreatmentItem(id=2, title="Продукт 2", category_id=2, type_id=2)]
-        )
-    ])
-    def test__find_items_by_type(self, repo_output, service, items_repo):
-        # Setup
-        items_repo.fetch_by_type.return_value = repo_output
-        type_id = 1
-        default_sort_field = 'avg_rating'
-        default_sort_direction = 'desc'
-        default_limit = 10
-        default_offset = 0
-
-        # Call
-        result = service.find_items_by_type(type_id=type_id)
-
-        # Assert
-        assert items_repo.method_calls == [
-            call.fetch_by_type(type_id, default_sort_field, default_sort_direction,
-                               default_limit, default_offset)
-        ]
-        assert result == repo_output
-
-
-class TestFindItemsByRating:
-    @pytest.mark.parametrize("repo_output", [
-        (
-            [
-                dtos.ItemGetSchema(id=3, title='Продукт 3', price=2000.0,
-                                   description=None, category_id=3, type_id=4,
-                                   avg_rating=9.5),
-                dtos.ItemGetSchema(id=2, title='Продукт 2', price=None,
-                                   description=None, category_id=2, type_id=3,
-                                   avg_rating=6.25),
-                dtos.ItemGetSchema(id=1, title='Продукт 1', price=None,
-                                   description='Описание 1', category_id=1, type_id=2,
-                                   avg_rating=None)
-            ]
-        )
-    ])
-    def test__find_items_by_rating(self, repo_output, service, items_repo):
-        # Setup
-        items_repo.fetch_by_rating.return_value = repo_output
-        min_rating = 1.5
-        max_rating = 10
-        default_sort_field = 'avg_rating'
-        default_sort_direction = 'desc'
-        default_limit = 10
-        default_offset = 0
-
-        # Call
-        result = service.find_items_by_rating(min_rating=min_rating,
-                                              max_rating=max_rating)
-
-        # Assert
-        assert items_repo.method_calls == [
-            call.fetch_by_rating(min_rating, max_rating, default_sort_field,
-                                 default_sort_direction, default_limit, default_offset)
-        ]
-        assert result == repo_output
-
-
-class TestFindItemsByHelpedStatus:
-    @pytest.mark.parametrize("helped_status, repo_output", [
+    @pytest.mark.parametrize("helped_status, result_output", [
         (
             True,
-            [dtos.ItemWithHelpedStatusGetSchema(id=1, title="Продукт 1", price=1000.0,
-                                                description="Описание 1", category_id=1,
-                                                type_id=2, avg_rating=10.0,
-                                                is_helped=True)]
+            [
+                dtos.TreatmentItem(id=3, title="Продукт 3", price=5000,
+                                          description='Описание 3', category_id=2,
+                                          type_id=3, avg_rating=8.5),
+                dtos.TreatmentItem(id=1, title="Продукт 1", price=7500.50,
+                                          description="Описание 1", category_id=1,
+                                          type_id=2, avg_rating=7.75)
+            ],
         ),
         (
             False,
-            [dtos.ItemWithHelpedStatusGetSchema(id=2, title="Продукт 2", price=2000.0,
-                                                description="Описание 2", category_id=2,
-                                                type_id=3, avg_rating=7.5,
-                                                is_helped=False)]
+            [
+                dtos.TreatmentItem(id=2, title="Процедура 1", price=3000.55,
+                                          description='Описание 2', category_id=2,
+                                          type_id=3, avg_rating=5),
+                dtos.TreatmentItem(id=1, title="Продукт 5", price=None,
+                                          description="Описание 5", category_id=1,
+                                          type_id=2, avg_rating=3.5)
+            ],
         )
     ])
-    def test__helped_status(self, helped_status, repo_output, service, items_repo):
+    def test__with_helped_status(self, helped_status, result_output, service, items_repo):
         # Setup
-        items_repo.fetch_by_helped_status.return_value = repo_output
-        default_sort_field = 'avg_rating'
-        default_sort_direction = 'desc'
-        default_limit = 10
-        default_offset = 0
+        items_repo.fetch_by_helped_status.return_value = result_output
+        filter_params = schemas.FindTreatmentItems(is_helped=True)
 
         # Call
-        result = service.find_items_by_helped_status(is_helped=helped_status)
+        result = service.find_items_with_reviews(filter_params=filter_params)
 
         # Assert
         assert items_repo.method_calls == [
-            call.fetch_by_helped_status(helped_status, default_sort_field,
-                                        default_sort_direction, default_limit,
-                                        default_offset)
+            call.fetch_by_helped_status(filter_params, True)
         ]
-        assert result == repo_output
+        assert result == result_output
 
-
-class TestFindItemsBySymptomAndHelpedStatus:
-    @pytest.mark.parametrize("repo_output", [
-        [
-            entities.TreatmentItem(id=3, title="Продукт 3", category_id=3, type_id=4),
-            entities.TreatmentItem(id=1, title="Продукт 1", category_id=1, type_id=2),
-        ]
+    @pytest.mark.parametrize("diagnosis_id, result_output", [
+        (
+            1,
+            [
+                dtos.TreatmentItem(id=3, title="Продукт 3", price=5000,
+                                       description='Описание 3', category_id=2,
+                                       type_id=3, avg_rating=8.5),
+                dtos.TreatmentItem(id=1, title="Продукт 1", price=7500.50,
+                                       description="Описание 1", category_id=1,
+                                       type_id=2, avg_rating=7.75)
+            ],
+        )
     ])
-    def test__find_items_by_symptoms_and_helped_status(self, repo_output, service,
-                                                       items_repo):
+    def test_with_diagnosis(self, diagnosis_id, result_output, service, items_repo):
         # Setup
-        items_repo.fetch_by_symptoms_and_helped_status.return_value = repo_output
-        symptom_ids = [1, 2, 3, 4]
-        default_helped_status = True
-        default_sort_field = 'avg_rating'
-        default_sort_direction = 'desc'
-        default_limit = 10
-        default_offset = 0
+        items_repo.fetch_by_diagnosis.return_value = result_output
+        filter_params = schemas.FindTreatmentItems(diagnosis_id=1)
 
         # Call
-        result = service.find_items_by_symptoms_and_helped_status(
-            symptom_ids=symptom_ids
-        )
+        result = service.find_items_with_reviews(filter_params=filter_params)
 
         # Assert
-        assert items_repo.method_calls == [
-            call.fetch_by_symptoms_and_helped_status(symptom_ids,
-                                                     default_helped_status,
-                                                     default_sort_field,
-                                                     default_sort_direction,
-                                                     default_limit,
-                                                     default_offset)
-        ]
-        assert result == repo_output
+        assert items_repo.method_calls == [call.fetch_by_diagnosis(filter_params, True)]
+        assert result == result_output
 
-
-class TestFindItemsByDiagnosisAndHelpedStatus:
-    @pytest.mark.parametrize("repo_output", [
-        [
-            entities.TreatmentItem(id=2, title="Продукт 2", category_id=2, type_id=3),
-            entities.TreatmentItem(id=1, title="Продукт 1", category_id=1, type_id=2)
-        ]
+    @pytest.mark.parametrize("symptom_ids, result_output", [
+        (
+            [1, 2, 3],
+            [
+                dtos.TreatmentItem(id=3, title="Продукт 3", price=5000,
+                                   description='Описание 3', category_id=2, type_id=2,
+                                   avg_rating=8.5),
+                dtos.TreatmentItem(id=1, title="Продукт 1", price=7500.50,
+                                   description="Описание 1", category_id=1, type_id=3,
+                                   avg_rating=7.75)
+            ]
+        )
     ])
-    def test__find_items_by_diagnosis_and_helped_status(self, repo_output, service,
-                                                        items_repo):
+    def test__with_symptoms(self, symptom_ids, result_output, service, items_repo):
         # Setup
-        items_repo.fetch_by_diagnosis_and_helped_status.return_value = repo_output
-        diagnosis_id = 1
-        default_helped_status = True
-        default_sort_field = 'avg_rating'
-        default_sort_direction = 'desc'
-        default_limit = 10
-        default_offset = 0
+        items_repo.fetch_by_symptoms.return_value = result_output
+        filter_params = schemas.FindTreatmentItems(symptom_ids=[1, 2, 3])
 
         # Call
-        result = service.find_items_by_diagnosis_and_helped_status(
-            diagnosis_id=diagnosis_id
-        )
+        result = service.find_items_with_reviews(filter_params=filter_params)
 
         # Assert
-        assert items_repo.method_calls == [
-            call.fetch_by_diagnosis_and_helped_status(diagnosis_id,
-                                                      default_helped_status,
-                                                      default_sort_field,
-                                                      default_sort_direction,
-                                                      default_limit,
-                                                      default_offset)
-        ]
-        assert result == repo_output
+        assert items_repo.method_calls == [call.fetch_by_symptoms(filter_params, True)]
+        assert result == result_output
+
+    @pytest.mark.parametrize("min_rating, max_rating, result_output", [
+        (
+            1.5,
+            9.5,
+            [
+                dtos.TreatmentItem(id=3, title="Продукт 3", price=5000,
+                                   description='Описание 3', category_id=2, type_id=3,
+                                   avg_rating=8.5),
+                dtos.TreatmentItem(id=1, title="Продукт 1", price=7500.50,
+                                   description="Описание 1", category_id=1, type_id=2,
+                                   avg_rating=7.75)
+            ]
+        )
+    ])
+    def test__with_rating(self, min_rating, max_rating, result_output, service,
+                          items_repo):
+        # Setup
+        items_repo.fetch_all.return_value = result_output
+        filter_params = schemas.FindTreatmentItems(min_rating=min_rating,
+                                                   max_rating=max_rating)
+
+        # Call
+        result = service.find_items_with_reviews(filter_params=filter_params)
+
+        # Assert
+        assert items_repo.method_calls == [call.fetch_all(filter_params, True)]
+        assert result == result_output
+
+    @pytest.mark.parametrize("min_price, max_price, result_output", [
+        (
+            1000,
+            10000,
+            [
+                dtos.TreatmentItem(id=3, title="Продукт 3", price=5000,
+                                   description='Описание 3', category_id=2, type_id=3,
+                                   avg_rating=8.5),
+                dtos.TreatmentItem(id=1, title="Продукт 1", price=7500.50,
+                                   description="Описание 1", category_id=1, type_id=2,
+                                   avg_rating=7.75)
+            ]
+        )
+    ])
+    def test__with_price(self, min_price, max_price, result_output, service, items_repo):
+        # Setup
+        items_repo.fetch_all.return_value = result_output
+        filter_params = schemas.FindTreatmentItems(min_price=min_price,
+                                                   max_price=max_price)
+
+        # Call
+        result = service.find_items_with_reviews(filter_params=filter_params)
+
+        # Assert
+        assert items_repo.method_calls == [call.fetch_all(filter_params, True)]
+        assert result == result_output
+
+    @pytest.mark.parametrize("category_id, result_output", [
+        (
+            1,
+            [
+                dtos.TreatmentItem(id=3, title="Продукт 3", price=5000,
+                                   description='Описание 3', category_id=1, type_id=3,
+                                   avg_rating=8.5),
+                dtos.TreatmentItem(id=1, title="Продукт 1", price=7500.50,
+                                   description="Описание 1", category_id=1, type_id=2,
+                                   avg_rating=7.75)
+            ]
+        )
+    ])
+    def test__with_category(self, category_id, result_output, service, items_repo):
+        # Setup
+        items_repo.fetch_all.return_value = result_output
+        filter_params = schemas.FindTreatmentItems(category_id=1)
+
+        # Call
+        result = service.find_items_with_reviews(filter_params=filter_params)
+
+        # Assert
+        assert items_repo.method_calls == [call.fetch_all(filter_params, True)]
+        assert result == result_output
+
+    @pytest.mark.parametrize("type_id, result_output", [
+        (
+            1,
+            [
+                dtos.TreatmentItem(id=3, title="Продукт 3", price=5000,
+                                   description='Описание 3', category_id=2, type_id=1,
+                                   avg_rating=8.5),
+                dtos.TreatmentItem(id=1, title="Продукт 1", price=7500.50,
+                                   description="Описание 1", category_id=1, type_id=1,
+                                   avg_rating=7.75)
+            ]
+        )
+    ])
+    def test__with_type(self, type_id, result_output, service, items_repo):
+        # Setup
+        items_repo.fetch_all.return_value = result_output
+        filter_params = schemas.FindTreatmentItems(type_id=1)
+
+        # Call
+        result = service.find_items_with_reviews(filter_params=filter_params)
+
+        # Assert
+        assert items_repo.method_calls == [call.fetch_all(filter_params, True)]
+        assert result == result_output
+
+    @pytest.mark.parametrize("sort_field, sort_direction, result_output", [
+        (
+            "title",
+            'asc',
+            [
+                dtos.TreatmentItem(id=3, title="Продукт 1", price=5000,
+                                   description='Описание 1', category_id=2, type_id=1,
+                                   avg_rating=8.5),
+                dtos.TreatmentItem(id=1, title="Продукт 3", price=7500.50,
+                                   description="Описание 3", category_id=1, type_id=10,
+                                   avg_rating=7.75)
+            ]
+        )
+    ])
+    def test__with_sort(self, sort_field, sort_direction, result_output, service,
+                        items_repo):
+        # Setup
+        items_repo.fetch_all.return_value = result_output
+        filter_params = schemas.FindTreatmentItems(sort_field=sort_field,
+                                                   sort_direction=sort_direction)
+
+        # Call
+        result = service.find_items_with_reviews(filter_params=filter_params)
+
+        # Assert
+        assert items_repo.method_calls == [call.fetch_all(filter_params, True)]
+        assert result == result_output
+
+    @pytest.mark.parametrize("offset, limit, result_output", [
+        (
+            1,
+            1,
+            [dtos.TreatmentItem(id=1, title="Продукт 3", price=7500.50,
+                                description="Описание 3", category_id=1, type_id=10,
+                                avg_rating=7.75)]
+        )
+    ])
+    def test__with_offset_and_limit(self, offset, limit, result_output, service,
+                                    items_repo):
+        # Setup
+        items_repo.fetch_all.return_value = result_output
+        filter_params = schemas.FindTreatmentItems(offset=offset, limit=limit)
+
+        # Call
+        result = service.find_items_with_reviews(filter_params=filter_params)
+
+        # Assert
+        assert items_repo.method_calls == [call.fetch_all(filter_params, True)]
+        assert result == result_output
 
 
 class TestAddItem:
     @pytest.mark.parametrize("new_entity, dto, saved_entity", [
         (
             entities.TreatmentItem(title='Продукт 1', category_id=1, type_id=2),
-            dtos.ItemCreateSchema(title='Продукт 1', category_id=1, type_id=2),
+            dtos.ItemCreate(title='Продукт 1', category_id=1, type_id=2),
             entities.TreatmentItem(id=1, title='Продукт 1', category_id=1, type_id=2),
         )
     ])
@@ -439,7 +631,7 @@ class TestAddItem:
         assert result == saved_entity
 
     @pytest.mark.parametrize("dto", [
-        dtos.ItemCreateSchema(title='Продукт 1', category_id=1, type_id=10),
+        dtos.ItemCreate(title='Продукт 1', category_id=1, type_id=10),
     ])
     def test__category_does_not_exist(self, dto, service, categories_repo):
         # Setup
@@ -452,7 +644,7 @@ class TestAddItem:
         assert categories_repo.method_calls == [call.fetch_by_id(dto.category_id)]
 
     @pytest.mark.parametrize("dto", [
-        dtos.ItemCreateSchema(title='Продукт 1', category_id=1, type_id=10),
+        dtos.ItemCreate(title='Продукт 1', category_id=1, type_id=10),
     ])
     def test__type_does_not_exist(self, dto, service, categories_repo, types_repo):
         # Setup
@@ -473,7 +665,7 @@ class TestChangeItem:
     @pytest.mark.parametrize("existing_entity, dto, updated_entity", [
         (
             entities.TreatmentItem(id=1, title='Продукт 1', category_id=1, type_id=2),
-            dtos.ItemUpdateSchema(id=1, title='Продукт 2', category_id=3, type_id=11),
+            dtos.ItemUpdate(id=1, title='Продукт 2', category_id=3, type_id=11),
             entities.TreatmentItem(id=1, title='Продукт 2', category_id=3, type_id=11),
         )
     ])
@@ -496,7 +688,7 @@ class TestChangeItem:
         assert result == updated_entity
 
     @pytest.mark.parametrize("dto", [
-        dtos.ItemUpdateSchema(id=100, title='Продукт 1', category_id=1, type_id=10),
+        dtos.ItemUpdate(id=100, title='Продукт 1', category_id=1, type_id=10),
     ])
     def test__item_does_not_exist(self, dto, service, items_repo):
         # Setup
@@ -511,7 +703,7 @@ class TestChangeItem:
     @pytest.mark.parametrize("existing_entity, dto", [
         (
             entities.TreatmentItem(id=1, title='Продукт 1', category_id=1, type_id=2),
-            dtos.ItemUpdateSchema(id=1, title='Продукт 2', category_id=3, type_id=11),
+            dtos.ItemUpdate(id=1, title='Продукт 2', category_id=3, type_id=11),
         )
     ])
     def test__category_does_not_exist(self, existing_entity, dto, service,
@@ -530,7 +722,7 @@ class TestChangeItem:
     @pytest.mark.parametrize("existing_entity, dto", [
         (
             entities.TreatmentItem(id=1, title='Продукт 1', category_id=1, type_id=2),
-            dtos.ItemUpdateSchema(id=1, title='Продукт 2', category_id=3, type_id=11),
+            dtos.ItemUpdate(id=1, title='Продукт 2', category_id=3, type_id=11),
         )
     ])
     def test__type_does_not_exist(self, existing_entity, dto, service, items_repo,

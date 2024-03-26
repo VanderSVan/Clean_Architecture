@@ -66,7 +66,7 @@ treatment_items = Table(
     metadata,
     Column('id', Integer, primary_key=True, autoincrement=True),
     Column('title', String, nullable=False),
-    Column('price', Float, nullable=True),
+    Column('price', DECIMAL(precision=12, scale=2), nullable=True),
     Column('description', String, nullable=True),
     Column('type_id', Integer,
            ForeignKey('item_types.id', ondelete='CASCADE', onupdate='CASCADE'),
@@ -74,7 +74,7 @@ treatment_items = Table(
     Column('category_id', Integer,
            ForeignKey('item_categories.id', ondelete='CASCADE', onupdate='CASCADE'),
            nullable=False),
-    Column('avg_rating', DECIMAL(precision=3, scale=2), nullable=True),
+    Column('avg_rating', Float, nullable=True),
 )
 
 item_reviews = Table(
@@ -85,7 +85,7 @@ item_reviews = Table(
            ForeignKey('treatment_items.id', ondelete='CASCADE', onupdate='CASCADE'),
            nullable=False),
     Column('is_helped', Boolean, nullable=False),
-    Column('item_rating', DECIMAL(precision=2, scale=1), nullable=False),
+    Column('item_rating', Float, nullable=False),
     Column('item_count', Integer, nullable=False),
     Column('usage_period', Integer, nullable=True),
 )
@@ -125,5 +125,5 @@ medical_books = Table(
     Column('patient_id', Integer,
            ForeignKey('patients.id', ondelete='CASCADE', onupdate='CASCADE')),
     Column('diagnosis_id', Integer,
-           ForeignKey('diagnoses.id',  ondelete='CASCADE', onupdate='CASCADE')),
+           ForeignKey('diagnoses.id', ondelete='CASCADE', onupdate='CASCADE')),
 )

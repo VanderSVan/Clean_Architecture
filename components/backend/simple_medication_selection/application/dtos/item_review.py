@@ -17,7 +17,7 @@ class ItemReviewGetSchema(DTO):
     is_helped: bool
     item_rating: float = Field(..., ge=1, le=10, multiple_of=0.5)
     item_count: int = Field(..., ge=1)
-    usage_period: int = Field(..., ge=1)
+    usage_period: int | None = Field(None, ge=1)
 
 
 class ItemReviewUpdateSchema(DTO):

@@ -19,12 +19,10 @@ from .item_type import (
     ItemTypeUpdateSchema,
 )
 from .item import (
-    ItemCreateSchema,
-    ItemGetSchema,
-    ItemUpdateSchema,
-    ItemWithHelpedStatusGetSchema,
-    ItemWithHelpedStatusSymptomsGetSchema,
-    ItemWithHelpedStatusDiagnosisGetSchema,
+    ItemCreate,
+    TreatmentItem,
+    ItemWithReviews,
+    ItemUpdate,
 )
 from .item_review import (
     ItemReviewCreateSchema,

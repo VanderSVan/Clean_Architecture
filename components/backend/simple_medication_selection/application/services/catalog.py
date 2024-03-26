@@ -1,12 +1,57 @@
-from typing import Literal, Sequence, Optional
+from collections import namedtuple
+from typing import Sequence, Callable
 
 from pydantic import validate_arguments
 
-from simple_medication_selection.application import dtos, entities, interfaces, errors
+from simple_medication_selection.application import (
+    dtos, entities, interfaces, errors, schemas
+)
 from simple_medication_selection.application.utils import DecoratedFunctionRegistry
 
 decorated_function_registry = DecoratedFunctionRegistry()
 register_method = decorated_function_registry.register_function
+
+
+class _ItemSearchStrategySelector:
+    """
+    Предназначен для выбора стратегии по поиску элементов лечения.
+    """
+
+    def __init__(self, items_repo: interfaces.TreatmentItemsRepo) -> None:
+        self.items_repo = items_repo
+        self.StrategyKey = namedtuple(
+            'StrategyKey',
+            ['diagnosis_id', 'symptom_ids', 'is_helped']
+        )
+        self.strategies: dict[namedtuple, Callable] = {
+            self.StrategyKey(diagnosis_id=True, symptom_ids=True, is_helped=True): (
+                self.items_repo.fetch_by_helped_status_diagnosis_symptoms
+            ),
+            self.StrategyKey(diagnosis_id=True, symptom_ids=True, is_helped=False): (
+                self.items_repo.fetch_by_diagnosis_and_symptoms
+            ),
+            self.StrategyKey(diagnosis_id=True, symptom_ids=False, is_helped=True): (
+                self.items_repo.fetch_by_diagnosis_and_helped_status
+            ),
+            self.StrategyKey(diagnosis_id=True, symptom_ids=False, is_helped=False): (
+                self.items_repo.fetch_by_diagnosis
+            ),
+            self.StrategyKey(diagnosis_id=False, symptom_ids=True, is_helped=True): (
+                self.items_repo.fetch_by_symptoms_and_helped_status
+            ),
+            self.StrategyKey(diagnosis_id=False, symptom_ids=True, is_helped=False): (
+                self.items_repo.fetch_by_symptoms
+            ),
+            self.StrategyKey(diagnosis_id=False, symptom_ids=False, is_helped=True): (
+                self.items_repo.fetch_by_helped_status
+            ),
+            self.StrategyKey(diagnosis_id=False, symptom_ids=False, is_helped=False): (
+                self.items_repo.fetch_all
+            )
+        }
+
+    def get(self, key):
+        return self.strategies.get(key)
 
 
 class TreatmentItemCatalog:
@@ -32,148 +77,36 @@ class TreatmentItemCatalog:
     @register_method
     @validate_arguments
     def find_items(self,
-                   keywords: str = '',
-                   *,
-                   sort_field: Literal[
-                       'price', 'category_id', 'type_id', 'avg_rating'] = 'avg_rating',
-                   sort_direction: Literal['asc', 'desc'] = 'desc',
-                   limit: int = 10,
-                   offset: int = 0
-                   ) -> list[dtos.ItemGetSchema | None]:
+                   filter_params: schemas.FindTreatmentItems
+                   ) -> list[dtos.TreatmentItem | None]:
 
-        if keywords:
-            return self.items_repo.fetch_by_keywords(keywords, sort_field,
-                                                     sort_direction, limit, offset)
+        strategy_selector = _ItemSearchStrategySelector(self.items_repo)
+        key: namedtuple = strategy_selector.StrategyKey(
+            filter_params.diagnosis_id is not None,
+            filter_params.symptom_ids is not None,
+            filter_params.is_helped is not None
+        )
 
-        return self.items_repo.fetch_all(sort_field, sort_direction, limit, offset)
+        return strategy_selector.get(key)(filter_params, False)
 
     @register_method
     @validate_arguments
     def find_items_with_reviews(self,
-                                keywords: str = '',
-                                *,
-                                sort_field: Literal[
-                                    'id', 'title', 'price', 'category_id',
-                                    'type_id', 'avg_rating'] = 'avg_rating',
-                                sort_direction: Literal['asc', 'desc'] = 'desc',
-                                limit: int = 10,
-                                offset: int = 0
+                                filter_params: schemas.FindTreatmentItems
                                 ) -> Sequence[entities.TreatmentItem | None]:
 
-        if keywords:
-            return self.items_repo.fetch_by_keywords_with_reviews(keywords, sort_field,
-                                                                  sort_direction, limit,
-                                                                  offset)
-
-        return self.items_repo.fetch_all_with_reviews(sort_field, sort_direction, limit,
-                                                      offset)
-
-    @register_method
-    @validate_arguments
-    def find_items_by_category(self,
-                               category_id: int,
-                               *,
-                               sort_field: Literal[
-                                   'id', 'title', 'price', 'category_id',
-                                   'type_id', 'avg_rating'] = 'avg_rating',
-                               sort_direction: Literal['asc', 'desc'] = 'desc',
-                               limit: int = 10,
-                               offset: int = 0
-                               ) -> Sequence[Optional[entities.TreatmentItem]]:
-
-        return self.items_repo.fetch_by_category(category_id, sort_field, sort_direction,
-                                                 limit, offset)
-
-    @register_method
-    @validate_arguments
-    def find_items_by_type(self,
-                           type_id: int,
-                           *,
-                           sort_field: Literal[
-                               'id', 'title', 'price', 'category_id',
-                               'type_id', 'avg_rating'] = 'avg_rating',
-                           sort_direction: Literal['asc', 'desc'] = 'desc',
-                           limit: int = 10,
-                           offset: int = 0
-                           ) -> Sequence[Optional[entities.TreatmentItem]]:
-
-        return self.items_repo.fetch_by_type(type_id, sort_field, sort_direction, limit,
-                                             offset)
-
-    @register_method
-    @validate_arguments
-    def find_items_by_rating(self,
-                             min_rating: float = 0.0,
-                             max_rating: float | None = 10.0,
-                             *,
-                             sort_field: Literal[
-                                 'id', 'title', 'price', 'category_id',
-                                 'type_id', 'avg_rating'] = 'avg_rating',
-                             sort_direction: Literal['asc', 'desc'] = 'desc',
-                             limit: int = 10,
-                             offset: int = 0
-                             ) -> list[dtos.ItemGetSchema | None]:
-
-        return self.items_repo.fetch_by_rating(min_rating, max_rating, sort_field,
-                                               sort_direction, limit, offset)
-
-    @register_method
-    @validate_arguments
-    def find_items_by_helped_status(self,
-                                    is_helped: bool = True,
-                                    *,
-                                    sort_field: Literal[
-                                        'id', 'title', 'price', 'category_id',
-                                        'type_id', 'avg_rating'] = 'avg_rating',
-                                    sort_direction: Literal['asc', 'desc'] = 'desc',
-                                    limit: int = 10,
-                                    offset: int = 0
-                                    ) -> list[dtos.ItemWithHelpedStatusGetSchema | None]:
-
-        return self.items_repo.fetch_by_helped_status(is_helped, sort_field,
-                                                      sort_direction, limit, offset)
-
-    @register_method
-    @validate_arguments
-    def find_items_by_symptoms_and_helped_status(
-        self,
-        symptom_ids: list[int],
-        is_helped: bool = True,
-        *,
-        sort_field: Literal[
-            'id', 'title', 'price', 'category_id',
-            'type_id', 'avg_rating'] = 'avg_rating',
-        sort_direction: Literal['asc', 'desc'] = 'desc',
-        limit: int = 10,
-        offset: int = 0
-    ) -> Sequence[Optional[entities.TreatmentItem]]:
-
-        return self.items_repo.fetch_by_symptoms_and_helped_status(
-            symptom_ids, is_helped, sort_field, sort_direction, limit, offset
+        strategy_selector = _ItemSearchStrategySelector(self.items_repo)
+        key: namedtuple = strategy_selector.StrategyKey(
+            filter_params.diagnosis_id is not None,
+            filter_params.symptom_ids is not None,
+            filter_params.is_helped is not None
         )
 
-    @register_method
-    @validate_arguments
-    def find_items_by_diagnosis_and_helped_status(
-        self,
-        diagnosis_id: int,
-        is_helped: bool = True,
-        *,
-        sort_field: Literal[
-            'id', 'title', 'price', 'category_id',
-            'type_id', 'avg_rating'] = 'avg_rating',
-        sort_direction: Literal['asc', 'desc'] = 'desc',
-        limit: int = 10,
-        offset: int = 0
-    ) -> Sequence[Optional[entities.TreatmentItem]]:
-
-        return self.items_repo.fetch_by_diagnosis_and_helped_status(
-            diagnosis_id, is_helped, sort_field, sort_direction, limit, offset
-        )
+        return strategy_selector.get(key)(filter_params, True)
 
     @register_method
     @validate_arguments
-    def add_item(self, new_item_info: dtos.ItemCreateSchema) -> entities.TreatmentItem:
+    def add_item(self, new_item_info: dtos.ItemCreate) -> entities.TreatmentItem:
 
         category: entities.ItemCategory = self.categories_repo.fetch_by_id(
             new_item_info.category_id)
@@ -193,7 +126,7 @@ class TreatmentItemCatalog:
     @register_method
     @validate_arguments
     def change_item(self,
-                    new_item_info: dtos.ItemUpdateSchema
+                    new_item_info: dtos.ItemUpdate
                     ) -> entities.TreatmentItem:
 
         item: entities.TreatmentItem = self.items_repo.fetch_by_id(new_item_info.id)
