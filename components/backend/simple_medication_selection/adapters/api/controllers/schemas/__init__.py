@@ -1,1 +1,0 @@
-from .symptoms import FindSymptoms

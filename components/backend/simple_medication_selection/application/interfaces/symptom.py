@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Sequence, Literal
+from typing import Sequence
 
-from .. import entities
+from .. import entities, schemas
 
 
 class SymptomsRepo(ABC):
@@ -16,20 +16,13 @@ class SymptomsRepo(ABC):
 
     @abstractmethod
     def fetch_all(self,
-                  order_field: str,
-                  order_direction: Literal['asc', 'desc'],
-                  limit: int | None,
-                  offset: int | None
+                  filter_params: schemas.FindSymptoms
                   ) -> Sequence[entities.Symptom]:
         ...
 
     @abstractmethod
     def search_by_name(self,
-                       name: str,
-                       order_field: str,
-                       order_direction: Literal['asc', 'desc'],
-                       limit: int | None,
-                       offset: int | None
+                       filter_params: schemas.FindSymptoms
                        ) -> Sequence[entities.Symptom | None]:
         ...
 

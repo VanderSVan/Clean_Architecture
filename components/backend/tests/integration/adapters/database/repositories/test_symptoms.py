@@ -3,7 +3,7 @@ import pytest
 from sqlalchemy import exc
 
 from simple_medication_selection.adapters.database import tables, repositories
-from simple_medication_selection.application import entities
+from simple_medication_selection.application import entities, schemas
 from .. import test_data
 
 
@@ -43,60 +43,73 @@ class TestFetchByName:
 
 class TestFetchAll:
     def test__fetch_all(self, repo):
-        result = repo.fetch_all(order_field='name', order_direction='asc', limit=None,
-                                offset=None)
+        filter_params = schemas.FindSymptoms(sort_field='name',
+                                             sort_direction='asc')
+        result = repo.fetch_all(filter_params)
 
         assert len(result) == len(test_data.SYMPTOMS_DATA)
         for symptom in result:
             assert isinstance(symptom, entities.Symptom)
 
     def test__with_limit(self, repo):
-        result = repo.fetch_all(order_field='name', order_direction='asc', limit=1,
-                                offset=None)
+        filter_params = schemas.FindSymptoms(sort_field='name',
+                                             sort_direction='asc',
+                                             limit=1)
+        result = repo.fetch_all(filter_params)
 
-        assert len(result) == 1
+        assert len(result) == filter_params.limit
 
     def test__with_offset(self, repo):
-        result = repo.fetch_all(order_field='name', order_direction='asc', limit=None,
-                                offset=1)
+        filter_params = schemas.FindSymptoms(sort_field='name',
+                                             sort_direction='asc',
+                                             offset=1)
+        result = repo.fetch_all(filter_params)
 
-        assert len(result) == len(test_data.SYMPTOMS_DATA) - 1
+        assert len(result) == len(test_data.SYMPTOMS_DATA) - filter_params.offset
 
 
 class TestSearchByName:
     def test__search_by_name(self, repo, fill_db):
+        # Setup
+        filter_params = schemas.FindSymptoms(
+            keywords=test_data.SYMPTOMS_DATA[0]['name'][:5],
+            sort_field='name',
+            sort_direction='asc'
+        )
+
         # Call
-        result = repo.search_by_name(name=test_data.SYMPTOMS_DATA[0]['name'][:5],
-                                     order_field='name',
-                                     order_direction='asc',
-                                     limit=None,
-                                     offset=None
-                                     )
+        result = repo.search_by_name(filter_params)
 
         # Assert
         assert len(result) == 1
         assert isinstance(result[0], entities.Symptom)
 
     def test__with_limit(self, repo, fill_db):
+        # Setup
+        filter_params = schemas.FindSymptoms(
+            keywords=test_data.SYMPTOMS_DATA[0]['name'][:5],
+            sort_field='name',
+            sort_direction='asc',
+            limit=1
+        )
+
         # Call
-        result = repo.search_by_name(name=test_data.SYMPTOMS_DATA[0]['name'][:5],
-                                     order_field='name',
-                                     order_direction='asc',
-                                     limit=0,
-                                     offset=None
-                                     )
+        result = repo.search_by_name(filter_params)
 
         # Assert
-        assert len(result) == 0
+        assert len(result) == 1
 
     def test__with_offset(self, repo, fill_db):
+        # Setup
+        filter_params = schemas.FindSymptoms(
+            keywords=test_data.SYMPTOMS_DATA[0]['name'][:5],
+            sort_field='name',
+            sort_direction='asc',
+            offset=1
+        )
+
         # Call
-        result = repo.search_by_name(name=test_data.SYMPTOMS_DATA[0]['name'][:5],
-                                     order_field='name',
-                                     order_direction='asc',
-                                     limit=None,
-                                     offset=1
-                                     )
+        result = repo.search_by_name(filter_params)
 
         # Assert
         assert len(result) == 0

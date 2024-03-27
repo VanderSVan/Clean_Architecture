@@ -1,7 +1,7 @@
 from pydantic import Field
 
 from .base import DTO
-from .symptom import SymptomSchema
+from .symptom import Symptom
 from .item_review import ItemReviewGetSchema
 
 
@@ -10,7 +10,7 @@ class MedicalBookCreateSchema(DTO):
     history: str = Field(None, min_length=1, max_length=5000)
     patient_id: int = Field(..., ge=1)
     diagnosis_id: int = Field(..., ge=1)
-    symptoms: list[SymptomSchema] = Field(None)
+    symptoms: list[Symptom] = Field(None)
     item_reviews: list[ItemReviewGetSchema] = Field(None)
 
 
@@ -28,5 +28,5 @@ class MedicalBookUpdateSchema(DTO):
     history: str = Field(None, min_length=1, max_length=5000)
     patient_id: int = Field(None, ge=1)
     diagnosis_id: int = Field(None, ge=1)
-    symptoms: list[SymptomSchema] = Field(None)
+    symptoms: list[Symptom] = Field(None)
     item_reviews: list[ItemReviewGetSchema] = Field(None)

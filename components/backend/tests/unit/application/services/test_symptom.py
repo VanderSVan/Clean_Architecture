@@ -2,7 +2,7 @@ from unittest.mock import Mock, call
 
 import pytest
 from simple_medication_selection.application import (dtos, entities, errors,
-                                                     interfaces, services)
+                                                     interfaces, services, schemas)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -47,11 +47,49 @@ class TestGet:
         assert repo.method_calls == [call.fetch_by_id(entity.id)]
 
 
+class TestFindSymptoms:
+    @pytest.mark.parametrize("result_output", [
+        [
+            entities.Symptom(id=1, name='Температура'),
+            entities.Symptom(id=2, name='Давление'),
+        ],
+    ])
+    def test__with_keywords(self, result_output, service, repo):
+        # Setup
+        repo.search_by_name.return_value = result_output
+        filter_params = schemas.FindSymptoms(keywords='Темп')
+
+        # Call
+        result = service.find_symptoms(filter_params=filter_params)
+
+        # Assert
+        assert repo.method_calls == [call.search_by_name(filter_params)]
+        assert result == result_output
+
+    @pytest.mark.parametrize("result_output", [
+        [
+            entities.Symptom(id=1, name='Температура'),
+            entities.Symptom(id=2, name='Давление'),
+        ]
+    ])
+    def test__without_keywords(self, result_output, service, repo):
+        # Setup
+        repo.fetch_all.return_value = result_output
+        filter_params = schemas.FindSymptoms()
+
+        # Call
+        result = service.find_symptoms(filter_params=filter_params)
+
+        # Assert
+        assert repo.method_calls == [call.fetch_all(filter_params)]
+        assert result == result_output
+
+
 class TestCreate:
     @pytest.mark.parametrize("new_entity, dto, created_entity", [
         (
             entities.Symptom(name='Температура'),
-            dtos.SymptomCreateSchema(name='Температура'),
+            dtos.NewSymptomInfo(name='Температура'),
             entities.Symptom(id=1, name='Температура')
         )
     ])
@@ -70,7 +108,7 @@ class TestCreate:
     @pytest.mark.parametrize("existing_entity, dto", [
         (
             entities.Symptom(id=1, name='Температура'),
-            dtos.SymptomCreateSchema(name='Температура')
+            dtos.NewSymptomInfo(name='Температура')
         )
     ])
     def test__create_existing_symptom(self, existing_entity, dto, service, repo):
@@ -88,7 +126,7 @@ class TestChange:
     @pytest.mark.parametrize("existing_entity, dto, updated_entity", [
         (
             entities.Symptom(id=1, name='Температура'),
-            dtos.SymptomUpdateSchema(id=1, name='Кашель'),
+            dtos.Symptom(id=1, name='Кашель'),
             entities.Symptom(id=1, name='Кашель')
         ),
     ])
@@ -105,7 +143,7 @@ class TestChange:
         assert result == updated_entity
 
     @pytest.mark.parametrize("dto", [
-        dtos.SymptomUpdateSchema(id=1, name='Кашель')
+        dtos.Symptom(id=1, name='Кашель')
     ])
     def test__change_non_existing_symptom(self, dto, service, repo):
         # Setup
@@ -119,7 +157,7 @@ class TestChange:
 
     @pytest.mark.parametrize("existing_entity, dto", [
         (entities.Symptom(id=1, name='Температура'),
-         dtos.SymptomUpdateSchema(id=2, name='Температура')),
+         dtos.Symptom(id=2, name='Температура')),
     ])
     def test__change_existing_symptom_with_same_name(self, existing_entity, dto, service,
                                                      repo):

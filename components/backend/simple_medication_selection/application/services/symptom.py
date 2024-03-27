@@ -1,8 +1,10 @@
-from typing import Sequence, Literal
+from typing import Sequence
 
 from pydantic import validate_arguments
 
-from simple_medication_selection.application import dtos, entities, interfaces, errors
+from simple_medication_selection.application import (
+    dtos, entities, interfaces, errors, schemas
+)
 from ..utils import DecoratedFunctionRegistry
 
 decorated_function_registry = DecoratedFunctionRegistry()
@@ -26,23 +28,16 @@ class Symptom:
     @register_method
     @validate_arguments
     def find_symptoms(self,
-                      keywords: str = '',
-                      *,
-                      sort_field: Literal['id', 'name'] = 'name',
-                      sort_direction: Literal['asc', 'desc'] = 'asc',
-                      limit: int = 10,
-                      offset: int = 0
+                      filter_params: schemas.FindSymptoms
                       ) -> Sequence[entities.Symptom | None]:
+        if filter_params.keywords:
+            return self.symptoms_repo.search_by_name(filter_params)
 
-        if keywords:
-            return self.symptoms_repo.search_by_name(keywords, sort_field,
-                                                     sort_direction, limit, offset)
-
-        return self.symptoms_repo.fetch_all(sort_field, sort_direction, limit, offset)
+        return self.symptoms_repo.fetch_all(filter_params)
 
     @register_method
     @validate_arguments
-    def create(self, new_symptom_info: dtos.SymptomCreateSchema) -> entities.Symptom:
+    def create(self, new_symptom_info: dtos.NewSymptomInfo) -> entities.Symptom:
         symptom: entities.Symptom = (
             self.symptoms_repo.fetch_by_name(new_symptom_info.name)
         )
@@ -55,7 +50,7 @@ class Symptom:
 
     @register_method
     @validate_arguments
-    def change(self, new_symptom_info: dtos.SymptomUpdateSchema) -> entities.Symptom:
+    def change(self, new_symptom_info: dtos.Symptom) -> entities.Symptom:
         symptom: entities.Symptom = self.symptoms_repo.fetch_by_id(new_symptom_info.id)
         if not symptom:
             raise errors.SymptomNotFound(id=new_symptom_info.id)

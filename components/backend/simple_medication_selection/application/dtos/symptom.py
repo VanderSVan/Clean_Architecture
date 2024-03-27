@@ -1,17 +1,22 @@
 from simple_medication_selection.application.dtos.base import DTO
 
-from pydantic import Field
+from pydantic import Field, validator
 
 
-class SymptomSchema(DTO):
-    id: int = Field(..., ge=1)
-    name: str = Field(..., min_length=1, max_length=255, example="Повышенная температура")
+class Symptom(DTO):
+    id: int = Field(ge=1)
+    name: str = Field(min_length=1, max_length=255, example="Повышенная температура")
+
+    @validator('id', pre=True)
+    def convert_id_to_int(cls, value):
+        if not isinstance(value, int):
+            try:
+                return int(value)
+            except ValueError:
+                raise ValueError('`symptom_id` must be an integer')
+
+        return value
 
 
-class SymptomCreateSchema(DTO):
-    name: str = Field(..., min_length=1, max_length=255, example="Повышенное давление")
-
-
-class SymptomUpdateSchema(DTO):
-    id: int = Field(..., ge=1)
-    name: str = Field(None, min_length=1, max_length=255, example="Пониженное давление")
+class NewSymptomInfo(DTO):
+    name: str = Field(min_length=1, max_length=255, example="Повышенное давление")
