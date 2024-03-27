@@ -74,6 +74,7 @@ class TreatmentItem:
     def __eq__(self, other):
         if not isinstance(other, TreatmentItem):
             return False
+
         return (self.id == other.id and
                 self.title == other.title and
                 self.price == other.price)
@@ -84,7 +85,7 @@ class TreatmentItem:
 
         return self.avg_rating
 
-    def to_dict_with_float_price(self) -> dict:
+    def to_dict(self) -> dict:
         data = asdict(self)
 
         if data['price'] is not None:

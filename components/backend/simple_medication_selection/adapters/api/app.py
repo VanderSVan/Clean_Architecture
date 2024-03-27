@@ -27,6 +27,13 @@ def create_app(symptom: services.Symptom,
                   suffix='by_id')
 
     app.add_route('/items', controllers.Catalog(catalog=catalog))
+    app.add_route('/items/new', controllers.Catalog(catalog=catalog),
+                  suffix='new')
+    app.add_route('/items/{item_id}', controllers.Catalog(catalog=catalog),
+                  suffix='by_id')
+
+    app.add_route('/items/{item_id}/reviews', controllers.Catalog(catalog=catalog),
+                  suffix='by_id_with_reviews')
     app.add_route('/items/reviews', controllers.Catalog(catalog=catalog),
                   suffix='with_reviews')
 

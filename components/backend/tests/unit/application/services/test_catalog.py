@@ -54,18 +54,48 @@ class TestGetItem:
         result = service.get_item(item_id=existing_entity.id)
 
         # Assert
-        assert items_repo.method_calls == [call.fetch_by_id(existing_entity.id)]
+        assert items_repo.method_calls == [call.fetch_by_id(existing_entity.id, False)]
         assert result == existing_entity
 
     def test__get_non_existing_treatment_item(self, service, items_repo):
         # Setup
         items_repo.fetch_by_id.return_value = None
+        item_id = 1
 
         # Call and Assert
         with pytest.raises(errors.TreatmentItemNotFound):
-            service.get_item(item_id=1)
+            service.get_item(item_id=item_id)
 
-        assert items_repo.method_calls == [call.fetch_by_id(1)]
+        assert items_repo.method_calls == [call.fetch_by_id(item_id, False)]
+
+
+class TestGetItemsWithReviews:
+    @pytest.mark.parametrize("existing_entity", [
+        entities.TreatmentItem(
+            id=1, title="Продукт 1", category_id=2, type_id=3
+        )
+    ])
+    def test__get_existing_treatment_item(self, existing_entity, service, items_repo):
+        # Setup
+        items_repo.fetch_by_id.return_value = existing_entity
+
+        # Call
+        result = service.get_item_with_reviews(item_id=existing_entity.id)
+
+        # Assert
+        assert items_repo.method_calls == [call.fetch_by_id(existing_entity.id, True)]
+        assert result == existing_entity
+
+    def test__get_non_existing_treatment_item(self, service, items_repo):
+        # Setup
+        items_repo.fetch_by_id.return_value = None
+        item_id = 1
+
+        # Call and Assert
+        with pytest.raises(errors.TreatmentItemNotFound):
+            service.get_item_with_reviews(item_id=item_id)
+
+        assert items_repo.method_calls == [call.fetch_by_id(item_id, True)]
 
 
 class TestFindItems:
@@ -608,7 +638,7 @@ class TestAddItem:
     @pytest.mark.parametrize("new_entity, dto, saved_entity", [
         (
             entities.TreatmentItem(title='Продукт 1', category_id=1, type_id=2),
-            dtos.ItemCreate(title='Продукт 1', category_id=1, type_id=2),
+            dtos.NewItemInfo(title='Продукт 1', category_id=1, type_id=2),
             entities.TreatmentItem(id=1, title='Продукт 1', category_id=1, type_id=2),
         )
     ])
@@ -631,7 +661,7 @@ class TestAddItem:
         assert result == saved_entity
 
     @pytest.mark.parametrize("dto", [
-        dtos.ItemCreate(title='Продукт 1', category_id=1, type_id=10),
+        dtos.NewItemInfo(title='Продукт 1', category_id=1, type_id=10),
     ])
     def test__category_does_not_exist(self, dto, service, categories_repo):
         # Setup
@@ -644,7 +674,7 @@ class TestAddItem:
         assert categories_repo.method_calls == [call.fetch_by_id(dto.category_id)]
 
     @pytest.mark.parametrize("dto", [
-        dtos.ItemCreate(title='Продукт 1', category_id=1, type_id=10),
+        dtos.NewItemInfo(title='Продукт 1', category_id=1, type_id=10),
     ])
     def test__type_does_not_exist(self, dto, service, categories_repo, types_repo):
         # Setup
@@ -665,7 +695,7 @@ class TestChangeItem:
     @pytest.mark.parametrize("existing_entity, dto, updated_entity", [
         (
             entities.TreatmentItem(id=1, title='Продукт 1', category_id=1, type_id=2),
-            dtos.ItemUpdate(id=1, title='Продукт 2', category_id=3, type_id=11),
+            dtos.UpdatedItemInfo(id=1, title='Продукт 2', category_id=3, type_id=11),
             entities.TreatmentItem(id=1, title='Продукт 2', category_id=3, type_id=11),
         )
     ])
@@ -682,13 +712,13 @@ class TestChangeItem:
         result = service.change_item(new_item_info=dto)
 
         # Assert
-        assert items_repo.method_calls == [call.fetch_by_id(dto.id)]
+        assert items_repo.method_calls == [call.fetch_by_id(dto.id, True)]
         assert categories_repo.method_calls == [call.fetch_by_id(dto.category_id)]
         assert types_repo.method_calls == [call.fetch_by_id(dto.type_id)]
         assert result == updated_entity
 
     @pytest.mark.parametrize("dto", [
-        dtos.ItemUpdate(id=100, title='Продукт 1', category_id=1, type_id=10),
+        dtos.UpdatedItemInfo(id=100, title='Продукт 1', category_id=1, type_id=10),
     ])
     def test__item_does_not_exist(self, dto, service, items_repo):
         # Setup
@@ -698,12 +728,12 @@ class TestChangeItem:
         with pytest.raises(errors.TreatmentItemNotFound):
             service.change_item(new_item_info=dto)
 
-        assert items_repo.method_calls == [call.fetch_by_id(dto.id)]
+        assert items_repo.method_calls == [call.fetch_by_id(dto.id, True)]
 
     @pytest.mark.parametrize("existing_entity, dto", [
         (
             entities.TreatmentItem(id=1, title='Продукт 1', category_id=1, type_id=2),
-            dtos.ItemUpdate(id=1, title='Продукт 2', category_id=3, type_id=11),
+            dtos.UpdatedItemInfo(id=1, title='Продукт 2', category_id=3, type_id=11),
         )
     ])
     def test__category_does_not_exist(self, existing_entity, dto, service,
@@ -716,13 +746,13 @@ class TestChangeItem:
         with pytest.raises(errors.ItemCategoryNotFound):
             service.change_item(new_item_info=dto)
 
-        assert items_repo.method_calls == [call.fetch_by_id(dto.id)]
+        assert items_repo.method_calls == [call.fetch_by_id(dto.id, True)]
         assert categories_repo.method_calls == [call.fetch_by_id(dto.category_id)]
 
     @pytest.mark.parametrize("existing_entity, dto", [
         (
             entities.TreatmentItem(id=1, title='Продукт 1', category_id=1, type_id=2),
-            dtos.ItemUpdate(id=1, title='Продукт 2', category_id=3, type_id=11),
+            dtos.UpdatedItemInfo(id=1, title='Продукт 2', category_id=3, type_id=11),
         )
     ])
     def test__type_does_not_exist(self, existing_entity, dto, service, items_repo,
@@ -738,7 +768,7 @@ class TestChangeItem:
         with pytest.raises(errors.ItemTypeNotFound):
             service.change_item(new_item_info=dto)
 
-        assert items_repo.method_calls == [call.fetch_by_id(dto.id)]
+        assert items_repo.method_calls == [call.fetch_by_id(dto.id, True)]
         assert categories_repo.method_calls == [call.fetch_by_id(dto.category_id)]
         assert types_repo.method_calls == [call.fetch_by_id(dto.type_id)]
 
@@ -761,7 +791,7 @@ class TestDeleteItem:
         result = service.delete_item(item_id=item_id)
 
         # Assert
-        assert items_repo.method_calls == [call.fetch_by_id(item_id),
+        assert items_repo.method_calls == [call.fetch_by_id(item_id, True),
                                            call.remove(removed_entity)]
         assert result == removed_entity
 
@@ -774,4 +804,4 @@ class TestDeleteItem:
         with pytest.raises(errors.TreatmentItemNotFound):
             service.delete_item(item_id=item_id)
 
-        assert items_repo.method_calls == [call.fetch_by_id(item_id)]
+        assert items_repo.method_calls == [call.fetch_by_id(item_id, True)]

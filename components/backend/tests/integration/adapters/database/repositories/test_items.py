@@ -251,7 +251,20 @@ class TestFetchById:
         expected_item = session.query(entities.TreatmentItem).first()
 
         # Call
-        result = repo.fetch_by_id(expected_item.id)
+        result = repo.fetch_by_id(expected_item.id, False)
+
+        # Assert
+        assert isinstance(result, dtos.TreatmentItem)
+        assert result.id == expected_item.id
+
+
+class TestFetchByIdWithReviews:
+    def test__fetch_by_id(self, repo, session):
+        # Setup
+        expected_item = session.query(entities.TreatmentItem).first()
+
+        # Call
+        result = repo.fetch_by_id(expected_item.id, True)
 
         # Assert
         assert isinstance(result, entities.TreatmentItem)

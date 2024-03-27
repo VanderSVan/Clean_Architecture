@@ -28,3 +28,5 @@ class FindTreatmentItems(BaseSchema):
 
         if isinstance(value, list):
             return set(value)
+
+        return value

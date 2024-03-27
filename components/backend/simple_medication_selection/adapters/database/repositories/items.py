@@ -103,12 +103,31 @@ class TreatmentItemsRepo(BaseRepository, interfaces.TreatmentItemsRepo):
         super().__init__(*args, **kwargs)
         self._filter = _TreatmentItemsFilter()
 
-    def fetch_by_id(self, item_id: int) -> entities.TreatmentItem | None:
-        query = (
-            select(entities.TreatmentItem)
-            .where(entities.TreatmentItem.id == item_id)
-        )
-        return self.session.execute(query).scalars().one_or_none()
+    def fetch_by_id(self,
+                    item_id: int,
+                    with_reviews: bool
+                    ) -> dtos.TreatmentItem | None:
+
+        if with_reviews:
+            query = select(entities.TreatmentItem)
+        else:
+            query = select(
+                entities.TreatmentItem.id,
+                entities.TreatmentItem.title,
+                entities.TreatmentItem.price,
+                entities.TreatmentItem.description,
+                entities.TreatmentItem.category_id,
+                entities.TreatmentItem.type_id,
+                entities.TreatmentItem.avg_rating
+            )
+        query = query.where(entities.TreatmentItem.id == item_id)
+
+        result = self.session.execute(query)
+        if with_reviews:
+            return result.scalars().one_or_none()
+
+        row = result.mappings().first()
+        return dtos.TreatmentItem(**row) if row else None
 
     def fetch_all(self,
                   filter_params: schemas.FindTreatmentItems,

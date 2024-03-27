@@ -7,7 +7,10 @@ from .. import entities, dtos, schemas
 class TreatmentItemsRepo(ABC):
 
     @abstractmethod
-    def fetch_by_id(self, item_id: int) -> entities.TreatmentItem | None:
+    def fetch_by_id(self,
+                    item_id: int,
+                    with_reviews: bool
+                    ) -> entities.TreatmentItem | None:
         ...
 
     @abstractmethod

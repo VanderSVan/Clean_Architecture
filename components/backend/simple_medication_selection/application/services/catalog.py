@@ -66,8 +66,18 @@ class TreatmentItemCatalog:
 
     @register_method
     @validate_arguments
-    def get_item(self, item_id: int) -> entities.TreatmentItem:
-        item: entities.TreatmentItem = self.items_repo.fetch_by_id(item_id)
+    def get_item(self, item_id: int) -> dtos.TreatmentItem:
+        item: dtos.TreatmentItem | None = self.items_repo.fetch_by_id(item_id, False)
+
+        if not item:
+            raise errors.TreatmentItemNotFound(id=item_id)
+
+        return item
+
+    @register_method
+    @validate_arguments
+    def get_item_with_reviews(self, item_id: int) -> entities.TreatmentItem:
+        item: entities.TreatmentItem | None = self.items_repo.fetch_by_id(item_id, True)
 
         if not item:
             raise errors.TreatmentItemNotFound(id=item_id)
@@ -106,7 +116,7 @@ class TreatmentItemCatalog:
 
     @register_method
     @validate_arguments
-    def add_item(self, new_item_info: dtos.ItemCreate) -> entities.TreatmentItem:
+    def add_item(self, new_item_info: dtos.NewItemInfo) -> entities.TreatmentItem:
 
         category: entities.ItemCategory = self.categories_repo.fetch_by_id(
             new_item_info.category_id)
@@ -126,10 +136,10 @@ class TreatmentItemCatalog:
     @register_method
     @validate_arguments
     def change_item(self,
-                    new_item_info: dtos.ItemUpdate
+                    new_item_info: dtos.UpdatedItemInfo
                     ) -> entities.TreatmentItem:
 
-        item: entities.TreatmentItem = self.items_repo.fetch_by_id(new_item_info.id)
+        item: entities.TreatmentItem = self.items_repo.fetch_by_id(new_item_info.id, True)
         if not item:
             raise errors.TreatmentItemNotFound(id=new_item_info.id)
 
@@ -151,7 +161,7 @@ class TreatmentItemCatalog:
     @validate_arguments
     def delete_item(self, item_id: int) -> entities.TreatmentItem:
 
-        item: entities.TreatmentItem = self.items_repo.fetch_by_id(item_id)
+        item: entities.TreatmentItem = self.items_repo.fetch_by_id(item_id, True)
         if not item:
             raise errors.TreatmentItemNotFound(id=item_id)
 
