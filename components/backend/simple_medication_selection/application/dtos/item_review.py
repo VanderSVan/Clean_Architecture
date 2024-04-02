@@ -11,13 +11,16 @@ class ItemReviewCreateSchema(DTO):
     usage_period: int = Field(None, ge=1)
 
 
-class ItemReviewGetSchema(DTO):
+class ItemReview(DTO):
     id: int = Field(..., ge=1)
     item_id: int = Field(..., ge=1)
     is_helped: bool
     item_rating: float = Field(..., ge=1, le=10, multiple_of=0.5)
     item_count: int = Field(..., ge=1)
     usage_period: int | None = Field(None, ge=1)
+
+    class Config:
+        orm_mode = True
 
 
 class ItemReviewUpdateSchema(DTO):

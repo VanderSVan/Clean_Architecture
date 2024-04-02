@@ -16,7 +16,7 @@ mapper.map_imperatively(
     tables.treatment_items,
     properties={
         'reviews': relationship(
-            entities.ItemReview, lazy='subquery', cascade='all, delete-orphan'
+            entities.ItemReview, lazy='select', cascade='all, delete-orphan'
         )
     }
 )
@@ -28,20 +28,20 @@ mapper.map_imperatively(
         'symptoms': relationship(
             entities.Symptom,
             secondary=tables.medical_books_symptoms,
-            lazy='subquery',
+            lazy='select',
             cascade='save-update, merge'
         ),
         'item_reviews': relationship(
             entities.ItemReview,
             secondary=tables.medical_books_item_reviews,
-            lazy='subquery',
+            lazy='select',
             cascade='save-update, merge'
         ),
         'diagnosis': relationship(
-            entities.Diagnosis, uselist=False, lazy='joined', backref='medical_books'
+            entities.Diagnosis, uselist=False, lazy='select', backref='medical_books'
         ),
         'patient': relationship(
-            entities.Patient, uselist=False, lazy='joined', backref='medical_books'
+            entities.Patient, uselist=False, lazy='select', backref='medical_books'
         ),
     }
 )

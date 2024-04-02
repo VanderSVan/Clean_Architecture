@@ -107,6 +107,17 @@ class MedicalBook:
     symptoms: list[Symptom] = field(default_factory=list)
     item_reviews: list[ItemReview] = field(default_factory=list)
 
+    def __hash__(self):
+        return hash((self.id, self.patient_id, self.diagnosis_id))
+
+    def __eq__(self, other):
+        if not isinstance(other, MedicalBook):
+            return False
+
+        return (self.id == other.id and
+                self.patient_id == other.patient_id and
+                self.diagnosis_id == other.diagnosis_id)
+
     def add_symptoms(self, symptoms: Iterable[Symptom]) -> None:
         for symptom in symptoms:
             self.symptoms.append(symptom) if symptom not in self.symptoms else None

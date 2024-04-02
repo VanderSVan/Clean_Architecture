@@ -3,7 +3,7 @@ from decimal import Decimal
 from pydantic import Field, validator
 
 from .base import DTO
-from .item_review import ItemReviewGetSchema
+from .item_review import ItemReview
 
 
 class TreatmentItem(DTO):
@@ -45,7 +45,7 @@ class TreatmentItem(DTO):
 
 
 class ItemWithReviews(TreatmentItem):
-    reviews: list[ItemReviewGetSchema]
+    reviews: list[ItemReview]
 
 
 class NewItemInfo(DTO):

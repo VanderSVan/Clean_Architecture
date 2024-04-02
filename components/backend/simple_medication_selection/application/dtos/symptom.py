@@ -17,6 +17,9 @@ class Symptom(DTO):
 
         return value
 
+    class Config:
+        orm_mode = True
+
 
 class NewSymptomInfo(DTO):
     name: str = Field(min_length=1, max_length=255, example="Повышенное давление")
