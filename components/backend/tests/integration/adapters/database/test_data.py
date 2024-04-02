@@ -52,7 +52,7 @@ REVIEWS_DATA = [
     {'is_helped': True, 'item_rating': 9.5, 'item_count': 5, 'usage_period': 7776000},
     {'is_helped': False, 'item_rating': 2.0, 'item_count': 3, 'usage_period': 5184000},
     {'is_helped': True, 'item_rating': 8.0, 'item_count': 4, 'usage_period': 2592000},
-    {'is_helped': True, 'item_rating': 7.5, 'item_count': 2, 'usage_period': 2592000},
+    {'is_helped': False, 'item_rating': 7.5, 'item_count': 2, 'usage_period': 2592000},
     {'is_helped': False, 'item_rating': 3.5, 'item_count': 1, 'usage_period': 5184000},
     {'is_helped': True, 'item_rating': 6.0, 'item_count': 3, 'usage_period': 2592000},
     {'is_helped': True, 'item_rating': 8.0, 'item_count': 4, 'usage_period': 2592000},

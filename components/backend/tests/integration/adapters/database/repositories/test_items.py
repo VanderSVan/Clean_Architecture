@@ -4,7 +4,7 @@ from typing import Sequence
 import pytest
 from sqlalchemy import select, func
 
-from simple_medication_selection.adapters.database import tables, repositories
+from simple_medication_selection.adapters.database import repositories
 from simple_medication_selection.application import entities, dtos, schemas
 
 from .. import test_data
@@ -61,7 +61,6 @@ def filter_params_factory(request, fill_db):
 
         setattr(new_params, param, value)
 
-    print(new_params)
     return new_params
 
 
@@ -922,7 +921,7 @@ class TestRemove:
 
         # Setup
         reviews_after_remove: list[entities.ItemReview] = (
-            session.execute(select(entities.ItemReview)).scalars().all()
+            session.execute(select(entities.ItemReview.id)).scalars().all()
         )
 
         # Assert

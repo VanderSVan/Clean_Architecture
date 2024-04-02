@@ -114,8 +114,8 @@ class TestAdd:
         (
             entities.MedicalBook(title_history='title', history='history',
                                  patient_id=1, diagnosis_id=1),
-            dtos.MedicalBookCreateSchema(title_history='title', history='history',
-                                         patient_id=1, diagnosis_id=1),
+            dtos.NewMedicalBookInfo(title_history='title', history='history',
+                                    patient_id=1, diagnosis_id=1),
             entities.MedicalBook(id=1, title_history='title', history='history',
                                  patient_id=1, diagnosis_id=1)
         )
@@ -141,8 +141,8 @@ class TestAdd:
         assert result == created_entity
 
     @pytest.mark.parametrize("dto", [
-        dtos.MedicalBookCreateSchema(title_history='title', history='history',
-                                     patient_id=10001, diagnosis_id=1)
+        dtos.NewMedicalBookInfo(title_history='title', history='history',
+                                patient_id=10001, diagnosis_id=1)
     ])
     def test__patient_not_found(self, dto, service, med_books_repo, patients_repo,
                                 diagnoses_repo):
@@ -158,8 +158,8 @@ class TestAdd:
         assert med_books_repo.method_calls == []
 
     @pytest.mark.parametrize("dto", [
-        dtos.MedicalBookCreateSchema(title_history='title', history='history',
-                                     patient_id=1, diagnosis_id=10001)
+        dtos.NewMedicalBookInfo(title_history='title', history='history',
+                                patient_id=1, diagnosis_id=10001)
     ])
     def test__diagnosis_not_found(self, dto, service, med_books_repo, patients_repo,
                                   diagnoses_repo):
@@ -183,8 +183,8 @@ class TestChange:
         (
             entities.MedicalBook(id=1, title_history='title', history='history',
                                  patient_id=1, diagnosis_id=1),
-            dtos.MedicalBookUpdateSchema(id=2, title_history='blabla',
-                                         patient_id=5, diagnosis_id=101),
+            dtos.UpdatedMedicalBookInfo(id=2, title_history='blabla',
+                                        patient_id=5, diagnosis_id=101),
             entities.MedicalBook(id=2, title_history='blabla', history='history',
                                  patient_id=5, diagnosis_id=101)
         )
@@ -210,8 +210,8 @@ class TestChange:
         assert result == updated_entity
 
     @pytest.mark.parametrize("dto", [
-        dtos.MedicalBookUpdateSchema(id=10001, title_history='title',
-                                     patient_id=1, diagnosis_id=1)
+        dtos.UpdatedMedicalBookInfo(id=10001, title_history='title',
+                                    patient_id=1, diagnosis_id=1)
     ])
     def test__med_book_not_found(self, dto, service, med_books_repo,
                                  patients_repo, diagnoses_repo):
@@ -230,7 +230,7 @@ class TestChange:
         (
             entities.MedicalBook(id=1, title_history='title', history='history',
                                  patient_id=1, diagnosis_id=1),
-            dtos.MedicalBookUpdateSchema(id=1, patient_id=10001, )
+            dtos.UpdatedMedicalBookInfo(id=1, patient_id=10001, )
         )
     ])
     def test__patient_not_found(self, existing_entity, dto, service, med_books_repo,
@@ -251,7 +251,7 @@ class TestChange:
         (
             entities.MedicalBook(id=1, title_history='title', history='history',
                                  patient_id=1, diagnosis_id=1),
-            dtos.MedicalBookUpdateSchema(id=1, patient_id=10, diagnosis_id=10001, )
+            dtos.UpdatedMedicalBookInfo(id=1, patient_id=10, diagnosis_id=10001, )
         )
     ])
     def test__diagnosis_not_found(self, existing_entity, dto, service, med_books_repo,

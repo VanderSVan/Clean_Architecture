@@ -1,6 +1,7 @@
 import pytest
 
 from sqlalchemy import select, func
+from sqlalchemy.orm import joinedload
 
 from simple_medication_selection.adapters.database import repositories
 from simple_medication_selection.application import entities
@@ -1005,64 +1006,54 @@ class TestRemove:
         assert before_count - 1 == after_count
         assert isinstance(result, entities.ItemReview)
 
-    def test__cascade_delete_effect_for_item(self, repo, session, fill_db):
+    def test__cascade_delete_item(self, repo, session, fill_db):
         # Setup
         review_to_remove: entities.ItemReview = session.query(entities.ItemReview).first()
-
-        items_before_remove: list[entities.TreatmentItem] = session.execute(
+        review_id_to_remove: int = review_to_remove.id
+        item: entities.TreatmentItem = session.execute(
             select(entities.TreatmentItem)
+            .distinct()
             .join(entities.TreatmentItem.reviews)
             .where(entities.TreatmentItem.reviews.any(
-                entities.ItemReview.id == review_to_remove.id)
+                entities.ItemReview.id == review_id_to_remove)
             )
-            .distinct()
-        ).scalars().all()
+        ).scalars().one_or_none()
+
+        # Assert
+        assert any(review_id_to_remove == review.id for review in item.reviews)
 
         # Call
         repo.remove(review_to_remove)
 
         # Setup
-        items_after_remove: list[entities.TreatmentItem] = session.execute(
-            select(entities.TreatmentItem)
-            .join(entities.TreatmentItem.reviews)
-            .where(entities.TreatmentItem.reviews.any(
-                entities.ItemReview.id == review_to_remove.id)
-            )
-            .distinct()
-        ).scalars().all()
+        session.refresh(item)
 
         # Assert
-        for item in items_before_remove:
-            assert review_to_remove in item.reviews
-        assert items_after_remove == []
+        assert all(review_id_to_remove != review.id for review in item.reviews)
 
-    def test__cascade_delete_effect_for_med_book(self, repo, session, fill_db):
+    def test__cascade_delete_med_book(self, repo, session, fill_db):
         # Setup
         review_to_remove: entities.ItemReview = session.query(entities.ItemReview).first()
-
-        med_books_before_remove: list[entities.MedicalBook] = session.execute(
+        med_books: list[entities.MedicalBook] = session.execute(
             select(entities.MedicalBook)
-            .join(entities.MedicalBook.item_reviews)
+            .distinct()
             .where(entities.MedicalBook.item_reviews.any(
                 entities.ItemReview.id == review_to_remove.id)
             )
-            .distinct()
-        ).scalars().all()
+            .options(joinedload(entities.MedicalBook.item_reviews))
+        ).scalars().unique().all()
+
+        # Assert
+        assert any(review_to_remove in med_book.item_reviews for med_book in med_books)
 
         # Call
         repo.remove(review_to_remove)
 
         # Setup
-        med_books_after_remove: list[entities.MedicalBook] = session.execute(
-            select(entities.MedicalBook)
-            .join(entities.MedicalBook.item_reviews)
-            .where(entities.MedicalBook.item_reviews.any(
-                entities.ItemReview.id == review_to_remove.id)
-            )
-            .distinct()
-        ).scalars().all()
+        for med_book in med_books:
+            session.refresh(med_book)
 
         # Assert
-        for med_book in med_books_before_remove:
-            assert review_to_remove in med_book.item_reviews
-        assert med_books_after_remove == []
+        assert len(med_books) > 0
+        assert all(review_to_remove not in med_book.item_reviews for med_book in
+                   med_books)
