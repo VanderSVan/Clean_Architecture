@@ -1,8 +1,9 @@
 from unittest.mock import Mock, call
 
 import pytest
-from simple_medication_selection.application import (dtos, entities, errors, interfaces,
-                                                     services)
+from simple_medication_selection.application import (
+    dtos, entities, errors, interfaces, services, schemas
+)
 
 
 # ---------------------------------------------------------------------------------------
@@ -36,77 +37,235 @@ def service(med_books_repo,
 # ---------------------------------------------------------------------------------------
 # TESTS
 # ---------------------------------------------------------------------------------------
-class TestGet:
-    @pytest.mark.parametrize("returned_entity", [
-        entities.MedicalBook(id=1, title_history='title', history='history',
-                             patient_id=1, diagnosis_id=1),
-    ])
-    def test__get_existing_medical_book(self, returned_entity, service, med_books_repo,
-                                        patients_repo, diagnoses_repo):
+@pytest.mark.parametrize(
+    "med_book_id, include_symptoms, include_reviews, repo_method", [
+        (1, True, True, 'fetch_by_id_with_symptoms_and_reviews'),
+        (1, True, False, 'fetch_by_id_with_symptoms'),
+        (1, False, True, 'fetch_by_id_with_reviews'),
+        (1, False, False, 'fetch_by_id')
+    ]
+)
+class TestGetMedBook:
+
+    def test__get_med_book(self, med_book_id, include_symptoms,
+                           include_reviews, repo_method, service,
+                           med_books_repo, patients_repo, diagnoses_repo):
         # Setup
-        med_books_repo.fetch_by_id.return_value = returned_entity
+        returned_entity = entities.MedicalBook(
+            id=1, title_history='title', history='history', patient_id=1, diagnosis_id=1
+        )
+        getattr(med_books_repo, repo_method).return_value = returned_entity
 
         # Call
-        result = service.get(medical_book_id=returned_entity.id)
+        result = service.get_med_book(med_book_id=med_book_id,
+                                      include_symptoms=include_symptoms,
+                                      include_reviews=include_reviews)
 
         # Assert
-        assert med_books_repo.method_calls == [call.fetch_by_id(returned_entity.id)]
+        getattr(med_books_repo, repo_method).assert_called_once_with(med_book_id)
         assert patients_repo.method_calls == []
         assert diagnoses_repo.method_calls == []
         assert result == returned_entity
 
-    def test_get_non_existing_medical_book(self, service, med_books_repo, patients_repo,
-                                           diagnoses_repo):
+    def test_medical_book_not_found(self, med_book_id, include_symptoms,
+                                    include_reviews, repo_method, service,
+                                    med_books_repo, patients_repo, diagnoses_repo):
         # Setup
-        med_books_repo.fetch_by_id.return_value = None
+        getattr(med_books_repo, repo_method).return_value = None
 
         # Call and Assert
         with pytest.raises(errors.MedicalBookNotFound):
-            service.get(medical_book_id=1)
+            service.get_med_book(med_book_id=med_book_id,
+                                 include_symptoms=include_symptoms,
+                                 include_reviews=include_reviews)
 
-        assert med_books_repo.method_calls == [call.fetch_by_id(1)]
+        getattr(med_books_repo, repo_method).assert_called_once_with(med_book_id)
         assert patients_repo.method_calls == []
         assert diagnoses_repo.method_calls == []
 
 
-class TestGetPatientMedBooks:
-    @pytest.mark.parametrize("returned_entity", [
-        entities.MedicalBook(
-            id=1,
-            title_history='title',
-            history='history',
-            patient_id=1,
-            diagnosis_id=1,
-            symptoms=[entities.Symptom(id=1, name='symptom1')],
-            item_reviews=[entities.ItemReview(
-                id=1,
-                item_id=1,
-                is_helped=True,
-                item_rating=8,
-                item_count=3,
-                usage_period=7776000)
-            ]
+class TestFindMedBooks:
+
+    @pytest.mark.parametrize("filter_params, repo_method", [
+        (
+            schemas.FindPatientMedicalBooks(patient_id=1, is_helped=True, diagnosis_id=1,
+                                            symptom_ids=[1, 2], match_all_symptoms=True),
+            'fetch_by_patient_helped_status_diagnosis_with_matching_all_symptoms'
         ),
+        (
+            schemas.FindPatientMedicalBooks(patient_id=1, is_helped=False, diagnosis_id=1,
+                                            symptom_ids=[1, 2], match_all_symptoms=True),
+            'fetch_by_patient_helped_status_diagnosis_with_matching_all_symptoms'
+        ),
+        (
+            schemas.FindPatientMedicalBooks(patient_id=1, is_helped=True, diagnosis_id=1,
+                                            symptom_ids=[1, 2]),
+            'fetch_by_patient_helped_status_diagnosis_and_symptoms'
+        ),
+        (
+            schemas.FindPatientMedicalBooks(patient_id=1, is_helped=False, diagnosis_id=1,
+                                            symptom_ids=[1, 2]),
+            'fetch_by_patient_helped_status_diagnosis_and_symptoms'
+        ),
+        (
+            schemas.FindPatientMedicalBooks(patient_id=1, is_helped=True, diagnosis_id=1),
+            'fetch_by_patient_helped_status_and_diagnosis'
+        ),
+        (
+            schemas.FindPatientMedicalBooks(patient_id=1, is_helped=False,
+                                            diagnosis_id=1),
+            'fetch_by_patient_helped_status_and_diagnosis'
+        ),
+        (
+            schemas.FindPatientMedicalBooks(patient_id=1, is_helped=True,
+                                            symptom_ids=[1, 2], match_all_symptoms=True),
+            'fetch_by_patient_helped_status_with_matching_all_symptoms'
+        ),
+        (
+            schemas.FindPatientMedicalBooks(patient_id=1, is_helped=False,
+                                            symptom_ids=[1, 2], match_all_symptoms=True),
+            'fetch_by_patient_helped_status_with_matching_all_symptoms'
+        ),
+        (
+            schemas.FindPatientMedicalBooks(patient_id=1, is_helped=True,
+                                            symptom_ids=[1, 2]),
+            'fetch_by_patient_helped_status_and_symptoms'
+        ),
+        (
+            schemas.FindPatientMedicalBooks(patient_id=1, is_helped=False,
+                                            symptom_ids=[1, 2]),
+            'fetch_by_patient_helped_status_and_symptoms'
+        ),
+        (
+            schemas.FindPatientMedicalBooks(patient_id=1, is_helped=True),
+            'fetch_by_patient_and_helped_status'
+        ),
+        (
+            schemas.FindPatientMedicalBooks(patient_id=1, is_helped=False),
+            'fetch_by_patient_and_helped_status'
+        ),
+        (
+            schemas.FindPatientMedicalBooks(patient_id=1, diagnosis_id=1,
+                                            symptom_ids=[1, 2], match_all_symptoms=True),
+            'fetch_by_patient_diagnosis_with_matching_all_symptoms'
+        ),
+        (
+            schemas.FindPatientMedicalBooks(patient_id=1, diagnosis_id=1,
+                                            symptom_ids=[1, 2]),
+            'fetch_by_patient_diagnosis_and_symptoms'
+        ),
+        (
+            schemas.FindPatientMedicalBooks(patient_id=1, diagnosis_id=1),
+            'fetch_by_patient_and_diagnosis'
+        ),
+        (
+            schemas.FindPatientMedicalBooks(patient_id=1, symptom_ids=[1, 2],
+                                            match_all_symptoms=True),
+            'fetch_by_patient_with_matching_all_symptoms'
+        ),
+        (
+            schemas.FindPatientMedicalBooks(patient_id=1, symptom_ids=[1, 2]),
+            'fetch_by_patient_and_symptoms'
+        ),
+        (
+            schemas.FindPatientMedicalBooks(patient_id=1),
+            'fetch_by_patient'
+        ),
+        (
+            schemas.FindMedicalBooks(is_helped=True, diagnosis_id=1,
+                                     symptom_ids=[1, 2], match_all_symptoms=True),
+            'fetch_by_helped_status_diagnosis_with_matching_all_symptoms'
+        ),
+        (
+            schemas.FindMedicalBooks(is_helped=False, diagnosis_id=1,
+                                     symptom_ids=[1, 2], match_all_symptoms=True),
+            'fetch_by_helped_status_diagnosis_with_matching_all_symptoms'
+        ),
+        (
+            schemas.FindMedicalBooks(is_helped=True, diagnosis_id=1, symptom_ids=[1, 2]),
+            'fetch_by_helped_status_diagnosis_and_symptoms'
+        ),
+        (
+            schemas.FindMedicalBooks(is_helped=False, diagnosis_id=1, symptom_ids=[1, 2]),
+            'fetch_by_helped_status_diagnosis_and_symptoms'
+        ),
+        (
+            schemas.FindMedicalBooks(is_helped=True, diagnosis_id=1),
+            'fetch_by_helped_status_and_diagnosis'
+        ),
+        (
+            schemas.FindMedicalBooks(is_helped=False, diagnosis_id=1),
+            'fetch_by_helped_status_and_diagnosis'
+        ),
+        (
+            schemas.FindMedicalBooks(is_helped=True, symptom_ids=[1, 2],
+                                     match_all_symptoms=True),
+            'fetch_by_helped_status_with_matching_all_symptoms'
+        ),
+        (
+            schemas.FindMedicalBooks(is_helped=False, symptom_ids=[1, 2],
+                                     match_all_symptoms=True),
+            'fetch_by_helped_status_with_matching_all_symptoms'
+        ),
+        (
+            schemas.FindMedicalBooks(is_helped=True, symptom_ids=[1, 2]),
+            'fetch_by_helped_status_and_symptoms'
+        ),
+        (
+            schemas.FindMedicalBooks(is_helped=False, symptom_ids=[1, 2]),
+            'fetch_by_helped_status_and_symptoms'
+        ),
+        (
+            schemas.FindMedicalBooks(is_helped=True),
+            'fetch_by_helped_status'
+        ),
+        (
+            schemas.FindMedicalBooks(is_helped=False),
+            'fetch_by_helped_status'
+        ),
+        (
+            schemas.FindMedicalBooks(diagnosis_id=1, symptom_ids=[1, 2],
+                                     match_all_symptoms=True),
+            'fetch_by_diagnosis_with_matching_all_symptoms'
+        ),
+        (
+            schemas.FindMedicalBooks(diagnosis_id=1, symptom_ids=[1, 2]),
+            'fetch_by_diagnosis_and_symptoms'
+        ),
+        (
+            schemas.FindMedicalBooks(diagnosis_id=1),
+            'fetch_by_diagnosis'
+        ),
+        (
+            schemas.FindMedicalBooks(symptom_ids=[1, 2], match_all_symptoms=True),
+            'fetch_by_matching_all_symptoms'
+        ),
+        (
+            schemas.FindMedicalBooks(symptom_ids=[1, 2]),
+            'fetch_by_symptoms'
+        ),
+        (
+            schemas.FindMedicalBooks(),
+            'fetch_all'
+        )
     ])
-    def test__get_patient_medical_books(self, returned_entity, service, med_books_repo,
-                                        patients_repo, diagnoses_repo):
+    def test_find_med_books(self, filter_params, repo_method, service,
+                            med_books_repo, patients_repo, diagnoses_repo):
         # Setup
-        med_books_repo.fetch_by_patient.return_value = [returned_entity]
-        default_limit = 10
-        default_offset = 0
+        returned_entities = [
+            entities.MedicalBook(id=1, title_history='title', history='history',
+                                 patient_id=1, diagnosis_id=1)
+        ]
+        getattr(med_books_repo, repo_method).return_value = returned_entities
 
         # Call
-        result = service.get_patient_med_books(patient_id=returned_entity.patient_id)
+        result = service.find_med_books(filter_params)
 
         # Assert
-        assert med_books_repo.method_calls == [
-            call.fetch_by_patient(
-                returned_entity.patient_id, default_limit, default_offset
-            )
-        ]
+        getattr(med_books_repo, repo_method).assert_called_once_with(filter_params)
+        assert result == returned_entities
         assert patients_repo.method_calls == []
         assert diagnoses_repo.method_calls == []
-        assert result == [returned_entity]
 
 
 class TestAdd:
