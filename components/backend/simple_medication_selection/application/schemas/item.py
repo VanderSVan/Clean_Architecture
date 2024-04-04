@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel as BaseSchema, Field, validator
+from pydantic import BaseModel as BaseSchema, Field, validator, root_validator
 
 
 class FindTreatmentItems(BaseSchema):
@@ -30,3 +30,11 @@ class FindTreatmentItems(BaseSchema):
             return set(value)
 
         return value
+
+    @root_validator
+    def fix_match_all_symptoms(cls, values):
+        if values['symptom_ids'] is None and values['match_all_symptoms'] is not None:
+            values['match_all_symptoms'] = None
+            return values
+
+        return values

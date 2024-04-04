@@ -112,7 +112,7 @@ class Catalog:
 
     @spectree.validate(
         json=dtos.NewItemInfo,
-        resp=Response(HTTP_201=dtos.TreatmentItem),
+        resp=Response(HTTP_201=dtos.ItemWithReviews),
         tags=["Items"]
     )
     def on_post_new(self, req, resp):
@@ -128,7 +128,7 @@ class Catalog:
     @spectree.validate(
         path_parameter_descriptions={"item_id": "Integer"},
         json=dtos.UpdatedItemInfo,
-        resp=Response(HTTP_200=dtos.TreatmentItem),
+        resp=Response(HTTP_200=dtos.ItemWithReviews),
         tags=["Items"]
     )
     def on_put_by_id(self, req, resp, item_id: int):

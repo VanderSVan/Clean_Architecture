@@ -39,6 +39,7 @@ class TreatmentItem(DTO):
         return data
 
     class Config:
+        orm_mode = True
         json_encoders = {
             Decimal: lambda v: float(v)
         }

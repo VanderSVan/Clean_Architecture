@@ -1,6 +1,7 @@
 from typing import Sequence, Callable
 
 from sqlalchemy import select, desc, func, between, asc, Select
+from sqlalchemy.orm import joinedload
 
 from simple_medication_selection.application import interfaces, entities, dtos, schemas
 from .base import BaseRepository
@@ -108,50 +109,32 @@ class TreatmentItemsRepo(BaseRepository, interfaces.TreatmentItemsRepo):
                     with_reviews: bool
                     ) -> dtos.TreatmentItem | None:
 
-        if with_reviews:
-            query = select(entities.TreatmentItem)
-        else:
-            query = select(
-                entities.TreatmentItem.id,
-                entities.TreatmentItem.title,
-                entities.TreatmentItem.price,
-                entities.TreatmentItem.description,
-                entities.TreatmentItem.category_id,
-                entities.TreatmentItem.type_id,
-                entities.TreatmentItem.avg_rating
-            )
-        query = query.where(entities.TreatmentItem.id == item_id)
+        query = (
+            select(entities.TreatmentItem)
+            .where(entities.TreatmentItem.id == item_id)
+        )
 
-        result = self.session.execute(query)
         if with_reviews:
-            return result.scalars().one_or_none()
+            query = query.options(joinedload(entities.TreatmentItem.reviews))
+            return self.session.execute(query).scalars().unique().one_or_none()
 
-        row = result.mappings().first()
-        return dtos.TreatmentItem(**row) if row else None
+        row = self.session.execute(query).scalars().one_or_none()
+        return dtos.TreatmentItem.from_orm(row) if row else None
 
     def fetch_all(self,
                   filter_params: schemas.FindTreatmentItems,
                   with_reviews: bool
                   ) -> Sequence[dtos.TreatmentItem | entities.TreatmentItem | None]:
 
-        if with_reviews:
-            query = select(entities.TreatmentItem)
-        else:
-            query = select(
-                entities.TreatmentItem.id,
-                entities.TreatmentItem.title,
-                entities.TreatmentItem.price,
-                entities.TreatmentItem.description,
-                entities.TreatmentItem.category_id,
-                entities.TreatmentItem.type_id,
-                entities.TreatmentItem.avg_rating
-            )
+        query = select(entities.TreatmentItem)
         query = self._filter.apply_filters(query, filter_params)
 
-        result = self.session.execute(query)
         if with_reviews:
-            return result.scalars().all()
-        return [dtos.TreatmentItem(**row) for row in result.mappings()]
+            query = query.options(joinedload(entities.TreatmentItem.reviews))
+            return self.session.execute(query).scalars().unique().all()
+
+        return [dtos.TreatmentItem.from_orm(row)
+                for row in self.session.execute(query).scalars()]
 
     def fetch_by_helped_status(
         self,
@@ -159,31 +142,20 @@ class TreatmentItemsRepo(BaseRepository, interfaces.TreatmentItemsRepo):
         with_reviews: bool
     ) -> Sequence[dtos.TreatmentItem | entities.TreatmentItem | None]:
 
-        subquery = (
-            select(entities.ItemReview.item_id)
+        query = (
+            select(entities.TreatmentItem)
+            .distinct()
+            .join(entities.TreatmentItem.reviews)
             .where(entities.ItemReview.is_helped == filter_params.is_helped)
-            .group_by(entities.ItemReview.item_id)
-            .subquery()
         )
-
-        if with_reviews:
-            query = select(entities.TreatmentItem)
-        else:
-            query = select(entities.TreatmentItem.id,
-                           entities.TreatmentItem.title,
-                           entities.TreatmentItem.price,
-                           entities.TreatmentItem.description,
-                           entities.TreatmentItem.category_id,
-                           entities.TreatmentItem.type_id,
-                           entities.TreatmentItem.avg_rating,
-                           )
-        query = query.join(subquery, subquery.c.item_id == entities.TreatmentItem.id)
         query = self._filter.apply_filters(query, filter_params)
 
-        result = self.session.execute(query)
         if with_reviews:
-            return result.scalars().all()
-        return [dtos.TreatmentItem(**row) for row in result.mappings()]
+            query = query.options(joinedload(entities.TreatmentItem.reviews))
+            return self.session.execute(query).scalars().unique().all()
+
+        return [dtos.TreatmentItem.from_orm(row)
+                for row in self.session.execute(query).scalars()]
 
     def fetch_by_symptoms(
         self,
@@ -205,24 +177,18 @@ class TreatmentItemsRepo(BaseRepository, interfaces.TreatmentItemsRepo):
                         )
         subquery = subquery.subquery()
 
-        if with_reviews:
-            query = select(entities.TreatmentItem)
-        else:
-            query = select(entities.TreatmentItem.id,
-                           entities.TreatmentItem.title,
-                           entities.TreatmentItem.price,
-                           entities.TreatmentItem.description,
-                           entities.TreatmentItem.category_id,
-                           entities.TreatmentItem.type_id,
-                           entities.TreatmentItem.avg_rating)
-
-        query = query.join(subquery, entities.TreatmentItem.id == subquery.c.item_id)
+        query = (
+            select(entities.TreatmentItem)
+            .join(subquery, entities.TreatmentItem.id == subquery.c.item_id)
+        )
         query = self._filter.apply_filters(query, filter_params)
 
-        result = self.session.execute(query)
         if with_reviews:
-            return result.scalars().all()
-        return [dtos.TreatmentItem(**row) for row in result.mappings()]
+            query = query.options(joinedload(entities.TreatmentItem.reviews))
+            return self.session.execute(query).scalars().unique().all()
+
+        return [dtos.TreatmentItem.from_orm(row)
+                for row in self.session.execute(query).scalars()]
 
     def fetch_by_diagnosis(
         self,
@@ -237,24 +203,18 @@ class TreatmentItemsRepo(BaseRepository, interfaces.TreatmentItemsRepo):
             .group_by(entities.ItemReview.item_id)
             .subquery()
         )
-        if with_reviews:
-            query = select(entities.TreatmentItem)
-        else:
-            query = select(entities.TreatmentItem.id,
-                           entities.TreatmentItem.title,
-                           entities.TreatmentItem.price,
-                           entities.TreatmentItem.description,
-                           entities.TreatmentItem.category_id,
-                           entities.TreatmentItem.type_id,
-                           entities.TreatmentItem.avg_rating)
-
-        query = query.join(subquery, entities.TreatmentItem.id == subquery.c.item_id)
+        query = (
+            select(entities.TreatmentItem)
+            .join(subquery, entities.TreatmentItem.id == subquery.c.item_id)
+        )
         query = self._filter.apply_filters(query, filter_params)
 
-        result = self.session.execute(query)
         if with_reviews:
-            return result.scalars().all()
-        return [dtos.TreatmentItem(**row) for row in result.mappings()]
+            query = query.options(joinedload(entities.TreatmentItem.reviews))
+            return self.session.execute(query).scalars().unique().all()
+
+        return [dtos.TreatmentItem.from_orm(row)
+                for row in self.session.execute(query).scalars()]
 
     def fetch_by_symptoms_and_helped_status(
         self,
@@ -277,24 +237,18 @@ class TreatmentItemsRepo(BaseRepository, interfaces.TreatmentItemsRepo):
                         )
         subquery = subquery.subquery()
 
-        if with_reviews:
-            query = select(entities.TreatmentItem)
-        else:
-            query = select(entities.TreatmentItem.id,
-                           entities.TreatmentItem.title,
-                           entities.TreatmentItem.price,
-                           entities.TreatmentItem.description,
-                           entities.TreatmentItem.category_id,
-                           entities.TreatmentItem.type_id,
-                           entities.TreatmentItem.avg_rating)
-
-        query = query.join(subquery, entities.TreatmentItem.id == subquery.c.item_id)
+        query = (
+            select(entities.TreatmentItem)
+            .join(subquery, entities.TreatmentItem.id == subquery.c.item_id)
+        )
         query = self._filter.apply_filters(query, filter_params)
 
-        result = self.session.execute(query)
         if with_reviews:
-            return result.scalars().all()
-        return [dtos.TreatmentItem(**row) for row in result.mappings()]
+            query = query.options(joinedload(entities.TreatmentItem.reviews))
+            return self.session.execute(query).scalars().unique().all()
+
+        return [dtos.TreatmentItem.from_orm(row)
+                for row in self.session.execute(query).scalars()]
 
     def fetch_by_diagnosis_and_helped_status(
         self,
@@ -310,25 +264,18 @@ class TreatmentItemsRepo(BaseRepository, interfaces.TreatmentItemsRepo):
             .group_by(entities.ItemReview.item_id)
             .subquery()
         )
-
-        if with_reviews:
-            query = select(entities.TreatmentItem)
-        else:
-            query = select(entities.TreatmentItem.id,
-                           entities.TreatmentItem.title,
-                           entities.TreatmentItem.price,
-                           entities.TreatmentItem.description,
-                           entities.TreatmentItem.category_id,
-                           entities.TreatmentItem.type_id,
-                           entities.TreatmentItem.avg_rating)
-
-        query = query.join(subquery, entities.TreatmentItem.id == subquery.c.item_id)
+        query = (
+            select(entities.TreatmentItem)
+            .join(subquery, entities.TreatmentItem.id == subquery.c.item_id)
+        )
         query = self._filter.apply_filters(query, filter_params)
 
-        result = self.session.execute(query)
         if with_reviews:
-            return result.scalars().all()
-        return [dtos.ItemWithDiagnosis(**row) for row in result.mappings()]
+            query = query.options(joinedload(entities.TreatmentItem.reviews))
+            return self.session.execute(query).scalars().unique().all()
+
+        return [dtos.TreatmentItem.from_orm(row)
+                for row in self.session.execute(query).scalars()]
 
     def fetch_by_diagnosis_and_symptoms(
         self,
@@ -351,24 +298,18 @@ class TreatmentItemsRepo(BaseRepository, interfaces.TreatmentItemsRepo):
                         )
         subquery = subquery.subquery()
 
-        if with_reviews:
-            query = select(entities.TreatmentItem)
-        else:
-            query = select(entities.TreatmentItem.id,
-                           entities.TreatmentItem.title,
-                           entities.TreatmentItem.price,
-                           entities.TreatmentItem.description,
-                           entities.TreatmentItem.category_id,
-                           entities.TreatmentItem.type_id,
-                           entities.TreatmentItem.avg_rating)
-
-        query = query.join(subquery, entities.TreatmentItem.id == subquery.c.item_id)
+        query = (
+            select(entities.TreatmentItem)
+            .join(subquery, entities.TreatmentItem.id == subquery.c.item_id)
+        )
         query = self._filter.apply_filters(query, filter_params)
 
-        result = self.session.execute(query)
         if with_reviews:
-            return result.scalars().all()
-        return [dtos.TreatmentItem(**row) for row in result.mappings()]
+            query = query.options(joinedload(entities.TreatmentItem.reviews))
+            return self.session.execute(query).scalars().unique().all()
+
+        return [dtos.TreatmentItem.from_orm(row)
+                for row in self.session.execute(query).scalars()]
 
     def fetch_by_helped_status_diagnosis_symptoms(
         self,
@@ -392,24 +333,18 @@ class TreatmentItemsRepo(BaseRepository, interfaces.TreatmentItemsRepo):
                         )
         subquery = subquery.subquery()
 
-        if with_reviews:
-            query = select(entities.TreatmentItem)
-        else:
-            query = select(entities.TreatmentItem.id,
-                           entities.TreatmentItem.title,
-                           entities.TreatmentItem.price,
-                           entities.TreatmentItem.description,
-                           entities.TreatmentItem.category_id,
-                           entities.TreatmentItem.type_id,
-                           entities.TreatmentItem.avg_rating)
-
-        query = query.join(subquery, entities.TreatmentItem.id == subquery.c.item_id)
+        query = (
+            select(entities.TreatmentItem)
+            .join(subquery, entities.TreatmentItem.id == subquery.c.item_id)
+        )
         query = self._filter.apply_filters(query, filter_params)
 
-        result = self.session.execute(query)
         if with_reviews:
-            return result.scalars().all()
-        return [dtos.TreatmentItem(**row) for row in result.mappings()]
+            query = query.options(joinedload(entities.TreatmentItem.reviews))
+            return self.session.execute(query).scalars().unique().all()
+
+        return [dtos.TreatmentItem.from_orm(row)
+                for row in self.session.execute(query).scalars()]
 
     def add(self, item: entities.TreatmentItem) -> entities.TreatmentItem:
         self.session.add(item)

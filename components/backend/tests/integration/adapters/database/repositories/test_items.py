@@ -102,6 +102,10 @@ PARAMS_TO_MIX: dict[str, list[dict]] = dict(
         dict(is_helped=True, match_all_symptoms=True, symptom_ids=[1, 2, 3, 4]),
         dict(is_helped=False, match_all_symptoms=False, symptom_ids=[1, 2, 3, 4])
     ],
+    fetch_by_diagnosis_and_helped_status=[
+        dict(is_helped=True, diagnosis_id=1, symptom_ids=[1, 2, 3, 4]),
+        dict(is_helped=False, diagnosis_id=1, symptom_ids=[1, 2, 3, 4])
+    ],
     fetch_by_diagnosis_and_symptoms=[
         dict(diagnosis_id=1, symptom_ids=[1, 2, 3, 4], match_all_symptoms=False),
         dict(diagnosis_id=1, symptom_ids=[1, 2, 3, 4], match_all_symptoms=True)
@@ -245,29 +249,50 @@ class _TestUniquenessMixin(_BaseMixin):
 
 
 class TestFetchById:
-    def test__fetch_by_id(self, repo, session):
+    def test__fetch_by_id(self, repo, session, fill_db):
         # Setup
-        expected_item = session.query(entities.TreatmentItem).first()
+        expected_item_id: int = fill_db['item_ids'][0]
 
         # Call
-        result = repo.fetch_by_id(expected_item.id, False)
+        result = repo.fetch_by_id(expected_item_id, False)
 
         # Assert
         assert isinstance(result, dtos.TreatmentItem)
-        assert result.id == expected_item.id
+        assert result.id == expected_item_id
+
+    def test__item_not_found(self, repo, session, fill_db):
+        # Setup
+        expected_item_id: int = max(fill_db['item_ids']) + 1
+
+        # Call
+        result = repo.fetch_by_id(expected_item_id, False)
+
+        # Assert
+        assert result is None
 
 
 class TestFetchByIdWithReviews:
-    def test__fetch_by_id(self, repo, session):
+    def test__fetch_by_id(self, repo, session, fill_db):
         # Setup
-        expected_item = session.query(entities.TreatmentItem).first()
+        expected_item_id: int = fill_db['item_ids'][0]
 
         # Call
-        result = repo.fetch_by_id(expected_item.id, True)
+        result = repo.fetch_by_id(expected_item_id, True)
 
         # Assert
         assert isinstance(result, entities.TreatmentItem)
-        assert result.id == expected_item.id
+        assert result.id == expected_item_id
+        assert len(result.reviews) > 0
+
+    def test__item_not_found(self, repo, session, fill_db):
+        # Setup
+        expected_item_id: int = max(fill_db['item_ids']) + 1
+
+        # Call
+        result = repo.fetch_by_id(expected_item_id, True)
+
+        # Assert
+        assert result is None
 
 
 class TestFetchAll(_TestOrderMixin,
@@ -310,8 +335,8 @@ class TestFetchAllWithReviews(_TestOrderMixin,
         assert isinstance(result, Sequence)
         assert len(result) > 0
         assert len(result) == len(test_data.ITEMS_DATA)
-        for item in result:
-            assert isinstance(item, entities.TreatmentItem)
+        assert all(isinstance(item, entities.TreatmentItem) for item in result)
+        assert any(len(item.reviews) > 0 for item in result)
 
 
 class TestFetchByHelpedStatus(_TestOrderMixin,
@@ -371,6 +396,7 @@ class TestFetchByHelpedStatusWithReviews(_TestOrderMixin,
         assert isinstance(result, Sequence)
         assert len(result) > 0
         assert len(result) == len(expected_item_ids)
+        assert any(len(item.reviews) > 0 for item in result)
         for item in result:
             assert isinstance(item, entities.TreatmentItem)
             assert item.id in expected_item_ids
@@ -446,6 +472,7 @@ class TestFetchBySymptomsWithReviews(_TestOrderMixin, _TestPaginationMixin,
         assert isinstance(result, Sequence)
         assert len(result) > 0
         assert len(result) == len(expected_item_ids)
+        assert any(len(item.reviews) > 0 for item in result)
         for item in result:
             assert isinstance(item, entities.TreatmentItem)
             assert item.id in expected_item_ids
@@ -505,6 +532,7 @@ class TestFetchByDiagnosisWithReviews(_TestOrderMixin, _TestPaginationMixin,
         assert isinstance(result, Sequence)
         assert len(result) > 0
         assert len(result) == len(expected_item_ids)
+        assert any(len(item.reviews) > 0 for item in result)
         for item in result:
             assert isinstance(item, entities.TreatmentItem)
             assert item.id in expected_item_ids
@@ -598,6 +626,77 @@ class TestFetchBySymptomsAndHelpedStatusWithReviews(_TestOrderMixin,
         assert isinstance(result, Sequence)
         assert len(result) > 0
         assert len(result) == len(expected_item_ids)
+        assert any(len(item.reviews) > 0 for item in result)
+        for item in result:
+            assert isinstance(item, entities.TreatmentItem)
+            assert item.id in expected_item_ids
+
+
+class TestFetchByDiagnosisAndHelpedStatus(_TestOrderMixin, _TestPaginationMixin,
+                                          _TestUniquenessMixin):
+    TEST_METHOD = 'fetch_by_diagnosis_and_helped_status'
+    TEST_KWARGS = dict(with_reviews=False)
+
+    @pytest.mark.parametrize('helped_status', [True, False])
+    def test__fetch_by_diagnosis_and_helped_status(self, helped_status, repo, session,
+                                                   fill_db):
+        # Setup
+        diagnosis_id: int = fill_db['diagnosis_ids'][0]
+        filter_params = schemas.FindTreatmentItems(diagnosis_id=diagnosis_id,
+                                                   is_helped=helped_status)
+        query = (
+            select(entities.ItemReview.item_id)
+            .join(entities.MedicalBook.item_reviews)
+            .where(entities.ItemReview.is_helped == helped_status,
+                   entities.MedicalBook.diagnosis_id == diagnosis_id)
+            .group_by(entities.ItemReview.item_id)
+        )
+
+        expected_item_ids: list[int] = session.execute(query).scalars().all()
+
+        # Call
+        result = repo.fetch_by_diagnosis_and_helped_status(filter_params, False)
+
+        # Assert
+        assert isinstance(result, list)
+        assert len(result) > 0
+        assert len(result) == len(expected_item_ids)
+        for item in result:
+            assert isinstance(item, dtos.TreatmentItem)
+            assert item.id in expected_item_ids
+
+
+class TestFetchByDiagnosisAndHelpedStatusWithReviews(_TestOrderMixin,
+                                                     _TestPaginationMixin,
+                                                     _TestUniquenessMixin):
+    TEST_METHOD = 'fetch_by_diagnosis_and_helped_status'
+    TEST_KWARGS = dict(with_reviews=True)
+
+    @pytest.mark.parametrize('helped_status', [True, False])
+    def test__fetch_by_diagnosis_and_helped_status(self, helped_status, repo, session,
+                                                   fill_db):
+        # Setup
+        diagnosis_id: int = fill_db['diagnosis_ids'][0]
+        filter_params = schemas.FindTreatmentItems(diagnosis_id=diagnosis_id,
+                                                   is_helped=helped_status)
+        query = (
+            select(entities.ItemReview.item_id)
+            .join(entities.MedicalBook.item_reviews)
+            .where(entities.ItemReview.is_helped == helped_status,
+                   entities.MedicalBook.diagnosis_id == diagnosis_id)
+            .group_by(entities.ItemReview.item_id)
+        )
+
+        expected_item_ids: list[int] = session.execute(query).scalars().all()
+
+        # Call
+        result = repo.fetch_by_diagnosis_and_helped_status(filter_params, True)
+
+        # Assert
+        assert isinstance(result, Sequence)
+        assert len(result) > 0
+        assert len(result) == len(expected_item_ids)
+        assert any(len(item.reviews) > 0 for item in result)
         for item in result:
             assert isinstance(item, entities.TreatmentItem)
             assert item.id in expected_item_ids
@@ -684,6 +783,7 @@ class TestFetchByDiagnosisSymptomsWithReviews(_TestOrderMixin,
         assert isinstance(result, Sequence)
         assert len(result) > 0
         assert len(result) == len(expected_item_ids)
+        assert any(len(item.reviews) > 0 for item in result)
         for item in result:
             assert isinstance(item, entities.TreatmentItem)
             assert item.id in expected_item_ids
@@ -786,6 +886,7 @@ class TestFetchByHelpedStatusDiagnosisSymptomsWithReviews(_TestOrderMixin,
         assert isinstance(result, Sequence)
         assert len(result) > 0
         assert len(result) == len(expected_item_ids)
+        assert any(len(item.reviews) > 0 for item in result)
         for item in result:
             assert isinstance(item, entities.TreatmentItem)
             assert item.id in expected_item_ids
