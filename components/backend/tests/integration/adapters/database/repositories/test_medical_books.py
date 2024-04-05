@@ -62,6 +62,9 @@ def filter_params_factory(request, fill_db):
         elif param == 'patient_id':
             value = fill_db['patient_ids'][0]
 
+        elif param == 'item_ids':
+            value = fill_db['item_ids']
+
         setattr(new_params, param, value)
 
     return new_params
@@ -167,6 +170,65 @@ PARAMS_TO_MIX: dict[str, list[dict]] = dict(
         dict(patient_id=1, diagnosis_id=1, symptom_ids=[1, 2, 3, 4])
     ],
     fetch_by_patient_and_diagnosis=[dict(patient_id=1, diagnosis_id=1)],
+    fetch_by_items=[dict(item_ids=[1, 2, 3, 4])],
+    fetch_by_patient_and_items=[dict(patient_id=1, item_ids=[1, 2, 3, 4])],
+    fetch_by_items_and_helped_status=[
+        dict(item_ids=[1, 2, 3, 4], is_helped=True),
+        dict(item_ids=[1, 2, 3, 4], is_helped=False)
+    ],
+    fetch_by_items_and_diagnosis=[dict(item_ids=[1, 2, 3, 4], diagnosis_id=1)],
+    fetch_by_items_and_symptoms=[dict(item_ids=[1, 2, 3, 4], symptom_ids=[1, 2, 3, 4])],
+    fetch_by_items_with_matching_all_symptoms=[
+        dict(item_ids=[1, 2, 3, 4], symptom_ids=[1, 2, 3, 4], match_all_symptoms=True)
+    ],
+    fetch_by_diagnosis_items_with_matching_all_symptoms=[
+        dict(diagnosis_id=1, item_ids=[1, 2, 3, 4], symptom_ids=[1, 2, 3, 4],
+             match_all_symptoms=True)
+    ],
+    fetch_by_helped_status_items_with_matching_all_symptoms=[
+        dict(is_helped=True, item_ids=[1, 2, 3, 4], symptom_ids=[1, 2, 3, 4],
+             match_all_symptoms=True),
+        dict(is_helped=False, item_ids=[1, 2, 3, 4], symptom_ids=[1, 2, 3, 4],
+             match_all_symptoms=True)
+    ],
+    fetch_by_helped_status_diagnosis_and_items=[
+        dict(is_helped=True, diagnosis_id=1, item_ids=[1, 2, 3, 4]),
+        dict(is_helped=False, diagnosis_id=1, item_ids=[1, 2, 3, 4])
+    ],
+    fetch_by_helped_status_diagnosis_items_with_matching_all_symptoms=[
+        dict(is_helped=True, diagnosis_id=1, item_ids=[1, 2, 3, 4],
+             symptom_ids=[1, 2, 3, 4], match_all_symptoms=True),
+        dict(is_helped=False, diagnosis_id=1, item_ids=[1, 2, 3, 4],
+             symptom_ids=[1, 2, 3, 4], match_all_symptoms=True)
+    ],
+
+    fetch_by_patient_helped_status_diagnosis_items_with_matching_all_symptoms=[
+        dict(patient_id=1, is_helped=True, diagnosis_id=1, item_ids=[1, 2, 3, 4],
+             symptom_ids=[1, 2, 3, 4], match_all_symptoms=True),
+        dict(patient_id=1, is_helped=False, diagnosis_id=1, item_ids=[1, 2, 3, 4],
+             symptom_ids=[1, 2, 3, 4], match_all_symptoms=True)
+    ],
+    fetch_by_patient_diagnosis_and_items=[
+        dict(patient_id=1, diagnosis_id=1, item_ids=[1, 2, 3, 4])
+    ],
+    fetch_by_patient_diagnosis_items_with_matching_all_symptoms=[
+        dict(patient_id=1, diagnosis_id=1, item_ids=[1, 2, 3, 4],
+             symptom_ids=[1, 2, 3, 4], match_all_symptoms=True)
+    ],
+    fetch_by_patient_helped_status_and_items=[
+        dict(patient_id=1, is_helped=True, item_ids=[1, 2, 3, 4]),
+        dict(patient_id=1, is_helped=False, item_ids=[1, 2, 3, 4])
+    ],
+    fetch_by_patient_helped_status_diagnosis_and_items=[
+        dict(patient_id=1, is_helped=True, diagnosis_id=1, item_ids=[1, 2, 3, 4]),
+        dict(patient_id=1, is_helped=False, diagnosis_id=1, item_ids=[1, 2, 3, 4])
+    ],
+    fetch_by_patient_helped_status_items_with_matching_all_symptoms=[
+        dict(patient_id=1, is_helped=True, item_ids=[1, 2, 3, 4],
+             symptom_ids=[1, 2, 3, 4], match_all_symptoms=True),
+        dict(patient_id=1, is_helped=False, item_ids=[1, 2, 3, 4],
+             symptom_ids=[1, 2, 3, 4], match_all_symptoms=True)
+    ],
 
     test__order_is_asc=[
         dict(sort_field='patient_id', sort_direction='asc'),
@@ -1338,6 +1400,774 @@ class TestFetchByPatientAndDiagnosis(_TestOrderMixin,
             assert med_book.id in expected_med_book_ids
             assert med_book.patient_id == med_book.patient_id
             assert med_book.diagnosis_id == filter_params.diagnosis_id
+
+
+class TestFetchByItems(_TestOrderMixin, _TestPaginationMixin, _TestUniquenessMixin):
+    TEST_METHOD = 'fetch_by_items'
+
+    def test__fetch_by_items(self, repo, session, fill_db):
+        # Setup
+        filter_params = schemas.FindMedicalBooks(
+            item_ids=[fill_db['item_ids'][0], fill_db['item_ids'][1]]
+        )
+        query = (
+            select(entities.MedicalBook.id)
+            .join(entities.MedicalBook.item_reviews)
+            .where(entities.ItemReview.item_id.in_(filter_params.item_ids))
+            .group_by(entities.MedicalBook.id)
+        )
+        expected_med_book_ids: list[int] = session.execute(query).scalars().all()
+
+        # Call
+        result = repo.fetch_by_items(filter_params=filter_params)
+
+        # Assert
+        assert isinstance(result, list)
+        assert len(result) > 0
+        assert len(result) == len(expected_med_book_ids)
+        for med_book in result:
+            assert isinstance(med_book, dtos.MedicalBookWithItemReviews)
+            assert med_book.id in expected_med_book_ids
+            assert any(review.item_id in filter_params.item_ids
+                       for review in med_book.item_reviews)
+
+
+class TestFetchByPatientAndItems(_TestOrderMixin,
+                                 _TestPaginationMixin,
+                                 _TestUniquenessMixin):
+    TEST_METHOD = 'fetch_by_patient_and_items'
+
+    def test__fetch_by_patient_and_items(self, repo, session, fill_db):
+        # Setup
+        filter_params = schemas.FindPatientMedicalBooks(
+            patient_id=fill_db['patient_ids'][0],
+            item_ids=[fill_db['item_ids'][0], fill_db['item_ids'][1]]
+        )
+        query = (
+            select(entities.MedicalBook.id)
+            .join(entities.MedicalBook.item_reviews)
+            .where(entities.MedicalBook.patient_id == filter_params.patient_id,
+                   entities.ItemReview.item_id.in_(filter_params.item_ids))
+            .group_by(entities.MedicalBook.id)
+        )
+        expected_med_book_ids: list[int] = session.execute(query).scalars().all()
+
+        # Call
+        result = repo.fetch_by_patient_and_items(filter_params=filter_params)
+
+        # Assert
+        assert isinstance(result, list)
+        assert len(result) > 0
+        assert len(result) == len(expected_med_book_ids)
+        for med_book in result:
+            assert isinstance(med_book, dtos.MedicalBookWithItemReviews)
+            assert med_book.id in expected_med_book_ids
+            assert med_book.patient_id == med_book.patient_id
+            assert any(review.item_id in filter_params.item_ids
+                       for review in med_book.item_reviews)
+
+
+class TestFetchByItemsAndHelpedStatus(_TestOrderMixin,
+                                      _TestPaginationMixin,
+                                      _TestUniquenessMixin):
+    TEST_METHOD = 'fetch_by_items_and_helped_status'
+
+    @pytest.mark.parametrize('helped_status', [True, False])
+    def test__fetch_by_items_and_helped_status(self, helped_status, repo, session,
+                                               fill_db):
+        # Setup
+        filter_params = schemas.FindMedicalBooks(
+            item_ids=[fill_db['item_ids'][0], fill_db['item_ids'][1]],
+            is_helped=helped_status
+        )
+        query = (
+            select(entities.MedicalBook.id)
+            .join(entities.MedicalBook.item_reviews)
+            .where(entities.ItemReview.item_id.in_(filter_params.item_ids),
+                   entities.ItemReview.is_helped == filter_params.is_helped)
+            .group_by(entities.MedicalBook.id)
+        )
+        expected_med_book_ids: list[int] = session.execute(query).scalars().all()
+
+        # Call
+        result = repo.fetch_by_items_and_helped_status(filter_params=filter_params)
+
+        # Assert
+        assert isinstance(result, list)
+        assert len(result) > 0
+        assert len(result) == len(expected_med_book_ids)
+        for med_book in result:
+            assert isinstance(med_book, dtos.MedicalBookWithItemReviews)
+            assert med_book.id in expected_med_book_ids
+            assert any(review.item_id in filter_params.item_ids
+                       for review in med_book.item_reviews)
+            assert any(review.is_helped == filter_params.is_helped
+                       for review in med_book.item_reviews)
+
+
+class TestFetchByItemsAndDiagnosis(_TestOrderMixin,
+                                   _TestPaginationMixin,
+                                   _TestUniquenessMixin):
+    TEST_METHOD = 'fetch_by_items_and_diagnosis'
+
+    def test__fetch_by_items_and_diagnosis(self, repo, session, fill_db):
+        # Setup
+        filter_params = schemas.FindMedicalBooks(
+            item_ids=[*fill_db['item_ids']],
+            diagnosis_id=fill_db['diagnosis_ids'][0]
+        )
+        query = (
+            select(entities.MedicalBook.id)
+            .join(entities.MedicalBook.item_reviews)
+            .where(entities.MedicalBook.diagnosis_id == filter_params.diagnosis_id,
+                   entities.ItemReview.item_id.in_(filter_params.item_ids))
+            .group_by(entities.MedicalBook.id)
+        )
+        expected_med_book_ids: list[int] = session.execute(query).scalars().all()
+
+        # Call
+        result = repo.fetch_by_items_and_diagnosis(filter_params=filter_params)
+
+        # Assert
+        assert isinstance(result, list)
+        assert len(result) > 0
+        assert len(result) == len(expected_med_book_ids)
+        for med_book in result:
+            assert isinstance(med_book, dtos.MedicalBookWithItemReviews)
+            assert med_book.id in expected_med_book_ids
+            assert med_book.diagnosis_id == filter_params.diagnosis_id
+            assert any(review.item_id in filter_params.item_ids
+                       for review in med_book.item_reviews)
+
+
+class TestFetchByItemsAndSymptoms(_TestOrderMixin,
+                                  _TestPaginationMixin,
+                                  _TestUniquenessMixin):
+    TEST_METHOD = 'fetch_by_items_and_symptoms'
+
+    def test__fetch_by_items_and_symptoms(self, repo, session, fill_db):
+        # Setup
+        filter_params = schemas.FindMedicalBooks(
+            item_ids=[*fill_db['item_ids']],
+            symptom_ids=[*fill_db['symptom_ids']]
+        )
+        query = (
+            select(entities.MedicalBook.id)
+            .join(entities.MedicalBook.item_reviews)
+            .join(entities.MedicalBook.symptoms)
+            .where(entities.ItemReview.item_id.in_(filter_params.item_ids),
+                   entities.Symptom.id.in_(filter_params.symptom_ids))
+            .group_by(entities.MedicalBook.id)
+        )
+        expected_med_book_ids: list[int] = session.execute(query).scalars().all()
+
+        # Call
+        result = repo.fetch_by_items_and_symptoms(filter_params=filter_params)
+
+        # Assert
+        assert isinstance(result, list)
+        assert len(result) > 0
+        assert len(result) == len(expected_med_book_ids)
+        for med_book in result:
+            assert isinstance(med_book, entities.MedicalBook)
+            assert med_book.id in expected_med_book_ids
+            assert any(review.item_id in filter_params.item_ids
+                       for review in med_book.item_reviews)
+            med_book_symptom_ids: list[int] = [
+                symptom.id for symptom in med_book.symptoms
+            ]
+            assert any(symptom_id in med_book_symptom_ids
+                       for symptom_id in filter_params.symptom_ids)
+
+
+class TestFetchByItemsWithMatchingAllSymptoms(_TestOrderMixin,
+                                              _TestPaginationMixin,
+                                              _TestUniquenessMixin):
+    TEST_METHOD = 'fetch_by_items_with_matching_all_symptoms'
+
+    def test__fetch_by_items_with_matching_all_symptoms(self, repo, session, fill_db):
+        # Setup
+        filter_params = schemas.FindMedicalBooks(
+            item_ids=[*fill_db['item_ids']],
+            symptom_ids=[*fill_db['symptom_ids'][:2]],
+            match_all_symptoms=True
+        )
+        subquery = (
+            select(entities.MedicalBook.id.label('med_book_id'),
+                   func.count(entities.Symptom.id.distinct()).label('symptom_count'))
+            .join(entities.MedicalBook.item_reviews)
+            .join(entities.MedicalBook.symptoms)
+            .where(entities.ItemReview.item_id.in_(filter_params.item_ids),
+                   entities.Symptom.id.in_(filter_params.symptom_ids))
+            .group_by(entities.MedicalBook.id)
+            .subquery()
+        )
+        query = (
+            select(subquery.c.med_book_id)
+            .where(subquery.c.symptom_count == len(filter_params.symptom_ids))
+        )
+        expected_med_book_ids: list[int] = session.execute(query).scalars().all()
+
+        # Call
+        result = repo.fetch_by_items_with_matching_all_symptoms(
+            filter_params=filter_params
+        )
+
+        # Assert
+        assert isinstance(result, list)
+        assert len(result) > 0
+        assert len(result) == len(expected_med_book_ids)
+        for med_book in result:
+            assert isinstance(med_book, entities.MedicalBook)
+            assert med_book.id in expected_med_book_ids
+            assert len(med_book.symptoms) >= len(filter_params.symptom_ids)
+            assert any(review.item_id in filter_params.item_ids
+                       for review in med_book.item_reviews)
+            med_book_symptom_ids: list[int] = [
+                symptom.id for symptom in med_book.symptoms
+            ]
+            assert all(symptom_id in med_book_symptom_ids
+                       for symptom_id in filter_params.symptom_ids)
+
+
+class TestFetchByDiagnosisItemsWithMatchingAllSymptoms(_TestOrderMixin,
+                                                       _TestPaginationMixin,
+                                                       _TestUniquenessMixin):
+    TEST_METHOD = 'fetch_by_diagnosis_items_with_matching_all_symptoms'
+
+    def test__fetch_by_diagnosis_items_with_matching_all_symptoms(self, repo, session,
+                                                                  fill_db):
+        # Setup
+        filter_params = schemas.FindMedicalBooks(
+            diagnosis_id=fill_db['diagnosis_ids'][0],
+            item_ids=[*fill_db['item_ids']],
+            symptom_ids=[*fill_db['symptom_ids'][:2]],
+            match_all_symptoms=True
+        )
+        subquery = (
+            select(entities.MedicalBook.id.label('med_book_id'),
+                   func.count(entities.Symptom.id.distinct()).label('symptom_count'))
+            .join(entities.MedicalBook.item_reviews)
+            .join(entities.MedicalBook.symptoms)
+            .where(entities.MedicalBook.diagnosis_id == filter_params.diagnosis_id,
+                   entities.ItemReview.item_id.in_(filter_params.item_ids),
+                   entities.Symptom.id.in_(filter_params.symptom_ids))
+            .group_by(entities.MedicalBook.id)
+            .subquery()
+        )
+        query = (
+            select(subquery.c.med_book_id)
+            .where(subquery.c.symptom_count == len(filter_params.symptom_ids))
+        )
+        expected_med_book_ids: list[int] = session.execute(query).scalars().all()
+
+        # Call
+        result = repo.fetch_by_diagnosis_items_with_matching_all_symptoms(
+            filter_params=filter_params
+        )
+
+        # Assert
+        assert isinstance(result, list)
+        assert len(result) > 0
+        assert len(result) == len(expected_med_book_ids)
+        for med_book in result:
+            assert isinstance(med_book, entities.MedicalBook)
+            assert med_book.id in expected_med_book_ids
+            assert med_book.diagnosis_id == filter_params.diagnosis_id
+            assert len(med_book.symptoms) >= len(filter_params.symptom_ids)
+            assert any(review.item_id in filter_params.item_ids
+                       for review in med_book.item_reviews)
+            med_book_symptom_ids: list[int] = [
+                symptom.id for symptom in med_book.symptoms
+            ]
+            assert all(symptom_id in med_book_symptom_ids
+                       for symptom_id in filter_params.symptom_ids)
+
+
+class TestFetchByHelpedStatusItemsWithMatchingAllSymptoms(_TestOrderMixin,
+                                                          _TestPaginationMixin,
+                                                          _TestUniquenessMixin):
+    TEST_METHOD = 'fetch_by_helped_status_items_with_matching_all_symptoms'
+
+    @pytest.mark.parametrize('helped_status', [True, False])
+    def test__fetch_by_helped_status_items_with_matching_all_symptoms(
+        self, helped_status, repo, session, fill_db
+    ):
+        # Setup
+        filter_params = schemas.FindMedicalBooks(
+            is_helped=helped_status,
+            item_ids=[*fill_db['item_ids']],
+            symptom_ids=[*fill_db['symptom_ids'][:2]],
+            match_all_symptoms=True
+        )
+        subquery = (
+            select(entities.MedicalBook.id.label('med_book_id'),
+                   func.count(entities.Symptom.id.distinct()).label('symptom_count'))
+            .join(entities.MedicalBook.item_reviews)
+            .join(entities.MedicalBook.symptoms)
+            .where(entities.ItemReview.is_helped == filter_params.is_helped,
+                   entities.ItemReview.item_id.in_(filter_params.item_ids),
+                   entities.Symptom.id.in_(filter_params.symptom_ids))
+            .group_by(entities.MedicalBook.id)
+            .subquery()
+        )
+        query = (
+            select(subquery.c.med_book_id)
+            .where(subquery.c.symptom_count == len(filter_params.symptom_ids))
+        )
+        expected_med_book_ids: list[int] = session.execute(query).scalars().all()
+
+        # Call
+        result = repo.fetch_by_helped_status_items_with_matching_all_symptoms(
+            filter_params=filter_params
+        )
+
+        # Assert
+        assert isinstance(result, list)
+        assert len(result) > 0
+        assert len(result) == len(expected_med_book_ids)
+        for med_book in result:
+            assert isinstance(med_book, entities.MedicalBook)
+            assert med_book.id in expected_med_book_ids
+            assert len(med_book.symptoms) >= len(filter_params.symptom_ids)
+            assert any(review.item_id in filter_params.item_ids
+                       for review in med_book.item_reviews)
+            assert any(review.is_helped == filter_params.is_helped
+                       for review in med_book.item_reviews)
+            med_book_symptom_ids: list[int] = [
+                symptom.id for symptom in med_book.symptoms
+            ]
+            assert all(symptom_id in med_book_symptom_ids
+                       for symptom_id in filter_params.symptom_ids)
+
+
+class TestFetchByHelpedStatusDiagnosisAndItems(_TestOrderMixin,
+                                               _TestPaginationMixin,
+                                               _TestUniquenessMixin):
+    TEST_METHOD = 'fetch_by_helped_status_diagnosis_and_items'
+
+    @pytest.mark.parametrize('helped_status', [True, False])
+    def test__fetch_by_helped_status_diagnosis_and_items(
+        self, helped_status, repo, session, fill_db
+    ):
+        # Setup
+        filter_params = schemas.FindMedicalBooks(
+            is_helped=helped_status,
+            diagnosis_id=fill_db['diagnosis_ids'][0],
+            item_ids=[*fill_db['item_ids']],
+        )
+        query = (
+            select(entities.MedicalBook.id)
+            .join(entities.MedicalBook.item_reviews)
+            .where(entities.ItemReview.is_helped == filter_params.is_helped,
+                   entities.MedicalBook.diagnosis_id == filter_params.diagnosis_id,
+                   entities.ItemReview.item_id.in_(filter_params.item_ids))
+            .group_by(entities.MedicalBook.id)
+        )
+        expected_med_book_ids: list[int] = session.execute(query).scalars().all()
+
+        # Call
+        result = repo.fetch_by_helped_status_diagnosis_and_items(
+            filter_params=filter_params
+        )
+
+        # Assert
+        assert isinstance(result, list)
+        assert len(result) > 0
+        assert len(result) == len(expected_med_book_ids)
+        for med_book in result:
+            assert isinstance(med_book, dtos.MedicalBookWithItemReviews)
+            assert med_book.id in expected_med_book_ids
+            assert med_book.diagnosis_id == filter_params.diagnosis_id
+            assert any(review.item_id in filter_params.item_ids
+                       for review in med_book.item_reviews)
+            assert any(review.is_helped == filter_params.is_helped
+                       for review in med_book.item_reviews)
+
+
+class TestFetchByHelpedStatusDiagnosisItemsWithMatchingAllSymptoms(
+    _TestOrderMixin, _TestPaginationMixin, _TestUniquenessMixin
+):
+    TEST_METHOD = (
+        'fetch_by_helped_status_diagnosis_items_with_matching_all_symptoms'
+    )
+
+    @pytest.mark.parametrize('helped_status', [True, False])
+    def test__fetch_by_helped_status_diagnosis_items_with_matching_all_symptoms(
+        self, helped_status, repo, session, fill_db
+    ):
+        # Setup
+        filter_params = schemas.FindMedicalBooks(
+            diagnosis_id=fill_db['diagnosis_ids'][0],
+            is_helped=helped_status,
+            item_ids=[*fill_db['item_ids']],
+            symptom_ids=[*fill_db['symptom_ids'][:2]],
+            match_all_symptoms=True
+        )
+        subquery = (
+            select(entities.MedicalBook.id.label('med_book_id'),
+                   func.count(entities.Symptom.id.distinct()).label('symptom_count'))
+            .join(entities.MedicalBook.item_reviews)
+            .join(entities.MedicalBook.symptoms)
+            .where(entities.MedicalBook.diagnosis_id == filter_params.diagnosis_id,
+                   entities.ItemReview.is_helped == filter_params.is_helped,
+                   entities.Symptom.id.in_(filter_params.symptom_ids))
+            .group_by(entities.MedicalBook.id)
+            .subquery()
+        )
+        query = (
+            select(subquery.c.med_book_id)
+            .where(subquery.c.symptom_count == len(filter_params.symptom_ids))
+        )
+        expected_med_book_ids: list[int] = session.execute(query).scalars().all()
+
+        # Call
+        result = (
+            repo
+            .fetch_by_helped_status_diagnosis_items_with_matching_all_symptoms(
+                filter_params=filter_params
+            )
+        )
+
+        # Assert
+        assert isinstance(result, list)
+        assert len(result) > 0
+        assert len(result) == len(expected_med_book_ids)
+        for med_book in result:
+            assert isinstance(med_book, entities.MedicalBook)
+            assert med_book.id in expected_med_book_ids
+            assert med_book.diagnosis_id == filter_params.diagnosis_id
+            assert len(med_book.symptoms) >= len(filter_params.symptom_ids)
+            assert any(review.item_id in filter_params.item_ids
+                       for review in med_book.item_reviews)
+            assert any(review.is_helped == filter_params.is_helped
+                       for review in med_book.item_reviews)
+            med_book_symptom_ids: list[int] = [
+                symptom.id for symptom in med_book.symptoms
+            ]
+            assert all(symptom_id in med_book_symptom_ids
+                       for symptom_id in filter_params.symptom_ids)
+
+
+class TestFetchByPatientDiagnosisAndItems(_TestOrderMixin,
+                                          _TestPaginationMixin,
+                                          _TestUniquenessMixin):
+    TEST_METHOD = 'fetch_by_patient_diagnosis_and_items'
+
+    def test__fetch_by_patient_diagnosis_and_items(self, repo, session, fill_db):
+        # Setup
+        filter_params = schemas.FindPatientMedicalBooks(
+            patient_id=fill_db['patient_ids'][0],
+            diagnosis_id=fill_db['diagnosis_ids'][0],
+            item_ids=[*fill_db['item_ids']]
+        )
+        query = (
+            select(entities.MedicalBook.id)
+            .join(entities.MedicalBook.item_reviews)
+            .where(entities.MedicalBook.patient_id == filter_params.patient_id,
+                   entities.MedicalBook.diagnosis_id == filter_params.diagnosis_id,
+                   entities.ItemReview.item_id.in_(filter_params.item_ids))
+            .group_by(entities.MedicalBook.id)
+        )
+        expected_med_book_ids: list[int] = session.execute(query).scalars().all()
+
+        # Call
+        result = repo.fetch_by_patient_diagnosis_and_items(filter_params=filter_params)
+
+        # Assert
+        assert isinstance(result, list)
+        assert len(result) > 0
+        assert len(result) == len(expected_med_book_ids)
+        for med_book in result:
+            assert isinstance(med_book, dtos.MedicalBookWithItemReviews)
+            assert med_book.id in expected_med_book_ids
+            assert med_book.patient_id == filter_params.patient_id
+            assert med_book.diagnosis_id == filter_params.diagnosis_id
+            assert any(review.item_id in filter_params.item_ids
+                       for review in med_book.item_reviews)
+
+
+class TestFetchByPatientDiagnosisItemsWithMatchingAllSymptoms(
+    _TestOrderMixin, _TestPaginationMixin, _TestUniquenessMixin
+):
+    TEST_METHOD = 'fetch_by_patient_diagnosis_items_with_matching_all_symptoms'
+
+    def test__fetch_by_patient_diagnosis_items_with_matching_all_symptoms(
+        self, repo, session, fill_db
+    ):
+        # Setup
+        filter_params = schemas.FindPatientMedicalBooks(
+            patient_id=fill_db['patient_ids'][0],
+            diagnosis_id=fill_db['diagnosis_ids'][0],
+            item_ids=[*fill_db['item_ids']],
+            symptom_ids=[*fill_db['symptom_ids'][:2]],
+            match_all_symptoms=True
+        )
+        subquery = (
+            select(entities.MedicalBook.id.label('med_book_id'),
+                   func.count(entities.Symptom.id.distinct()).label('symptom_count'))
+            .join(entities.MedicalBook.item_reviews)
+            .join(entities.MedicalBook.symptoms)
+            .where(entities.MedicalBook.patient_id == filter_params.patient_id,
+                   entities.MedicalBook.diagnosis_id == filter_params.diagnosis_id,
+                   entities.ItemReview.item_id.in_(filter_params.item_ids),
+                   entities.Symptom.id.in_(filter_params.symptom_ids))
+            .group_by(entities.MedicalBook.id)
+            .subquery()
+        )
+        query = (
+            select(subquery.c.med_book_id)
+            .where(subquery.c.symptom_count == len(filter_params.symptom_ids))
+        )
+        expected_med_book_ids: list[int] = session.execute(query).scalars().all()
+
+        # Call
+        result = (
+            repo
+            .fetch_by_patient_diagnosis_items_with_matching_all_symptoms(
+                filter_params=filter_params
+            )
+        )
+
+        # Assert
+        assert isinstance(result, list)
+        assert len(result) > 0
+        assert len(result) == len(expected_med_book_ids)
+        for med_book in result:
+            assert isinstance(med_book, entities.MedicalBook)
+            assert med_book.id in expected_med_book_ids
+            assert med_book.patient_id == filter_params.patient_id
+            assert med_book.diagnosis_id == filter_params.diagnosis_id
+            assert len(med_book.symptoms) >= len(filter_params.symptom_ids)
+            assert any(review.item_id in filter_params.item_ids
+                       for review in med_book.item_reviews)
+            med_book_symptom_ids: list[int] = [
+                symptom.id for symptom in med_book.symptoms
+            ]
+            assert all(symptom_id in med_book_symptom_ids
+                       for symptom_id in filter_params.symptom_ids)
+
+
+class TestFetchByPatientHelpedStatusAndItems(_TestOrderMixin,
+                                             _TestPaginationMixin,
+                                             _TestUniquenessMixin):
+    TEST_METHOD = 'fetch_by_patient_helped_status_and_items'
+
+    @pytest.mark.parametrize('helped_status', [True, False])
+    def test__fetch_by_patient_helped_status_and_items(self, helped_status, repo, session,
+                                                       fill_db):
+        # Setup
+        filter_params = schemas.FindPatientMedicalBooks(
+            patient_id=fill_db['patient_ids'][0],
+            is_helped=helped_status,
+            item_ids=[*fill_db['item_ids']],
+        )
+        query = (
+            select(entities.MedicalBook.id)
+            .join(entities.MedicalBook.item_reviews)
+            .where(entities.MedicalBook.patient_id == filter_params.patient_id,
+                   entities.ItemReview.is_helped == filter_params.is_helped,
+                   entities.ItemReview.item_id.in_(filter_params.item_ids))
+            .group_by(entities.MedicalBook.id)
+        )
+        expected_med_book_ids: list[int] = session.execute(query).scalars().all()
+
+        # Call
+        result = repo.fetch_by_patient_helped_status_and_items(
+            filter_params=filter_params
+        )
+
+        # Assert
+        assert isinstance(result, list)
+        assert len(result) > 0
+        assert len(result) == len(expected_med_book_ids)
+        for med_book in result:
+            assert isinstance(med_book, dtos.MedicalBookWithItemReviews)
+            assert med_book.id in expected_med_book_ids
+            assert med_book.patient_id == filter_params.patient_id
+            assert any(review.item_id in filter_params.item_ids
+                       for review in med_book.item_reviews)
+            assert any(review.is_helped == filter_params.is_helped
+                       for review in med_book.item_reviews)
+
+
+class TestFetchByPatientHelpedStatusDiagnosisAndItems(_TestOrderMixin,
+                                                      _TestPaginationMixin,
+                                                      _TestUniquenessMixin):
+    TEST_METHOD = 'fetch_by_patient_helped_status_diagnosis_and_items'
+
+    @pytest.mark.parametrize('helped_status', [True, False])
+    def test__fetch_by_patient_helped_status_diagnosis_and_items(
+        self, helped_status, repo, session, fill_db):
+        # Setup
+        filter_params = schemas.FindPatientMedicalBooks(
+            patient_id=fill_db['patient_ids'][0],
+            is_helped=helped_status,
+            diagnosis_id=fill_db['diagnosis_ids'][0],
+            item_ids=[*fill_db['item_ids']],
+        )
+        query = (
+            select(entities.MedicalBook.id)
+            .join(entities.MedicalBook.item_reviews)
+            .where(entities.MedicalBook.patient_id == filter_params.patient_id,
+                   entities.MedicalBook.diagnosis_id == filter_params.diagnosis_id,
+                   entities.ItemReview.is_helped == filter_params.is_helped,
+                   entities.ItemReview.item_id.in_(filter_params.item_ids))
+            .group_by(entities.MedicalBook.id)
+        )
+        expected_med_book_ids: list[int] = session.execute(query).scalars().all()
+
+        # Call
+        result = repo.fetch_by_patient_helped_status_diagnosis_and_items(
+            filter_params=filter_params
+        )
+
+        # Assert
+        assert isinstance(result, list)
+        assert len(result) > 0
+        assert len(result) == len(expected_med_book_ids)
+        for med_book in result:
+            assert isinstance(med_book, dtos.MedicalBookWithItemReviews)
+            assert med_book.id in expected_med_book_ids
+            assert med_book.patient_id == filter_params.patient_id
+            assert med_book.diagnosis_id == filter_params.diagnosis_id
+            assert any(review.item_id in filter_params.item_ids
+                       for review in med_book.item_reviews)
+            assert any(review.is_helped == filter_params.is_helped
+                       for review in med_book.item_reviews)
+
+
+class TestFetchByPatientHelpedStatusItemsWithMatchingAllSymptoms(
+    _TestOrderMixin, _TestPaginationMixin, _TestUniquenessMixin
+):
+    TEST_METHOD = (
+        'fetch_by_patient_helped_status_items_with_matching_all_symptoms'
+    )
+
+    @pytest.mark.parametrize('helped_status', [True, False])
+    def test__fetch_by_patient_helped_status_items_with_matching_all_symptoms(
+        self, helped_status, repo, session, fill_db
+    ):
+        # Setup
+        filter_params = schemas.FindPatientMedicalBooks(
+            patient_id=fill_db['patient_ids'][0],
+            is_helped=helped_status,
+            item_ids=[*fill_db['item_ids']],
+            symptom_ids=[*fill_db['symptom_ids'][:2]],
+            match_all_symptoms=True
+        )
+        subquery = (
+            select(entities.MedicalBook.id.label('med_book_id'),
+                   func.count(entities.Symptom.id.distinct()).label('symptom_count'))
+            .join(entities.MedicalBook.item_reviews)
+            .join(entities.MedicalBook.symptoms)
+            .where(entities.MedicalBook.patient_id == filter_params.patient_id,
+                   entities.ItemReview.is_helped == filter_params.is_helped,
+                   entities.ItemReview.item_id.in_(filter_params.item_ids),
+                   entities.Symptom.id.in_(filter_params.symptom_ids))
+            .group_by(entities.MedicalBook.id)
+            .subquery()
+        )
+        query = (
+            select(subquery.c.med_book_id)
+            .where(subquery.c.symptom_count == len(filter_params.symptom_ids))
+        )
+        expected_med_book_ids: list[int] = session.execute(query).scalars().all()
+
+        # Call
+        result = (
+            repo
+            .fetch_by_patient_helped_status_items_with_matching_all_symptoms(
+                filter_params=filter_params
+            )
+        )
+
+        # Assert
+        assert isinstance(result, list)
+        assert len(result) > 0
+        assert len(result) == len(expected_med_book_ids)
+        for med_book in result:
+            assert isinstance(med_book, entities.MedicalBook)
+            assert med_book.id in expected_med_book_ids
+            assert med_book.patient_id == filter_params.patient_id
+            assert len(med_book.symptoms) >= len(filter_params.symptom_ids)
+            assert any(review.item_id in filter_params.item_ids
+                       for review in med_book.item_reviews)
+            assert any(review.is_helped == filter_params.is_helped
+                       for review in med_book.item_reviews)
+            med_book_symptom_ids: list[int] = [
+                symptom.id for symptom in med_book.symptoms
+            ]
+            assert all(symptom_id in med_book_symptom_ids
+                       for symptom_id in filter_params.symptom_ids)
+
+
+class TestFetchByPatientHelpedStatusDiagnosisItemsWithMatchingAllSymptoms(
+    _TestOrderMixin, _TestPaginationMixin, _TestUniquenessMixin
+):
+    TEST_METHOD = (
+        'fetch_by_patient_helped_status_diagnosis_items_with_matching_all_symptoms'
+    )
+
+    @pytest.mark.parametrize('helped_status', [True, False])
+    def test__fetch_by_patient_helped_status_diagnosis_items_with_matching_all_symptoms(
+        self, helped_status, repo, session, fill_db
+    ):
+        # Setup
+        filter_params = schemas.FindPatientMedicalBooks(
+            patient_id=fill_db['patient_ids'][0],
+            diagnosis_id=fill_db['diagnosis_ids'][0],
+            is_helped=helped_status,
+            item_ids=[*fill_db['item_ids']],
+            symptom_ids=[*fill_db['symptom_ids'][:2]],
+            match_all_symptoms=True
+        )
+        subquery = (
+            select(entities.MedicalBook.id.label('med_book_id'),
+                   func.count(entities.Symptom.id.distinct()).label('symptom_count'))
+            .join(entities.MedicalBook.item_reviews)
+            .join(entities.MedicalBook.symptoms)
+            .where(entities.MedicalBook.patient_id == filter_params.patient_id,
+                   entities.MedicalBook.diagnosis_id == filter_params.diagnosis_id,
+                   entities.ItemReview.is_helped == filter_params.is_helped,
+                   entities.ItemReview.item_id.in_(filter_params.item_ids),
+                   entities.Symptom.id.in_(filter_params.symptom_ids))
+            .group_by(entities.MedicalBook.id)
+            .subquery()
+        )
+        query = (
+            select(subquery.c.med_book_id)
+            .where(subquery.c.symptom_count == len(filter_params.symptom_ids))
+        )
+        expected_med_book_ids: list[int] = session.execute(query).scalars().all()
+
+        # Call
+        result = (
+            repo
+            .fetch_by_patient_helped_status_diagnosis_items_with_matching_all_symptoms(
+                filter_params=filter_params
+            )
+        )
+
+        # Assert
+        assert isinstance(result, list)
+        assert len(result) > 0
+        assert len(result) == len(expected_med_book_ids)
+        for med_book in result:
+            assert isinstance(med_book, entities.MedicalBook)
+            assert med_book.id in expected_med_book_ids
+            assert med_book.patient_id == filter_params.patient_id
+            assert med_book.diagnosis_id == filter_params.diagnosis_id
+            assert len(med_book.symptoms) >= len(filter_params.symptom_ids)
+            assert any(review.item_id in filter_params.item_ids
+                       for review in med_book.item_reviews)
+            assert any(review.is_helped == filter_params.is_helped
+                       for review in med_book.item_reviews)
+            med_book_symptom_ids: list[int] = [
+                symptom.id for symptom in med_book.symptoms
+            ]
+            assert all(symptom_id in med_book_symptom_ids
+                       for symptom_id in filter_params.symptom_ids)
 
 
 class TestAdd:

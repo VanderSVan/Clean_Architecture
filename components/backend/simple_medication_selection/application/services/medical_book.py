@@ -23,182 +23,144 @@ class _MedBookSearchStrategySelector:
         self.StrategyKey = namedtuple(
             'StrategyKey',
             ['patient_id', 'is_helped', 'diagnosis_id', 'symptom_ids',
-             'match_all_symptoms']
+             'match_all_symptoms', 'item_ids']
         )
         self.strategies: dict[namedtuple, Callable] = {
-            self.StrategyKey(patient_id=True,
-                             is_helped=True,
-                             diagnosis_id=True,
-                             symptom_ids=True,
-                             match_all_symptoms=True): (
+            self.StrategyKey(True, True, True, True, True, False): (
                 self
                 .med_books_repo
                 .fetch_by_patient_helped_status_diagnosis_with_matching_all_symptoms
             ),
-            self.StrategyKey(patient_id=True,
-                             is_helped=True,
-                             diagnosis_id=True,
-                             symptom_ids=True,
-                             match_all_symptoms=False): (
+            self.StrategyKey(True, True, True, True, False, False): (
                 self.med_books_repo.fetch_by_patient_helped_status_diagnosis_and_symptoms
             ),
-            self.StrategyKey(patient_id=True,
-                             is_helped=True,
-                             diagnosis_id=True,
-                             symptom_ids=False,
-                             match_all_symptoms=False): (
+            self.StrategyKey(True, True, True, False, False, False): (
                 self.med_books_repo.fetch_by_patient_helped_status_and_diagnosis
             ),
-            self.StrategyKey(patient_id=True,
-                             is_helped=True,
-                             diagnosis_id=False,
-                             symptom_ids=True,
-                             match_all_symptoms=True): (
+            self.StrategyKey(True, True, False, True, True, False): (
                 self
                 .med_books_repo
                 .fetch_by_patient_helped_status_with_matching_all_symptoms
             ),
-            self.StrategyKey(patient_id=True,
-                             is_helped=True,
-                             diagnosis_id=False,
-                             symptom_ids=True,
-                             match_all_symptoms=False): (
+            self.StrategyKey(True, True, False, True, False, False): (
                 self.med_books_repo.fetch_by_patient_helped_status_and_symptoms
             ),
-            self.StrategyKey(patient_id=True,
-                             is_helped=True,
-                             diagnosis_id=False,
-                             symptom_ids=False,
-                             match_all_symptoms=False): (
+            self.StrategyKey(True, True, False, False, False, False): (
                 self.med_books_repo.fetch_by_patient_and_helped_status
             ),
-            self.StrategyKey(patient_id=True,
-                             is_helped=False,
-                             diagnosis_id=True,
-                             symptom_ids=True,
-                             match_all_symptoms=True): (
+            self.StrategyKey(True, False, True, True, True, False): (
                 self.med_books_repo.fetch_by_patient_diagnosis_with_matching_all_symptoms
             ),
-            self.StrategyKey(patient_id=True,
-                             is_helped=False,
-                             diagnosis_id=True,
-                             symptom_ids=True,
-                             match_all_symptoms=False): (
+            self.StrategyKey(True, False, True, True, False, False): (
                 self.med_books_repo.fetch_by_patient_diagnosis_and_symptoms
             ),
-            self.StrategyKey(patient_id=True,
-                             is_helped=False,
-                             diagnosis_id=True,
-                             symptom_ids=False,
-                             match_all_symptoms=False): (
+            self.StrategyKey(True, False, True, False, False, False): (
                 self.med_books_repo.fetch_by_patient_and_diagnosis
             ),
-            self.StrategyKey(patient_id=True,
-                             is_helped=False,
-                             diagnosis_id=False,
-                             symptom_ids=True,
-                             match_all_symptoms=True): (
+            self.StrategyKey(True, False, False, True, True, False): (
                 self.med_books_repo.fetch_by_patient_with_matching_all_symptoms
             ),
-            self.StrategyKey(patient_id=True,
-                             is_helped=False,
-                             diagnosis_id=False,
-                             symptom_ids=True,
-                             match_all_symptoms=False): (
+            self.StrategyKey(True, False, False, True, False, False): (
                 self.med_books_repo.fetch_by_patient_and_symptoms
             ),
-            self.StrategyKey(patient_id=True,
-                             is_helped=False,
-                             diagnosis_id=False,
-                             symptom_ids=False,
-                             match_all_symptoms=False): (
+            self.StrategyKey(True, False, False, False, False, False): (
                 self.med_books_repo.fetch_by_patient
             ),
-            self.StrategyKey(patient_id=False,
-                             is_helped=True,
-                             diagnosis_id=True,
-                             symptom_ids=True,
-                             match_all_symptoms=True): (
+            self.StrategyKey(False, True, True, True, True, False): (
                 self
                 .med_books_repo
                 .fetch_by_helped_status_diagnosis_with_matching_all_symptoms
             ),
-            self.StrategyKey(patient_id=False,
-                             is_helped=True,
-                             diagnosis_id=True,
-                             symptom_ids=True,
-                             match_all_symptoms=False): (
+            self.StrategyKey(False, True, True, True, False, False): (
                 self.med_books_repo.fetch_by_helped_status_diagnosis_and_symptoms
             ),
-            self.StrategyKey(patient_id=False,
-                             is_helped=True,
-                             diagnosis_id=True,
-                             symptom_ids=False,
-                             match_all_symptoms=False): (
+            self.StrategyKey(False, True, True, False, False, False): (
                 self.med_books_repo.fetch_by_helped_status_and_diagnosis
             ),
-            self.StrategyKey(patient_id=False,
-                             is_helped=True,
-                             diagnosis_id=False,
-                             symptom_ids=True,
-                             match_all_symptoms=True): (
+            self.StrategyKey(False, True, False, True, True, False): (
                 self.med_books_repo.fetch_by_helped_status_with_matching_all_symptoms
             ),
-            self.StrategyKey(patient_id=False,
-                             is_helped=True,
-                             diagnosis_id=False,
-                             symptom_ids=True,
-                             match_all_symptoms=False): (
+            self.StrategyKey(False, True, False, True, False, False): (
                 self.med_books_repo.fetch_by_helped_status_and_symptoms
             ),
-            self.StrategyKey(patient_id=False,
-                             is_helped=True,
-                             diagnosis_id=False,
-                             symptom_ids=False,
-                             match_all_symptoms=False): (
+            self.StrategyKey(False, True, False, False, False, False): (
                 self.med_books_repo.fetch_by_helped_status
             ),
-            self.StrategyKey(patient_id=False,
-                             is_helped=False,
-                             diagnosis_id=True,
-                             symptom_ids=True,
-                             match_all_symptoms=True): (
+            self.StrategyKey(False, False, True, True, True, False): (
                 self.med_books_repo.fetch_by_diagnosis_with_matching_all_symptoms
             ),
-            self.StrategyKey(patient_id=False,
-                             is_helped=False,
-                             diagnosis_id=True,
-                             symptom_ids=True,
-                             match_all_symptoms=False): (
+            self.StrategyKey(False, False, True, True, False, False): (
                 self.med_books_repo.fetch_by_diagnosis_and_symptoms
             ),
-            self.StrategyKey(patient_id=False,
-                             is_helped=False,
-                             diagnosis_id=True,
-                             symptom_ids=False,
-                             match_all_symptoms=False): (
+            self.StrategyKey(False, False, True, False, False, False): (
                 self.med_books_repo.fetch_by_diagnosis
             ),
-            self.StrategyKey(patient_id=False,
-                             is_helped=False,
-                             diagnosis_id=False,
-                             symptom_ids=True,
-                             match_all_symptoms=True): (
+            self.StrategyKey(False, False, False, True, True, False): (
                 self.med_books_repo.fetch_by_matching_all_symptoms
             ),
-            self.StrategyKey(patient_id=False,
-                             is_helped=False,
-                             diagnosis_id=False,
-                             symptom_ids=True,
-                             match_all_symptoms=False): (
+            self.StrategyKey(False, False, False, True, False, False): (
                 self.med_books_repo.fetch_by_symptoms
             ),
-            self.StrategyKey(patient_id=False,
-                             is_helped=False,
-                             diagnosis_id=False,
-                             symptom_ids=False,
-                             match_all_symptoms=False): (
+            self.StrategyKey(False, False, False, False, False, False): (
                 self.med_books_repo.fetch_all
+            ),
+            self.StrategyKey(False, False, False, False, False, True): (
+                self.med_books_repo.fetch_by_items
+            ),
+            self.StrategyKey(True, False, False, False, False, True): (
+                self.med_books_repo.fetch_by_patient_and_items
+            ),
+            self.StrategyKey(False, True, False, False, False, True): (
+                self.med_books_repo.fetch_by_items_and_helped_status
+            ),
+            self.StrategyKey(False, False, True, False, False, True): (
+                self.med_books_repo.fetch_by_items_and_diagnosis
+            ),
+            self.StrategyKey(False, False, False, True, False, True): (
+                self.med_books_repo.fetch_by_items_and_symptoms
+            ),
+            self.StrategyKey(False, False, False, True, True, True): (
+                self.med_books_repo.fetch_by_items_with_matching_all_symptoms
+            ),
+            self.StrategyKey(False, False, True, True, True, True): (
+                self.med_books_repo.fetch_by_diagnosis_items_with_matching_all_symptoms
+            ),
+            self.StrategyKey(False, True, False, True, True, True): (
+                self
+                .med_books_repo
+                .fetch_by_helped_status_items_with_matching_all_symptoms
+            ),
+            self.StrategyKey(False, True, True, False, False, True): (
+                self.med_books_repo.fetch_by_helped_status_diagnosis_and_items
+            ),
+            self.StrategyKey(False, True, True, True, True, True): (
+                self
+                .med_books_repo
+                .fetch_by_helped_status_diagnosis_items_with_matching_all_symptoms
+            ),
+            self.StrategyKey(True, False, True, False, False, True): (
+                self.med_books_repo.fetch_by_patient_diagnosis_and_items
+            ),
+            self.StrategyKey(True, False, True, True, True, True): (
+                self
+                .med_books_repo
+                .fetch_by_patient_diagnosis_items_with_matching_all_symptoms
+            ),
+            self.StrategyKey(True, True, False, False, False, True): (
+                self.med_books_repo.fetch_by_patient_helped_status_and_items
+            ),
+            self.StrategyKey(True, True, False, True, True, True): (
+                self
+                .med_books_repo
+                .fetch_by_patient_helped_status_items_with_matching_all_symptoms
+            ),
+            self.StrategyKey(True, True, True, False, False, True): (
+                self.med_books_repo.fetch_by_patient_helped_status_diagnosis_and_items
+            ),
+            self.StrategyKey(True, True, True, True, True, True): (
+                self
+                .med_books_repo
+                .fetch_by_patient_helped_status_diagnosis_items_with_matching_all_symptoms
             )
         }
 
@@ -219,7 +181,8 @@ class _MedBookSearchStrategySelector:
             symptom_ids=True if filter_params.symptom_ids is not None else False,
             match_all_symptoms=(True
                                 if filter_params.match_all_symptoms is not None
-                                else False)
+                                else False),
+            item_ids=True if filter_params.item_ids is not None else False
         )
 
     def get_method(

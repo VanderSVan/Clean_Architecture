@@ -252,7 +252,6 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         self,
         filter_params: schemas.FindMedicalBooks
     ) -> Sequence[dtos.MedicalBookWithItemReviews | None]:
-
         query: Select = (
             select(entities.MedicalBook)
             .distinct()
@@ -276,7 +275,6 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         self,
         filter_params: schemas.FindMedicalBooks
     ) -> Sequence[entities.MedicalBook | None]:
-
         query: Select = (
             select(entities.MedicalBook)
             .distinct()
@@ -302,7 +300,6 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         self,
         filter_params: schemas.FindMedicalBooks
     ) -> Sequence[entities.MedicalBook | None]:
-
         query: Select = (
             select(entities.MedicalBook)
             .join(entities.MedicalBook.item_reviews)
@@ -521,7 +518,6 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         self,
         filter_params: schemas.FindPatientMedicalBooks
     ) -> Sequence[entities.MedicalBook | None]:
-
         query: Select = (
             select(entities.MedicalBook)
             .join(entities.MedicalBook.symptoms)
@@ -616,6 +612,395 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
 
         result = self.session.execute(query).unique().scalars()
         return [dtos.MedicalBook.from_orm(row) for row in result]
+
+    def fetch_by_items(self,
+                       filter_params: schemas.FindMedicalBooks
+                       ) -> list[dtos.MedicalBookWithItemReviews | None]:
+        query: Select = (
+            select(entities.MedicalBook)
+            .distinct()
+            .join(entities.MedicalBook.item_reviews)
+            .where(entities.ItemReview.item_id.in_(filter_params.item_ids))
+            .order_by(
+                desc(getattr(entities.MedicalBook, filter_params.sort_field))
+                if filter_params.sort_direction == 'desc'
+                else asc(getattr(entities.MedicalBook, filter_params.sort_field))
+            )
+            .limit(filter_params.limit)
+            .offset(filter_params.offset)
+            .options(joinedload(entities.MedicalBook.item_reviews))
+        )
+
+        result = self.session.execute(query).unique().scalars()
+        return [dtos.MedicalBookWithItemReviews.from_orm(row) for row in result]
+
+    def fetch_by_patient_and_items(self,
+                                   filter_params: schemas.FindPatientMedicalBooks
+                                   ) -> list[dtos.MedicalBookWithItemReviews | None]:
+        query: Select = (
+            select(entities.MedicalBook)
+            .distinct()
+            .join(entities.MedicalBook.item_reviews)
+            .where(entities.MedicalBook.patient_id == filter_params.patient_id,
+                   entities.ItemReview.item_id.in_(filter_params.item_ids))
+            .order_by(desc(getattr(entities.MedicalBook, filter_params.sort_field))
+                      if filter_params.sort_direction == 'desc'
+                      else asc(getattr(entities.MedicalBook, filter_params.sort_field)))
+            .limit(filter_params.limit)
+            .offset(filter_params.offset)
+            .options(joinedload(entities.MedicalBook.item_reviews))
+        )
+
+        result = self.session.execute(query).unique().scalars()
+        return [dtos.MedicalBookWithItemReviews.from_orm(row) for row in result]
+
+    def fetch_by_items_and_helped_status(
+        self,
+        filter_params: schemas.FindMedicalBooks
+    ) -> list[dtos.MedicalBookWithItemReviews | None]:
+
+        query: Select = (
+            select(entities.MedicalBook)
+            .distinct()
+            .join(entities.MedicalBook.item_reviews)
+            .where(entities.ItemReview.item_id.in_(filter_params.item_ids),
+                   entities.ItemReview.is_helped == filter_params.is_helped)
+            .order_by(desc(getattr(entities.MedicalBook, filter_params.sort_field))
+                      if filter_params.sort_direction == 'desc'
+                      else asc(getattr(entities.MedicalBook, filter_params.sort_field)))
+            .limit(filter_params.limit)
+            .offset(filter_params.offset)
+            .options(joinedload(entities.MedicalBook.item_reviews))
+        )
+
+        result = self.session.execute(query).unique().scalars()
+        return [dtos.MedicalBookWithItemReviews.from_orm(row) for row in result]
+
+    def fetch_by_items_and_diagnosis(self,
+                                     filter_params: schemas.FindMedicalBooks
+                                     ) -> list[dtos.MedicalBookWithItemReviews | None]:
+        query: Select = (
+            select(entities.MedicalBook)
+            .distinct()
+            .join(entities.MedicalBook.item_reviews)
+            .where(entities.MedicalBook.diagnosis_id == filter_params.diagnosis_id,
+                   entities.ItemReview.item_id.in_(filter_params.item_ids))
+            .order_by(desc(getattr(entities.MedicalBook, filter_params.sort_field))
+                      if filter_params.sort_direction == 'desc'
+                      else asc(getattr(entities.MedicalBook, filter_params.sort_field)))
+            .limit(filter_params.limit)
+            .offset(filter_params.offset)
+            .options(joinedload(entities.MedicalBook.item_reviews))
+        )
+
+        result = self.session.execute(query).unique().scalars()
+        return [dtos.MedicalBookWithItemReviews.from_orm(row) for row in result]
+
+    def fetch_by_items_and_symptoms(self,
+                                    filter_params: schemas.FindMedicalBooks
+                                    ) -> Sequence[entities.MedicalBook | None]:
+        query: Select = (
+            select(entities.MedicalBook)
+            .distinct()
+            .join(entities.MedicalBook.item_reviews)
+            .join(entities.MedicalBook.symptoms)
+            .where(entities.ItemReview.item_id.in_(filter_params.item_ids),
+                   entities.Symptom.id.in_(filter_params.symptom_ids))
+            .order_by(desc(getattr(entities.MedicalBook, filter_params.sort_field))
+                      if filter_params.sort_direction == 'desc'
+                      else asc(getattr(entities.MedicalBook, filter_params.sort_field)))
+            .limit(filter_params.limit)
+            .offset(filter_params.offset)
+            .options(joinedload(entities.MedicalBook.item_reviews))
+            .options(joinedload(entities.MedicalBook.symptoms))
+        )
+
+        return self.session.execute(query).unique().scalars().all()
+
+    def fetch_by_items_with_matching_all_symptoms(
+        self,
+        filter_params: schemas.FindMedicalBooks
+    ) -> Sequence[entities.MedicalBook | None]:
+        query: Select = (
+            select(entities.MedicalBook)
+            .join(entities.MedicalBook.item_reviews)
+            .join(entities.MedicalBook.symptoms)
+            .where(entities.ItemReview.item_id.in_(filter_params.item_ids),
+                   entities.Symptom.id.in_(filter_params.symptom_ids))
+            .group_by(entities.MedicalBook.id)
+            .having(func.count(entities.Symptom.id.distinct()) == len(
+                filter_params.symptom_ids))
+            .order_by(desc(getattr(entities.MedicalBook, filter_params.sort_field))
+                      if filter_params.sort_direction == 'desc'
+                      else asc(getattr(entities.MedicalBook, filter_params.sort_field)))
+            .limit(filter_params.limit)
+            .offset(filter_params.offset)
+            .options(joinedload(entities.MedicalBook.item_reviews))
+            .options(joinedload(entities.MedicalBook.symptoms))
+        )
+
+        return self.session.execute(query).unique().scalars().all()
+
+    def fetch_by_diagnosis_items_with_matching_all_symptoms(
+        self,
+        filter_params: schemas.FindMedicalBooks
+    ) -> Sequence[entities.MedicalBook | None]:
+
+        query: Select = (
+            select(entities.MedicalBook)
+            .join(entities.MedicalBook.item_reviews)
+            .join(entities.MedicalBook.symptoms)
+            .where(entities.MedicalBook.diagnosis_id == filter_params.diagnosis_id,
+                   entities.ItemReview.item_id.in_(filter_params.item_ids),
+                   entities.Symptom.id.in_(filter_params.symptom_ids))
+            .group_by(entities.MedicalBook.id)
+            .having(func.count(entities.Symptom.id.distinct()) == len(
+                filter_params.symptom_ids))
+            .order_by(desc(getattr(entities.MedicalBook, filter_params.sort_field))
+                      if filter_params.sort_direction == 'desc'
+                      else asc(getattr(entities.MedicalBook, filter_params.sort_field)))
+            .limit(filter_params.limit)
+            .offset(filter_params.offset)
+            .options(joinedload(entities.MedicalBook.item_reviews))
+            .options(joinedload(entities.MedicalBook.symptoms))
+        )
+
+        return self.session.execute(query).unique().scalars().all()
+
+    def fetch_by_helped_status_items_with_matching_all_symptoms(
+        self,
+        filter_params: schemas.FindMedicalBooks
+    ) -> Sequence[entities.MedicalBook | None]:
+        query: Select = (
+            select(entities.MedicalBook)
+            .join(entities.MedicalBook.item_reviews)
+            .join(entities.MedicalBook.symptoms)
+            .where(entities.ItemReview.is_helped == filter_params.is_helped,
+                   entities.ItemReview.item_id.in_(filter_params.item_ids),
+                   entities.Symptom.id.in_(filter_params.symptom_ids))
+            .group_by(entities.MedicalBook.id)
+            .having(func.count(entities.Symptom.id.distinct()) == len(
+                filter_params.symptom_ids))
+            .order_by(desc(getattr(entities.MedicalBook, filter_params.sort_field))
+                      if filter_params.sort_direction == 'desc'
+                      else asc(getattr(entities.MedicalBook, filter_params.sort_field)))
+            .limit(filter_params.limit)
+            .offset(filter_params.offset)
+            .options(joinedload(entities.MedicalBook.item_reviews))
+            .options(joinedload(entities.MedicalBook.symptoms))
+        )
+
+        return self.session.execute(query).unique().scalars().all()
+
+    def fetch_by_helped_status_diagnosis_and_items(
+        self,
+        filter_params: schemas.FindMedicalBooks
+    ) -> list[dtos.MedicalBookWithItemReviews | None]:
+        query: Select = (
+            select(entities.MedicalBook)
+            .distinct()
+            .join(entities.MedicalBook.item_reviews)
+            .where(entities.ItemReview.is_helped == filter_params.is_helped,
+                   entities.MedicalBook.diagnosis_id == filter_params.diagnosis_id,
+                   entities.ItemReview.item_id.in_(filter_params.item_ids))
+            .order_by(
+                desc(getattr(entities.MedicalBook, filter_params.sort_field))
+                if filter_params.sort_direction == 'desc'
+                else asc(getattr(entities.MedicalBook, filter_params.sort_field))
+            )
+            .limit(filter_params.limit)
+            .offset(filter_params.offset)
+            .options(joinedload(entities.MedicalBook.item_reviews))
+        )
+
+        result = self.session.execute(query).scalars().unique()
+        return [dtos.MedicalBookWithItemReviews.from_orm(row) for row in result]
+
+    def fetch_by_helped_status_diagnosis_items_with_matching_all_symptoms(
+        self,
+        filter_params: schemas.FindMedicalBooks
+    ) -> Sequence[entities.MedicalBook | None]:
+        query: Select = (
+            select(entities.MedicalBook)
+            .join(entities.MedicalBook.item_reviews)
+            .join(entities.MedicalBook.symptoms)
+            .where(entities.ItemReview.is_helped == filter_params.is_helped,
+                   entities.MedicalBook.diagnosis_id == filter_params.diagnosis_id,
+                   entities.ItemReview.item_id.in_(filter_params.item_ids),
+                   entities.Symptom.id.in_(filter_params.symptom_ids))
+            .group_by(entities.MedicalBook.id)
+            .having(func.count(entities.Symptom.id.distinct()) == len(
+                filter_params.symptom_ids))
+            .order_by(desc(getattr(entities.MedicalBook, filter_params.sort_field))
+                      if filter_params.sort_direction == 'desc'
+                      else asc(getattr(entities.MedicalBook, filter_params.sort_field)))
+            .limit(filter_params.limit)
+            .offset(filter_params.offset)
+            .options(joinedload(entities.MedicalBook.item_reviews))
+            .options(joinedload(entities.MedicalBook.symptoms))
+        )
+
+        return self.session.execute(query).unique().scalars().all()
+
+    def fetch_by_patient_diagnosis_and_items(
+        self,
+        filter_params: schemas.FindPatientMedicalBooks
+    ) -> list[dtos.MedicalBookWithItemReviews | None]:
+
+        query: Select = (
+            select(entities.MedicalBook)
+            .distinct()
+            .join(entities.MedicalBook.item_reviews)
+            .where(entities.MedicalBook.patient_id == filter_params.patient_id,
+                   entities.MedicalBook.diagnosis_id == filter_params.diagnosis_id,
+                   entities.ItemReview.item_id.in_(filter_params.item_ids))
+            .order_by(
+                desc(getattr(entities.MedicalBook, filter_params.sort_field))
+                if filter_params.sort_direction == 'desc'
+                else asc(getattr(entities.MedicalBook, filter_params.sort_field))
+            )
+            .limit(filter_params.limit)
+            .offset(filter_params.offset)
+            .options(joinedload(entities.MedicalBook.item_reviews))
+        )
+
+        result = self.session.execute(query).scalars().unique()
+        return [dtos.MedicalBookWithItemReviews.from_orm(row) for row in result]
+
+    def fetch_by_patient_diagnosis_items_with_matching_all_symptoms(
+        self,
+        filter_params: schemas.FindPatientMedicalBooks
+    ) -> Sequence[entities.MedicalBook | None]:
+
+        query: Select = (
+            select(entities.MedicalBook)
+            .join(entities.MedicalBook.item_reviews)
+            .join(entities.MedicalBook.symptoms)
+            .where(entities.MedicalBook.patient_id == filter_params.patient_id,
+                   entities.MedicalBook.diagnosis_id == filter_params.diagnosis_id,
+                   entities.ItemReview.item_id.in_(filter_params.item_ids),
+                   entities.Symptom.id.in_(filter_params.symptom_ids))
+            .group_by(entities.MedicalBook.id)
+            .having(func.count(entities.Symptom.id.distinct()) == len(
+                filter_params.symptom_ids))
+            .order_by(desc(getattr(entities.MedicalBook, filter_params.sort_field))
+                      if filter_params.sort_direction == 'desc'
+                      else asc(getattr(entities.MedicalBook, filter_params.sort_field)))
+            .limit(filter_params.limit)
+            .offset(filter_params.offset)
+            .options(joinedload(entities.MedicalBook.item_reviews))
+            .options(joinedload(entities.MedicalBook.symptoms))
+        )
+
+        return self.session.execute(query).unique().scalars().all()
+
+    def fetch_by_patient_helped_status_and_items(
+        self,
+        filter_params: schemas.FindPatientMedicalBooks
+    ) -> list[dtos.MedicalBookWithItemReviews | None]:
+        query: Select = (
+            select(entities.MedicalBook)
+            .distinct()
+            .join(entities.MedicalBook.item_reviews)
+            .where(entities.MedicalBook.patient_id == filter_params.patient_id,
+                   entities.ItemReview.is_helped == filter_params.is_helped,
+                   entities.ItemReview.item_id.in_(filter_params.item_ids))
+            .order_by(
+                desc(getattr(entities.MedicalBook, filter_params.sort_field))
+                if filter_params.sort_direction == 'desc'
+                else asc(getattr(entities.MedicalBook, filter_params.sort_field))
+            )
+            .limit(filter_params.limit)
+            .offset(filter_params.offset)
+            .options(joinedload(entities.MedicalBook.item_reviews))
+        )
+
+        result = self.session.execute(query).scalars().unique()
+        return [dtos.MedicalBookWithItemReviews.from_orm(row) for row in result]
+
+    def fetch_by_patient_helped_status_diagnosis_and_items(
+        self,
+        filter_params: schemas.FindPatientMedicalBooks
+    ) -> list[dtos.MedicalBookWithItemReviews | None]:
+
+        query: Select = (
+            select(entities.MedicalBook)
+            .distinct()
+            .join(entities.MedicalBook.item_reviews)
+            .where(entities.MedicalBook.patient_id == filter_params.patient_id,
+                   entities.MedicalBook.diagnosis_id == filter_params.diagnosis_id,
+                   entities.ItemReview.is_helped == filter_params.is_helped,
+                   entities.ItemReview.item_id.in_(filter_params.item_ids))
+            .order_by(
+                desc(getattr(entities.MedicalBook, filter_params.sort_field))
+                if filter_params.sort_direction == 'desc'
+                else asc(getattr(entities.MedicalBook, filter_params.sort_field))
+            )
+            .limit(filter_params.limit)
+            .offset(filter_params.offset)
+            .options(joinedload(entities.MedicalBook.item_reviews))
+        )
+
+        result = self.session.execute(query).scalars().unique()
+        return [dtos.MedicalBookWithItemReviews.from_orm(row) for row in result]
+
+    def fetch_by_patient_helped_status_items_with_matching_all_symptoms(
+        self,
+        filter_params: schemas.FindPatientMedicalBooks
+    ) -> Sequence[entities.MedicalBook | None]:
+
+        query: Select = (
+            select(entities.MedicalBook)
+            .join(entities.MedicalBook.item_reviews)
+            .join(entities.MedicalBook.symptoms)
+            .where(entities.MedicalBook.patient_id == filter_params.patient_id,
+                   entities.ItemReview.is_helped == filter_params.is_helped,
+                   entities.ItemReview.item_id.in_(filter_params.item_ids),
+                   entities.Symptom.id.in_(filter_params.symptom_ids))
+            .group_by(entities.MedicalBook.id)
+            .having(func.count(entities.Symptom.id.distinct()) == len(
+                filter_params.symptom_ids))
+            .order_by(
+                desc(getattr(entities.MedicalBook, filter_params.sort_field))
+                if filter_params.sort_direction == 'desc'
+                else asc(getattr(entities.MedicalBook, filter_params.sort_field))
+            )
+            .limit(filter_params.limit)
+            .offset(filter_params.offset)
+            .options(joinedload(entities.MedicalBook.item_reviews))
+            .options(joinedload(entities.MedicalBook.symptoms))
+        )
+
+        return self.session.execute(query).unique().scalars().all()
+
+    def fetch_by_patient_helped_status_diagnosis_items_with_matching_all_symptoms(
+        self,
+        filter_params: schemas.FindPatientMedicalBooks
+    ) -> Sequence[entities.MedicalBook | None]:
+        query: Select = (
+            select(entities.MedicalBook)
+            .join(entities.MedicalBook.item_reviews)
+            .join(entities.MedicalBook.symptoms)
+            .where(entities.MedicalBook.patient_id == filter_params.patient_id,
+                   entities.MedicalBook.diagnosis_id == filter_params.diagnosis_id,
+                   entities.ItemReview.is_helped == filter_params.is_helped,
+                   entities.ItemReview.item_id.in_(filter_params.item_ids),
+                   entities.Symptom.id.in_(filter_params.symptom_ids))
+            .group_by(entities.MedicalBook.id)
+            .having(func.count(entities.Symptom.id.distinct()) == len(
+                filter_params.symptom_ids))
+            .order_by(
+                desc(getattr(entities.MedicalBook, filter_params.sort_field))
+                if filter_params.sort_direction == 'desc'
+                else asc(getattr(entities.MedicalBook, filter_params.sort_field))
+            )
+            .limit(filter_params.limit)
+            .offset(filter_params.offset)
+            .options(joinedload(entities.MedicalBook.item_reviews))
+            .options(joinedload(entities.MedicalBook.symptoms))
+        )
+
+        return self.session.execute(query).unique().scalars().all()
 
     def add(self, med_book: entities.MedicalBook) -> entities.MedicalBook:
         self.session.add(med_book)

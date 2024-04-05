@@ -3,8 +3,6 @@ from pydantic import Field
 from .base import DTO
 from .symptom import Symptom
 from .item_review import ItemReview
-from .item_review import ItemReview
-from simple_medication_selection.application import entities
 
 
 class MedicalBook(DTO):

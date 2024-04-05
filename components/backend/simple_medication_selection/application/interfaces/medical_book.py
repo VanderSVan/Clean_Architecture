@@ -188,6 +188,114 @@ class MedicalBooksRepo(ABC):
         ...
 
     @abstractmethod
+    def fetch_by_items(self,
+                       filter_params: schemas.FindMedicalBooks
+                       ) -> list[dtos.MedicalBookWithItemReviews | None]:
+        ...
+
+    @abstractmethod
+    def fetch_by_patient_and_items(self,
+                                   filter_params: schemas.FindPatientMedicalBooks
+                                   ) -> list[dtos.MedicalBookWithItemReviews | None]:
+        ...
+
+    @abstractmethod
+    def fetch_by_items_and_helped_status(
+        self,
+        filter_params: schemas.FindMedicalBooks
+    ) -> list[dtos.MedicalBookWithItemReviews | None]:
+        ...
+
+    @abstractmethod
+    def fetch_by_items_and_diagnosis(self,
+                                     filter_params: schemas.FindMedicalBooks
+                                     ) -> list[dtos.MedicalBookWithItemReviews | None]:
+        ...
+
+    @abstractmethod
+    def fetch_by_items_and_symptoms(self,
+                                    filter_params: schemas.FindMedicalBooks
+                                    ) -> Sequence[entities.MedicalBook | None]:
+        ...
+
+    @abstractmethod
+    def fetch_by_items_with_matching_all_symptoms(
+        self,
+        filter_params: schemas.FindMedicalBooks
+    ) -> Sequence[entities.MedicalBook | None]:
+        ...
+
+    @abstractmethod
+    def fetch_by_diagnosis_items_with_matching_all_symptoms(
+        self,
+        filter_params: schemas.FindMedicalBooks
+    ) -> Sequence[entities.MedicalBook | None]:
+        ...
+
+    @abstractmethod
+    def fetch_by_helped_status_items_with_matching_all_symptoms(
+        self,
+        filter_params: schemas.FindMedicalBooks
+    ) -> Sequence[entities.MedicalBook | None]:
+        ...
+
+    @abstractmethod
+    def fetch_by_helped_status_diagnosis_and_items(
+        self,
+        filter_params: schemas.FindMedicalBooks
+    ) -> Sequence[entities.MedicalBook | None]:
+        ...
+
+    @abstractmethod
+    def fetch_by_helped_status_diagnosis_items_with_matching_all_symptoms(
+        self,
+        filter_params: schemas.FindMedicalBooks
+    ) -> Sequence[entities.MedicalBook | None]:
+        ...
+
+    @abstractmethod
+    def fetch_by_patient_diagnosis_and_items(
+        self,
+        filter_params: schemas.FindPatientMedicalBooks
+    ) -> list[dtos.MedicalBookWithItemReviews | None]:
+        ...
+
+    @abstractmethod
+    def fetch_by_patient_diagnosis_items_with_matching_all_symptoms(
+        self,
+        filter_params: schemas.FindPatientMedicalBooks
+    ) -> Sequence[entities.MedicalBook | None]:
+        ...
+
+    @abstractmethod
+    def fetch_by_patient_helped_status_and_items(
+        self,
+        filter_params: schemas.FindPatientMedicalBooks
+    ) -> list[dtos.MedicalBookWithItemReviews | None]:
+        ...
+
+    @abstractmethod
+    def fetch_by_patient_helped_status_diagnosis_and_items(
+        self,
+        filter_params: schemas.FindPatientMedicalBooks
+    ) -> list[dtos.MedicalBookWithItemReviews | None]:
+        ...
+
+    @abstractmethod
+    def fetch_by_patient_helped_status_items_with_matching_all_symptoms(
+        self,
+        filter_params: schemas.FindPatientMedicalBooks
+    ) -> Sequence[entities.MedicalBook | None]:
+        ...
+
+    @abstractmethod
+    def fetch_by_patient_helped_status_diagnosis_items_with_matching_all_symptoms(
+        self,
+        filter_params: schemas.FindPatientMedicalBooks
+    ) -> Sequence[entities.MedicalBook | None]:
+        ...
+
+    @abstractmethod
     def add(self, med_book: entities.MedicalBook) -> entities.MedicalBook:
         ...
 
