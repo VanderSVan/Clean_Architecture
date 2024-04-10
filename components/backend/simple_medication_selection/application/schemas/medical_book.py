@@ -46,4 +46,3 @@ class FindMedicalBooks(BaseSchema):
 
 class FindPatientMedicalBooks(FindMedicalBooks):
     patient_id: int = Field(ge=1)
-
