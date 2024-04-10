@@ -30,7 +30,7 @@ from .item_review import (
 )
 from .patient import (
     PatientCreateSchema,
-    PatientGetSchema,
+    Patient,
     PatientUpdateSchema,
 )
 from .medical_book import (
@@ -38,5 +38,6 @@ from .medical_book import (
     MedicalBook,
     MedicalBookWithSymptoms,
     MedicalBookWithItemReviews,
+    MedicalBookWithSymptomsAndItemReviews,
     UpdatedMedicalBookInfo,
 )

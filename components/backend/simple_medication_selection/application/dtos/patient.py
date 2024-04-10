@@ -26,7 +26,7 @@ class PatientCreateSchema(DTO):
     phone: str = Field(None, min_length=9, max_length=15, pattern=r'^([\d]+)$')
 
 
-class PatientGetSchema(DTO):
+class Patient(DTO):
     id: int = Field(..., ge=1)
     nickname: str = Field(..., min_length=1, max_length=255)
     gender: GenderEnum = Field(...)

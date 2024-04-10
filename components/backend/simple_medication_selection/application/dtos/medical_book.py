@@ -35,13 +35,18 @@ class MedicalBookWithItemReviews(MedicalBook):
     item_reviews: list[ItemReview | None]
 
 
+class MedicalBookWithSymptomsAndItemReviews(MedicalBookWithSymptoms,
+                                            MedicalBookWithItemReviews):
+    pass
+
+
 class NewMedicalBookInfo(DTO):
     title_history: str = Field(min_length=1, max_length=255)
     history: str | None = Field(min_length=1, max_length=15000)
     patient_id: int = Field(ge=1)
     diagnosis_id: int = Field(ge=1)
-    symptoms: list[Symptom | None] | None
-    item_reviews: list[ItemReview | None] | None
+    symptom_ids: list[int] | None
+    item_review_ids: list[int] | None
 
 
 class UpdatedMedicalBookInfo(DTO):
@@ -50,5 +55,5 @@ class UpdatedMedicalBookInfo(DTO):
     history: str | None = Field(min_length=1, max_length=15000)
     patient_id: int | None = Field(ge=1)
     diagnosis_id: int | None = Field(ge=1)
-    symptoms: list[Symptom | None] | None
-    item_reviews: list[ItemReview | None] | None
+    symptom_ids: list[int] | None
+    item_review_ids: list[int] | None

@@ -126,23 +126,17 @@ class MedicalBook:
         for symptom in symptoms:
             self.symptoms.remove(symptom) if symptom in self.symptoms else None
 
-    def sort_items_by_rating(self, order: Literal['asc', 'desc'] = 'desc') -> None:
-        reverse = True if order == 'desc' else False
-        self.item_reviews.sort(
-            key=lambda item_review: item_review.item_rating, reverse=reverse
-        )
+    def add_item_reviews(self, item_reviews: Iterable[ItemReview]) -> None:
+        for item_review in item_reviews:
+            (self.item_reviews.append(item_review)
+             if item_review not in self.item_reviews
+             else None)
 
-    def get_items_by_helped_status(self,
-                                   is_helped: bool = True,
-                                   *,
-                                   order_by_rating: Literal['asc', 'desc'] = 'desc'
-                                   ) -> list[TreatmentItem]:
-        self.sort_items_by_rating(order_by_rating)
-        return [
-            item_review.item
-            for item_review in self.item_reviews
-            if item_review.is_helped == is_helped
-        ]
+    def remove_item_reviews(self, item_reviews: Iterable[ItemReview]) -> None:
+        for item_review in item_reviews:
+            (self.item_reviews.remove(item_review)
+             if item_review in self.item_reviews
+             else None)
 
 
 # Хранит все сущности из текущего модуля, формируя кортеж
