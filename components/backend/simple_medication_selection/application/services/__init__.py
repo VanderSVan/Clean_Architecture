@@ -16,7 +16,7 @@ from .item_type import (
 )
 from .catalog import (
     TreatmentItemCatalog,
-    decorated_function_registry as treatment_item_decorated_function_registry
+    decorated_function_registry as catalog_decorated_function_registry
 )
 from .item_review import (
     ItemReview,
