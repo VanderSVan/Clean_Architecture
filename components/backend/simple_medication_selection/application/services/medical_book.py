@@ -166,16 +166,11 @@ class _MedBookSearchStrategySelector:
 
     def _build_key(
         self,
-        filter_params: schemas.FindMedicalBooks | schemas.FindPatientMedicalBooks
+        filter_params: schemas.FindMedicalBooks | schemas.FindMedicalBooks
     ) -> namedtuple:
 
-        if isinstance(filter_params, schemas.FindPatientMedicalBooks):
-            patient_id = True if filter_params.patient_id is not None else False
-        else:
-            patient_id = None
-
         return self.StrategyKey(
-            patient_id=True if patient_id is not None else False,
+            patient_id=True if filter_params.patient_id is not None else False,
             is_helped=True if filter_params.is_helped is not None else False,
             diagnosis_id=True if filter_params.diagnosis_id is not None else False,
             symptom_ids=True if filter_params.symptom_ids is not None else False,
@@ -187,7 +182,7 @@ class _MedBookSearchStrategySelector:
 
     def get_method(
         self,
-        filter_params: schemas.FindMedicalBooks | schemas.FindPatientMedicalBooks
+        filter_params: schemas.FindMedicalBooks | schemas.FindMedicalBooks
     ) -> Callable:
 
         key: namedtuple = self._build_key(filter_params)
@@ -270,7 +265,7 @@ class MedicalBook:
     @validate_arguments
     def find_med_books(
         self,
-        filter_params: schemas.FindMedicalBooks | schemas.FindPatientMedicalBooks
+        filter_params: schemas.FindMedicalBooks | schemas.FindMedicalBooks
     ) -> list[dtos.MedicalBook | None]:
 
         search_strategy_selector = _MedBookSearchStrategySelector(self.med_books_repo)
@@ -282,7 +277,7 @@ class MedicalBook:
     @validate_arguments
     def find_med_books_with_symptoms(
         self,
-        filter_params: schemas.FindMedicalBooks | schemas.FindPatientMedicalBooks
+        filter_params: schemas.FindMedicalBooks | schemas.FindMedicalBooks
     ) -> list[dtos.MedicalBookWithSymptoms | None]:
 
         search_strategy_selector = _MedBookSearchStrategySelector(self.med_books_repo)
@@ -294,7 +289,7 @@ class MedicalBook:
     @validate_arguments
     def find_med_books_with_reviews(
         self,
-        filter_params: schemas.FindMedicalBooks | schemas.FindPatientMedicalBooks
+        filter_params: schemas.FindMedicalBooks | schemas.FindMedicalBooks
     ) -> list[dtos.MedicalBookWithItemReviews | None]:
 
         search_strategy_selector = _MedBookSearchStrategySelector(self.med_books_repo)
@@ -306,7 +301,7 @@ class MedicalBook:
     @validate_arguments
     def find_med_books_with_symptoms_and_reviews(
         self,
-        filter_params: schemas.FindMedicalBooks | schemas.FindPatientMedicalBooks
+        filter_params: schemas.FindMedicalBooks | schemas.FindMedicalBooks
     ) -> Sequence[dtos.MedicalBook | None]:
 
         search_strategy_selector = _MedBookSearchStrategySelector(self.med_books_repo)

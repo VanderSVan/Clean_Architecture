@@ -4,6 +4,7 @@ from pydantic import BaseModel as BaseSchema, Field, validator, root_validator
 
 
 class FindMedicalBooks(BaseSchema):
+    patient_id: int | None = Field(ge=1)
     item_ids: list[int] | None = Field(ge=1)
     is_helped: bool | None
     diagnosis_id: int | None = Field(ge=1)
@@ -43,6 +44,3 @@ class FindMedicalBooks(BaseSchema):
 
         return values
 
-
-class FindPatientMedicalBooks(FindMedicalBooks):
-    patient_id: int = Field(ge=1)

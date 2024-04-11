@@ -246,43 +246,190 @@ filter_params_combinations: list[tuple] = [
 # ---------------------------------------------------------------------------------------
 
 
-# class TestGetMedBook:
-#
-#     def test__get_med_book(self, patient_id, is_helped, diagnosis_id, symptom_ids,
-#                            match_all_symptoms, item_ids, repo_method, service,
-#                            med_books_repo, patients_repo, diagnoses_repo):
-#         # Setup
-#         med_book_id = 1
-#         returned_entity = entities.MedicalBook(
-#             id=med_book_id, title_history='title', history='history', patient_id=1,
-#             diagnosis_id=1
-#         )
-#         getattr(med_books_repo, repo_method).return_value = returned_entity
-#
-#         # Call
-#         result = service.get_med_book(med_book_id=med_book_id)
-#
-#         # Assert
-#         getattr(med_books_repo, repo_method).assert_called_once_with(med_book_id)
-#         assert patients_repo.method_calls == []
-#         assert diagnoses_repo.method_calls == []
-#         assert result == returned_entity
-#
-#     def test_medical_book_not_found(self, med_book_id, include_symptoms,
-#                                     include_reviews, repo_method, service,
-#                                     med_books_repo, patients_repo, diagnoses_repo):
-#         # Setup
-#         getattr(med_books_repo, repo_method).return_value = None
-#
-#         # Call and Assert
-#         with pytest.raises(errors.MedicalBookNotFound):
-#             service.get_med_book(med_book_id=med_book_id,
-#                                  include_symptoms=include_symptoms,
-#                                  include_reviews=include_reviews)
-#
-#         getattr(med_books_repo, repo_method).assert_called_once_with(med_book_id)
-#         assert patients_repo.method_calls == []
-#         assert diagnoses_repo.method_calls == []
+class TestGetMedBook:
+
+    def test__get_med_book(self, service, med_books_repo, patients_repo, diagnoses_repo,
+                           symptoms_repo, reviews_repo):
+        # Setup
+        med_book_id = 1
+        returned_entity = dtos.MedicalBook(
+            id=med_book_id, title_history='title', history='history', patient_id=1,
+            diagnosis_id=1
+        )
+        med_books_repo.fetch_by_id.return_value = returned_entity
+
+        # Call
+        result = service.get_med_book(med_book_id=med_book_id)
+
+        # Assert
+        med_books_repo.fetch_by_id.assert_called_once_with(
+            med_book_id, include_symptoms=False, include_reviews=False
+        )
+        assert patients_repo.method_calls == []
+        assert diagnoses_repo.method_calls == []
+        assert result == returned_entity
+        assert symptoms_repo.method_calls == []
+        assert reviews_repo.method_calls == []
+
+    def test_medical_book_not_found(self, service, med_books_repo, patients_repo,
+                                    diagnoses_repo, symptoms_repo, reviews_repo):
+        # Setup
+        med_book_id = 1
+        med_books_repo.fetch_by_id.return_value = None
+
+        # Call and Assert
+        with pytest.raises(errors.MedicalBookNotFound):
+            service.get_med_book(med_book_id=med_book_id)
+
+        med_books_repo.fetch_by_id.assert_called_once_with(
+            med_book_id, include_symptoms=False, include_reviews=False
+        )
+        assert patients_repo.method_calls == []
+        assert diagnoses_repo.method_calls == []
+        assert symptoms_repo.method_calls == []
+        assert reviews_repo.method_calls == []
+
+
+class TestGetMedBookWithSymptoms:
+
+    def test__get_med_book_with_symptoms(self, service, med_books_repo, patients_repo,
+                                         diagnoses_repo, symptoms_repo, reviews_repo):
+        # Setup
+        med_book_id = 1
+        returned_entity = dtos.MedicalBookWithSymptoms(
+            id=med_book_id, title_history='title', history='history', patient_id=1,
+            diagnosis_id=1, symptoms=[
+                dtos.Symptom(id=1, name='Symptom 1'),
+            ]
+        )
+        med_books_repo.fetch_by_id.return_value = returned_entity
+
+        # Call
+        result = service.get_med_book_with_symptoms(med_book_id=med_book_id)
+
+        # Assert
+        med_books_repo.fetch_by_id.assert_called_once_with(
+            med_book_id, include_symptoms=True, include_reviews=False
+        )
+        assert patients_repo.method_calls == []
+        assert diagnoses_repo.method_calls == []
+        assert result == returned_entity
+        assert symptoms_repo.method_calls == []
+        assert reviews_repo.method_calls == []
+
+    def test_medical_book_not_found(self, service, med_books_repo, patients_repo,
+                                    diagnoses_repo, symptoms_repo, reviews_repo):
+        # Setup
+        med_book_id = 1
+        med_books_repo.fetch_by_id.return_value = None
+
+        # Call and Assert
+        with pytest.raises(errors.MedicalBookNotFound):
+            service.get_med_book_with_symptoms(med_book_id=med_book_id)
+
+        med_books_repo.fetch_by_id.assert_called_once_with(
+            med_book_id, include_symptoms=True, include_reviews=False
+        )
+        assert patients_repo.method_calls == []
+        assert diagnoses_repo.method_calls == []
+        assert symptoms_repo.method_calls == []
+        assert reviews_repo.method_calls == []
+
+
+class TestGetMedBookWithReviews:
+
+    def test__get_med_book_with_reviews(self, service, med_books_repo, patients_repo,
+                                        diagnoses_repo, symptoms_repo, reviews_repo):
+        # Setup
+        med_book_id = 1
+        returned_entity = dtos.MedicalBookWithItemReviews(
+            id=med_book_id, title_history='title', history='history', patient_id=1,
+            diagnosis_id=1, item_reviews=[
+                dtos.ItemReview(id=1, item_id=1, is_helped=True, item_rating=7.5,
+                                item_count=7)
+            ]
+        )
+        med_books_repo.fetch_by_id.return_value = returned_entity
+
+        # Call
+        result = service.get_med_book_with_reviews(med_book_id=med_book_id)
+
+        # Assert
+        med_books_repo.fetch_by_id.assert_called_once_with(
+            med_book_id, include_symptoms=False, include_reviews=True
+        )
+        assert patients_repo.method_calls == []
+        assert diagnoses_repo.method_calls == []
+        assert result == returned_entity
+        assert symptoms_repo.method_calls == []
+        assert reviews_repo.method_calls == []
+
+    def test_medical_book_not_found(self, service, med_books_repo, patients_repo,
+                                    diagnoses_repo, symptoms_repo, reviews_repo):
+        # Setup
+        med_book_id = 1
+        med_books_repo.fetch_by_id.return_value = None
+
+        # Call and Assert
+        with pytest.raises(errors.MedicalBookNotFound):
+            service.get_med_book_with_reviews(med_book_id=med_book_id)
+
+        med_books_repo.fetch_by_id.assert_called_once_with(
+            med_book_id, include_symptoms=False, include_reviews=True
+        )
+        assert patients_repo.method_calls == []
+        assert diagnoses_repo.method_calls == []
+        assert symptoms_repo.method_calls == []
+        assert reviews_repo.method_calls == []
+
+
+class TestGetMedBookWithSymptomsAndReviews:
+
+    def test__get_med_book_with_symptoms_and_reviews(self, service, med_books_repo,
+                                                     patients_repo, diagnoses_repo,
+                                                     symptoms_repo, reviews_repo):
+        # Setup
+        med_book_id = 1
+        returned_entity = entities.MedicalBook(
+            id=med_book_id, title_history='title', history='history', patient_id=1,
+            diagnosis_id=1, symptoms=[dtos.Symptom(id=1, name='Symptom 1')],
+            item_reviews=[
+                dtos.ItemReview(id=1, item_id=1, is_helped=True, item_rating=7.5,
+                                item_count=7)
+            ]
+        )
+        med_books_repo.fetch_by_id.return_value = returned_entity
+
+        # Call
+        result = service.get_med_book_with_symptoms_and_reviews(med_book_id=med_book_id)
+
+        # Assert
+        med_books_repo.fetch_by_id.assert_called_once_with(
+            med_book_id, include_symptoms=True, include_reviews=True
+        )
+        assert patients_repo.method_calls == []
+        assert diagnoses_repo.method_calls == []
+        assert result == returned_entity
+        assert symptoms_repo.method_calls == []
+        assert reviews_repo.method_calls == []
+
+    def test_medical_book_not_found(self, service, med_books_repo, patients_repo,
+                                    diagnoses_repo, symptoms_repo, reviews_repo):
+        # Setup
+        med_book_id = 1
+        med_books_repo.fetch_by_id.return_value = None
+
+        # Call and Assert
+        with pytest.raises(errors.MedicalBookNotFound):
+            service.get_med_book_with_symptoms_and_reviews(med_book_id=med_book_id)
+
+        med_books_repo.fetch_by_id.assert_called_once_with(
+            med_book_id, include_symptoms=True, include_reviews=True
+        )
+        assert patients_repo.method_calls == []
+        assert diagnoses_repo.method_calls == []
+        assert symptoms_repo.method_calls == []
+        assert reviews_repo.method_calls == []
 
 
 class TestFindMedBooks:
@@ -297,7 +444,7 @@ class TestFindMedBooks:
                             reviews_repo):
         # Setup
         if patient_id:
-            filter_params = schemas.FindPatientMedicalBooks(
+            filter_params = schemas.FindMedicalBooks(
                 patient_id=patient_id, is_helped=is_helped, diagnosis_id=diagnosis_id,
                 symptom_ids=symptom_ids, match_all_symptoms=match_all_symptoms,
                 item_ids=item_ids
@@ -340,7 +487,7 @@ class TestFindMedBooksWithSymptoms:
     ):
         # Setup
         if patient_id:
-            filter_params = schemas.FindPatientMedicalBooks(
+            filter_params = schemas.FindMedicalBooks(
                 patient_id=patient_id, is_helped=is_helped, diagnosis_id=diagnosis_id,
                 symptom_ids=symptom_ids, match_all_symptoms=match_all_symptoms,
                 item_ids=item_ids
@@ -383,7 +530,7 @@ class TestFindMedBooksWithReviews:
     ):
         # Setup
         if patient_id:
-            filter_params = schemas.FindPatientMedicalBooks(
+            filter_params = schemas.FindMedicalBooks(
                 patient_id=patient_id, is_helped=is_helped, diagnosis_id=diagnosis_id,
                 symptom_ids=symptom_ids, match_all_symptoms=match_all_symptoms,
                 item_ids=item_ids
@@ -426,7 +573,7 @@ class TestFindMedBooksWithSymptomsAndReviews:
     ):
         # Setup
         if patient_id:
-            filter_params = schemas.FindPatientMedicalBooks(
+            filter_params = schemas.FindMedicalBooks(
                 patient_id=patient_id, is_helped=is_helped, diagnosis_id=diagnosis_id,
                 symptom_ids=symptom_ids, match_all_symptoms=match_all_symptoms,
                 item_ids=item_ids

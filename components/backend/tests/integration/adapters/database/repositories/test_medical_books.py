@@ -1,4 +1,3 @@
-import copy
 from itertools import product
 
 import pytest
@@ -144,169 +143,6 @@ def pytest_generate_tests(metafunc):
             combined_kwargs: list[dict] = _combine_data(main=method_kwargs,
                                                         mixin=mixin_kwargs)
             metafunc.parametrize('kwargs_factory', combined_kwargs, indirect=True)
-
-
-# TEST_METHOD_KWARGS: dict[str, list[dict]] = dict(
-#     fetch_all=[dict(include_symptoms=False, include_reviews=False, filter_params=dict())],
-#     fetch_by_symptoms=[dict(symptom_ids=[1, 2, 3, 4])],
-#     fetch_by_matching_all_symptoms=[
-#         dict(symptom_ids=[1, 2, 3, 4], match_all_symptoms=True)
-#     ],
-#     fetch_by_diagnosis=[dict(diagnosis_id=1)],
-#     fetch_by_diagnosis_and_symptoms=[dict(diagnosis_id=1, symptom_ids=[1, 2, 3, 4])],
-#     fetch_by_diagnosis_with_matching_all_symptoms=[
-#         dict(diagnosis_id=1, symptom_ids=[1, 2, 3, 4], match_all_symptoms=True)
-#     ],
-#     fetch_by_helped_status=[dict(is_helped=True), dict(is_helped=False)],
-#     fetch_by_helped_status_and_symptoms=[
-#         dict(is_helped=True, symptom_ids=[1, 2, 3, 4]),
-#         dict(is_helped=False, symptom_ids=[1, 2, 3, 4])
-#     ],
-#     fetch_by_helped_status_with_matching_all_symptoms=[
-#         dict(is_helped=True, symptom_ids=[1, 2, 3, 4], match_all_symptoms=True),
-#         dict(is_helped=False, symptom_ids=[1, 2, 3, 4], match_all_symptoms=True)
-#     ],
-#     fetch_by_helped_status_and_diagnosis=[
-#         dict(is_helped=True, diagnosis_id=1),
-#         dict(is_helped=False, diagnosis_id=1)
-#     ],
-#     fetch_by_helped_status_diagnosis_and_symptoms=[
-#         dict(is_helped=True, diagnosis_id=1, symptom_ids=[1, 2, 3, 4]),
-#         dict(is_helped=False, diagnosis_id=1, symptom_ids=[1, 2, 3, 4])
-#     ],
-#     fetch_by_helped_status_diagnosis_with_matching_all_symptoms=[
-#         dict(is_helped=True, diagnosis_id=1, symptom_ids=[1, 2, 3, 4],
-#              match_all_symptoms=True),
-#         dict(is_helped=False, diagnosis_id=1, symptom_ids=[1, 2, 3, 4],
-#              match_all_symptoms=True)
-#     ],
-#     fetch_by_patient=[dict(patient_id=1)],
-#     fetch_by_patient_and_symptoms=[dict(patient_id=1, symptom_ids=[1, 2, 3, 4])],
-#     fetch_by_patient_with_matching_all_symptoms=[
-#         dict(patient_id=1, symptom_ids=[1, 2, 3, 4], match_all_symptoms=True)
-#     ],
-#     fetch_by_patient_and_helped_status=[
-#         dict(patient_id=1, is_helped=True),
-#         dict(patient_id=1, is_helped=False)
-#     ],
-#     fetch_by_patient_helped_status_and_symptoms=[
-#         dict(patient_id=1, is_helped=True, symptom_ids=[1, 2, 3, 4]),
-#         dict(patient_id=1, is_helped=False, symptom_ids=[1, 2, 3, 4])
-#     ],
-#     fetch_by_patient_helped_status_with_matching_all_symptoms=[
-#         dict(patient_id=1, is_helped=True, symptom_ids=[1, 2, 3, 4],
-#              match_all_symptoms=True),
-#         dict(patient_id=1, is_helped=False, symptom_ids=[1, 2, 3, 4],
-#              match_all_symptoms=True)
-#     ],
-#     fetch_by_patient_helped_status_and_diagnosis=[
-#         dict(patient_id=1, is_helped=True, diagnosis_id=1),
-#         dict(patient_id=1, is_helped=False, diagnosis_id=1)
-#     ],
-#     fetch_by_patient_helped_status_diagnosis_and_symptoms=[
-#         dict(patient_id=1, is_helped=True, diagnosis_id=1, symptom_ids=[1, 2, 3, 4]),
-#         dict(patient_id=1, is_helped=False, diagnosis_id=1, symptom_ids=[1, 2, 3, 4])
-#     ],
-#     fetch_by_patient_helped_status_diagnosis_with_matching_all_symptoms=[
-#         dict(patient_id=1, is_helped=True, diagnosis_id=1, symptom_ids=[1, 2, 3, 4],
-#              match_all_symptoms=True),
-#         dict(patient_id=1, is_helped=False, diagnosis_id=1, symptom_ids=[1, 2, 3, 4],
-#              match_all_symptoms=True)
-#     ],
-#     fetch_by_patient_diagnosis_with_matching_all_symptoms=[
-#         dict(patient_id=1, diagnosis_id=1, symptom_ids=[1, 2, 3, 4],
-#              match_all_symptoms=True)
-#     ],
-#     fetch_by_patient_diagnosis_and_symptoms=[
-#         dict(patient_id=1, diagnosis_id=1, symptom_ids=[1, 2, 3, 4])
-#     ],
-#     fetch_by_patient_and_diagnosis=[dict(patient_id=1, diagnosis_id=1)],
-#     fetch_by_items=[dict(item_ids=[1, 2, 3, 4])],
-#     fetch_by_patient_and_items=[dict(patient_id=1, item_ids=[1, 2, 3, 4])],
-#     fetch_by_items_and_helped_status=[
-#         dict(item_ids=[1, 2, 3, 4], is_helped=True),
-#         dict(item_ids=[1, 2, 3, 4], is_helped=False)
-#     ],
-#     fetch_by_items_and_diagnosis=[dict(item_ids=[1, 2, 3, 4], diagnosis_id=1)],
-#     fetch_by_items_and_symptoms=[dict(item_ids=[1, 2, 3, 4], symptom_ids=[1, 2, 3, 4])],
-#     fetch_by_items_with_matching_all_symptoms=[
-#         dict(item_ids=[1, 2, 3, 4], symptom_ids=[1, 2, 3, 4], match_all_symptoms=True)
-#     ],
-#     fetch_by_diagnosis_items_with_matching_all_symptoms=[
-#         dict(diagnosis_id=1, item_ids=[1, 2, 3, 4], symptom_ids=[1, 2, 3, 4],
-#              match_all_symptoms=True)
-#     ],
-#     fetch_by_helped_status_items_with_matching_all_symptoms=[
-#         dict(is_helped=True, item_ids=[1, 2, 3, 4], symptom_ids=[1, 2, 3, 4],
-#              match_all_symptoms=True),
-#         dict(is_helped=False, item_ids=[1, 2, 3, 4], symptom_ids=[1, 2, 3, 4],
-#              match_all_symptoms=True)
-#     ],
-#     fetch_by_helped_status_diagnosis_and_items=[
-#         dict(is_helped=True, diagnosis_id=1, item_ids=[1, 2, 3, 4]),
-#         dict(is_helped=False, diagnosis_id=1, item_ids=[1, 2, 3, 4])
-#     ],
-#     fetch_by_helped_status_diagnosis_items_with_matching_all_symptoms=[
-#         dict(is_helped=True, diagnosis_id=1, item_ids=[1, 2, 3, 4],
-#              symptom_ids=[1, 2, 3, 4], match_all_symptoms=True),
-#         dict(is_helped=False, diagnosis_id=1, item_ids=[1, 2, 3, 4],
-#              symptom_ids=[1, 2, 3, 4], match_all_symptoms=True)
-#     ],
-#     fetch_by_patient_helped_status_diagnosis_items_with_matching_all_symptoms=[
-#         dict(patient_id=1, is_helped=True, diagnosis_id=1, item_ids=[1, 2, 3, 4],
-#              symptom_ids=[1, 2, 3, 4], match_all_symptoms=True),
-#         dict(patient_id=1, is_helped=False, diagnosis_id=1, item_ids=[1, 2, 3, 4],
-#              symptom_ids=[1, 2, 3, 4], match_all_symptoms=True)
-#     ],
-#     fetch_by_patient_diagnosis_and_items=[
-#         dict(patient_id=1, diagnosis_id=1, item_ids=[1, 2, 3, 4])
-#     ],
-#     fetch_by_patient_diagnosis_items_with_matching_all_symptoms=[
-#         dict(patient_id=1, diagnosis_id=1, item_ids=[1, 2, 3, 4],
-#              symptom_ids=[1, 2, 3, 4], match_all_symptoms=True)
-#     ],
-#     fetch_by_patient_helped_status_and_items=[
-#         dict(patient_id=1, is_helped=True, item_ids=[1, 2, 3, 4]),
-#         dict(patient_id=1, is_helped=False, item_ids=[1, 2, 3, 4])
-#     ],
-#     fetch_by_patient_helped_status_diagnosis_and_items=[
-#         dict(patient_id=1, is_helped=True, diagnosis_id=1, item_ids=[1, 2, 3, 4]),
-#         dict(patient_id=1, is_helped=False, diagnosis_id=1, item_ids=[1, 2, 3, 4])
-#     ],
-#     fetch_by_patient_helped_status_items_with_matching_all_symptoms=[
-#         dict(patient_id=1, is_helped=True, item_ids=[1, 2, 3, 4],
-#              symptom_ids=[1, 2, 3, 4], match_all_symptoms=True),
-#         dict(patient_id=1, is_helped=False, item_ids=[1, 2, 3, 4],
-#              symptom_ids=[1, 2, 3, 4], match_all_symptoms=True)
-#     ]
-# )
-#
-# MIXIN_METHOD_KWARGS: dict[str, list[dict]] = dict(
-#     test__order_is_asc=[
-#         dict(include_symptoms=False, include_reviews=False,
-#              filter_params=dict(sort_field='patient_id', sort_direction='asc')),
-#         dict(include_symptoms=False, include_reviews=False,
-#              filter_params=dict(sort_field='diagnosis_id', sort_direction='asc')),
-#         dict(include_symptoms=False, include_reviews=False,
-#              filter_params=dict(sort_field='title_history', sort_direction='asc'))
-#     ],
-#     test__order_is_desc=[
-#         dict(include_symptoms=False, include_reviews=False,
-#              filter_params=dict(sort_field='patient_id', sort_direction='desc')),
-#         dict(include_symptoms=False, include_reviews=False,
-#              filter_params=dict(sort_field='diagnosis_id', sort_direction='desc')),
-#         dict(include_symptoms=False, include_reviews=False,
-#              filter_params=dict(sort_field='title_history', sort_direction='desc'))
-#     ],
-#     test__null_last=[dict(include_symptoms=False, include_reviews=False,
-#                           filter_params=dict())],
-#     test__with_limit=[dict(include_symptoms=False, include_reviews=False,
-#                            filter_params=dict(limit=1))],
-#     test__with_offset=[dict(include_symptoms=False, include_reviews=False,
-#                             filter_params=dict(offset=1))],
-#     test__unique_check=[dict(include_symptoms=False, include_reviews=False,
-#                              filter_params=dict())],
-# )
 
 
 # ---------------------------------------------------------------------------------------
@@ -1305,13 +1141,13 @@ class TestFetchByHelpedStatusDiagnosisWithMatchingAllSymptoms(_TestOrderMixin,
 class TestFetchByPatient(_TestOrderMixin, _TestPaginationMixin, _TestUniquenessMixin):
     TEST_METHOD = 'fetch_by_patient'
     TEST_KWARGS = [dict(include_symptoms=False, include_reviews=False,
-                        filter_params=schemas.FindPatientMedicalBooks(patient_id=1)),
+                        filter_params=schemas.FindMedicalBooks(patient_id=1)),
                    dict(include_symptoms=True, include_reviews=False,
-                        filter_params=schemas.FindPatientMedicalBooks(patient_id=1)),
+                        filter_params=schemas.FindMedicalBooks(patient_id=1)),
                    dict(include_symptoms=False, include_reviews=True,
-                        filter_params=schemas.FindPatientMedicalBooks(patient_id=1)),
+                        filter_params=schemas.FindMedicalBooks(patient_id=1)),
                    dict(include_symptoms=True, include_reviews=True,
-                        filter_params=schemas.FindPatientMedicalBooks(patient_id=1))]
+                        filter_params=schemas.FindMedicalBooks(patient_id=1))]
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
                   dtos.MedicalBookWithItemReviews, entities.MedicalBook]
 
@@ -1336,19 +1172,19 @@ class TestFetchByPatientAndSymptoms(_TestOrderMixin,
                                     _TestUniquenessMixin):
     TEST_METHOD = 'fetch_by_patient_and_symptoms'
     TEST_KWARGS = [dict(include_symptoms=False, include_reviews=False,
-                        filter_params=schemas.FindPatientMedicalBooks(
+                        filter_params=schemas.FindMedicalBooks(
                             patient_id=1, symptom_ids=[1, 2])
                         ),
                    dict(include_symptoms=True, include_reviews=False,
-                        filter_params=schemas.FindPatientMedicalBooks(
+                        filter_params=schemas.FindMedicalBooks(
                             patient_id=1, symptom_ids=[1, 2])
                         ),
                    dict(include_symptoms=False, include_reviews=True,
-                        filter_params=schemas.FindPatientMedicalBooks(
+                        filter_params=schemas.FindMedicalBooks(
                             patient_id=1, symptom_ids=[1, 2])
                         ),
                    dict(include_symptoms=True, include_reviews=True,
-                        filter_params=schemas.FindPatientMedicalBooks(
+                        filter_params=schemas.FindMedicalBooks(
                             patient_id=1, symptom_ids=[1, 2])
                         )]
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
@@ -1399,19 +1235,19 @@ class TestFetchByPatientWithMatchingAllSymptoms(_TestOrderMixin,
                                                 _TestUniquenessMixin):
     TEST_METHOD = 'fetch_by_patient_with_matching_all_symptoms'
     TEST_KWARGS = [dict(include_symptoms=False, include_reviews=False,
-                        filter_params=schemas.FindPatientMedicalBooks(
+                        filter_params=schemas.FindMedicalBooks(
                             patient_id=1, symptom_ids=[1, 2], match_all_symptoms=True)
                         ),
                    dict(include_symptoms=True, include_reviews=False,
-                        filter_params=schemas.FindPatientMedicalBooks(
+                        filter_params=schemas.FindMedicalBooks(
                             patient_id=1, symptom_ids=[1, 2], match_all_symptoms=True)
                         ),
                    dict(include_symptoms=False, include_reviews=True,
-                        filter_params=schemas.FindPatientMedicalBooks(
+                        filter_params=schemas.FindMedicalBooks(
                             patient_id=1, symptom_ids=[1, 2], match_all_symptoms=True)
                         ),
                    dict(include_symptoms=True, include_reviews=True,
-                        filter_params=schemas.FindPatientMedicalBooks(
+                        filter_params=schemas.FindMedicalBooks(
                             patient_id=1, symptom_ids=[1, 2], match_all_symptoms=True)
                         )]
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
@@ -1471,35 +1307,35 @@ class TestFetchByPatientAndHelpedStatus(_TestOrderMixin,
     TEST_METHOD = 'fetch_by_patient_and_helped_status'
     TEST_KWARGS = [
         dict(include_symptoms=False, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1)
              ),
         dict(include_symptoms=False, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1)
              ),
         dict(include_symptoms=True, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1)
              ),
         dict(include_symptoms=True, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1)
              ),
         dict(include_symptoms=False, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1)
              ),
         dict(include_symptoms=False, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1)
              ),
         dict(include_symptoms=True, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1)
              ),
         dict(include_symptoms=True, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1)
              )
     ]
@@ -1550,35 +1386,35 @@ class TestFetchByPatientHelpedStatusAndSymptoms(_TestOrderMixin,
     TEST_METHOD = 'fetch_by_patient_helped_status_and_symptoms'
     TEST_KWARGS = [
         dict(include_symptoms=False, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, symptom_ids=[1, 2])
              ),
         dict(include_symptoms=False, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, symptom_ids=[1, 2])
              ),
         dict(include_symptoms=True, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, symptom_ids=[1, 2])
              ),
         dict(include_symptoms=True, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, symptom_ids=[1, 2])
              ),
         dict(include_symptoms=False, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, symptom_ids=[1, 2])
              ),
         dict(include_symptoms=False, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, symptom_ids=[1, 2])
              ),
         dict(include_symptoms=True, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, symptom_ids=[1, 2])
              ),
         dict(include_symptoms=True, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, symptom_ids=[1, 2])
              )
     ]
@@ -1644,42 +1480,42 @@ class TestFetchByPatientHelpedStatusWithMatchingAllSymptoms(_TestOrderMixin,
     TEST_METHOD = 'fetch_by_patient_helped_status_with_matching_all_symptoms'
     TEST_KWARGS = [
         dict(include_symptoms=False, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, symptom_ids=[1, 2],
                  match_all_symptoms=True)
              ),
         dict(include_symptoms=False, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, symptom_ids=[1, 2],
                  match_all_symptoms=True)
              ),
         dict(include_symptoms=True, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, symptom_ids=[1, 2],
                  match_all_symptoms=True)
              ),
         dict(include_symptoms=True, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, symptom_ids=[1, 2],
                  match_all_symptoms=True)
              ),
         dict(include_symptoms=False, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, symptom_ids=[1, 2],
                  match_all_symptoms=True)
              ),
         dict(include_symptoms=False, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, symptom_ids=[1, 2],
                  match_all_symptoms=True)
              ),
         dict(include_symptoms=True, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, symptom_ids=[1, 2],
                  match_all_symptoms=True)
              ),
         dict(include_symptoms=True, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, symptom_ids=[1, 2],
                  match_all_symptoms=True)
              )
@@ -1754,35 +1590,35 @@ class TestFetchByPatientHelpedStatusAndDiagnosis(_TestOrderMixin,
     TEST_METHOD = 'fetch_by_patient_helped_status_and_diagnosis'
     TEST_KWARGS = [
         dict(include_symptoms=False, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, diagnosis_id=1)
              ),
         dict(include_symptoms=False, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, diagnosis_id=1)
              ),
         dict(include_symptoms=True, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, diagnosis_id=1)
              ),
         dict(include_symptoms=True, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, diagnosis_id=1)
              ),
         dict(include_symptoms=False, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, diagnosis_id=1)
              ),
         dict(include_symptoms=False, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, diagnosis_id=1)
              ),
         dict(include_symptoms=True, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, diagnosis_id=1)
              ),
         dict(include_symptoms=True, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, diagnosis_id=1)
              )
     ]
@@ -1838,35 +1674,35 @@ class TestFetchByPatientHelpedStatusDiagnosisAndSymptoms(_TestOrderMixin,
     TEST_METHOD = 'fetch_by_patient_helped_status_diagnosis_and_symptoms'
     TEST_KWARGS = [
         dict(include_symptoms=False, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, symptom_ids=[1, 2], diagnosis_id=1)
              ),
         dict(include_symptoms=False, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, symptom_ids=[1, 2], diagnosis_id=1)
              ),
         dict(include_symptoms=True, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, symptom_ids=[1, 2], diagnosis_id=1)
              ),
         dict(include_symptoms=True, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, symptom_ids=[1, 2], diagnosis_id=1)
              ),
         dict(include_symptoms=False, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, symptom_ids=[1, 2], diagnosis_id=1)
              ),
         dict(include_symptoms=False, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, symptom_ids=[1, 2], diagnosis_id=1)
              ),
         dict(include_symptoms=True, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, symptom_ids=[1, 2], diagnosis_id=1)
              ),
         dict(include_symptoms=True, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, symptom_ids=[1, 2], diagnosis_id=1)
              )
     ]
@@ -1937,42 +1773,42 @@ class TestFetchByPatientHelpedStatusDiagnosisWithMatchingAllSymptoms(
     TEST_METHOD = 'fetch_by_patient_helped_status_diagnosis_with_matching_all_symptoms'
     TEST_KWARGS = [
         dict(include_symptoms=False, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, symptom_ids=[1, 2], diagnosis_id=1,
                  match_all_symptoms=True)
              ),
         dict(include_symptoms=False, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, symptom_ids=[1, 2], diagnosis_id=1,
                  match_all_symptoms=True)
              ),
         dict(include_symptoms=True, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, symptom_ids=[1, 2], diagnosis_id=1,
                  match_all_symptoms=True)
              ),
         dict(include_symptoms=True, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, symptom_ids=[1, 2], diagnosis_id=1,
                  match_all_symptoms=True)
              ),
         dict(include_symptoms=False, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, symptom_ids=[1, 2], diagnosis_id=1,
                  match_all_symptoms=True)
              ),
         dict(include_symptoms=False, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, symptom_ids=[1, 2], diagnosis_id=1,
                  match_all_symptoms=True)
              ),
         dict(include_symptoms=True, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, symptom_ids=[1, 2], diagnosis_id=1,
                  match_all_symptoms=True)
              ),
         dict(include_symptoms=True, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, symptom_ids=[1, 2], diagnosis_id=1,
                  match_all_symptoms=True)
              )
@@ -2053,22 +1889,22 @@ class TestFetchByPatientDiagnosisWithMatchingAllSymptoms(_TestOrderMixin,
                                                          _TestUniquenessMixin):
     TEST_METHOD = 'fetch_by_patient_diagnosis_with_matching_all_symptoms'
     TEST_KWARGS = [dict(include_symptoms=False, include_reviews=False,
-                        filter_params=schemas.FindPatientMedicalBooks(
+                        filter_params=schemas.FindMedicalBooks(
                             patient_id=1, symptom_ids=[1, 2], match_all_symptoms=True,
                             diagnosis_id=1)
                         ),
                    dict(include_symptoms=True, include_reviews=False,
-                        filter_params=schemas.FindPatientMedicalBooks(
+                        filter_params=schemas.FindMedicalBooks(
                             patient_id=1, symptom_ids=[1, 2], match_all_symptoms=True,
                             diagnosis_id=1)
                         ),
                    dict(include_symptoms=False, include_reviews=True,
-                        filter_params=schemas.FindPatientMedicalBooks(
+                        filter_params=schemas.FindMedicalBooks(
                             patient_id=1, symptom_ids=[1, 2], match_all_symptoms=True,
                             diagnosis_id=1)
                         ),
                    dict(include_symptoms=True, include_reviews=True,
-                        filter_params=schemas.FindPatientMedicalBooks(
+                        filter_params=schemas.FindMedicalBooks(
                             patient_id=1, symptom_ids=[1, 2], match_all_symptoms=True,
                             diagnosis_id=1)
                         )]
@@ -2133,19 +1969,19 @@ class TestFetchByPatientDiagnosisAndSymptoms(_TestOrderMixin,
                                              _TestUniquenessMixin):
     TEST_METHOD = 'fetch_by_patient_diagnosis_and_symptoms'
     TEST_KWARGS = [dict(include_symptoms=False, include_reviews=False,
-                        filter_params=schemas.FindPatientMedicalBooks(
+                        filter_params=schemas.FindMedicalBooks(
                             patient_id=1, symptom_ids=[1, 2], diagnosis_id=1)
                         ),
                    dict(include_symptoms=True, include_reviews=False,
-                        filter_params=schemas.FindPatientMedicalBooks(
+                        filter_params=schemas.FindMedicalBooks(
                             patient_id=1, symptom_ids=[1, 2], diagnosis_id=1)
                         ),
                    dict(include_symptoms=False, include_reviews=True,
-                        filter_params=schemas.FindPatientMedicalBooks(
+                        filter_params=schemas.FindMedicalBooks(
                             patient_id=1, symptom_ids=[1, 2], diagnosis_id=1)
                         ),
                    dict(include_symptoms=True, include_reviews=True,
-                        filter_params=schemas.FindPatientMedicalBooks(
+                        filter_params=schemas.FindMedicalBooks(
                             patient_id=1, symptom_ids=[1, 2], diagnosis_id=1)
                         )]
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
@@ -2201,19 +2037,19 @@ class TestFetchByPatientAndDiagnosis(_TestOrderMixin,
                                      _TestUniquenessMixin):
     TEST_METHOD = 'fetch_by_patient_and_diagnosis'
     TEST_KWARGS = [dict(include_symptoms=False, include_reviews=False,
-                        filter_params=schemas.FindPatientMedicalBooks(
+                        filter_params=schemas.FindMedicalBooks(
                             patient_id=1, diagnosis_id=1)
                         ),
                    dict(include_symptoms=True, include_reviews=False,
-                        filter_params=schemas.FindPatientMedicalBooks(
+                        filter_params=schemas.FindMedicalBooks(
                             patient_id=1, diagnosis_id=1)
                         ),
                    dict(include_symptoms=False, include_reviews=True,
-                        filter_params=schemas.FindPatientMedicalBooks(
+                        filter_params=schemas.FindMedicalBooks(
                             patient_id=1, diagnosis_id=1)
                         ),
                    dict(include_symptoms=True, include_reviews=True,
-                        filter_params=schemas.FindPatientMedicalBooks(
+                        filter_params=schemas.FindMedicalBooks(
                             patient_id=1, diagnosis_id=1)
                         )]
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
@@ -2299,19 +2135,19 @@ class TestFetchByPatientAndItems(_TestOrderMixin,
                                  _TestUniquenessMixin):
     TEST_METHOD = 'fetch_by_patient_and_items'
     TEST_KWARGS = [dict(include_symptoms=False, include_reviews=False,
-                        filter_params=schemas.FindPatientMedicalBooks(
+                        filter_params=schemas.FindMedicalBooks(
                             patient_id=1, item_ids=[1, 2])
                         ),
                    dict(include_symptoms=True, include_reviews=False,
-                        filter_params=schemas.FindPatientMedicalBooks(
+                        filter_params=schemas.FindMedicalBooks(
                             patient_id=1, item_ids=[1, 2])
                         ),
                    dict(include_symptoms=False, include_reviews=True,
-                        filter_params=schemas.FindPatientMedicalBooks(
+                        filter_params=schemas.FindMedicalBooks(
                             patient_id=1, item_ids=[1, 2])
                         ),
                    dict(include_symptoms=True, include_reviews=True,
-                        filter_params=schemas.FindPatientMedicalBooks(
+                        filter_params=schemas.FindMedicalBooks(
                             patient_id=1, item_ids=[1, 2])
                         )]
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
@@ -3028,19 +2864,19 @@ class TestFetchByPatientDiagnosisAndItems(_TestOrderMixin,
                                           _TestUniquenessMixin):
     TEST_METHOD = 'fetch_by_patient_diagnosis_and_items'
     TEST_KWARGS = [dict(include_symptoms=False, include_reviews=False,
-                        filter_params=schemas.FindPatientMedicalBooks(
+                        filter_params=schemas.FindMedicalBooks(
                             patient_id=1, diagnosis_id=1, item_ids=[1, 2])
                         ),
                    dict(include_symptoms=True, include_reviews=False,
-                        filter_params=schemas.FindPatientMedicalBooks(
+                        filter_params=schemas.FindMedicalBooks(
                             patient_id=1, diagnosis_id=1, item_ids=[1, 2])
                         ),
                    dict(include_symptoms=False, include_reviews=True,
-                        filter_params=schemas.FindPatientMedicalBooks(
+                        filter_params=schemas.FindMedicalBooks(
                             patient_id=1, diagnosis_id=1, item_ids=[1, 2])
                         ),
                    dict(include_symptoms=True, include_reviews=True,
-                        filter_params=schemas.FindPatientMedicalBooks(
+                        filter_params=schemas.FindMedicalBooks(
                             patient_id=1, diagnosis_id=1, item_ids=[1, 2])
                         )]
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
@@ -3092,22 +2928,22 @@ class TestFetchByPatientDiagnosisItemsWithMatchingAllSymptoms(
 ):
     TEST_METHOD = 'fetch_by_patient_diagnosis_items_with_matching_all_symptoms'
     TEST_KWARGS = [dict(include_symptoms=False, include_reviews=False,
-                        filter_params=schemas.FindPatientMedicalBooks(
+                        filter_params=schemas.FindMedicalBooks(
                             patient_id=1, diagnosis_id=1, item_ids=[1, 2],
                             symptom_ids=[1, 2], match_all_symptoms=True)
                         ),
                    dict(include_symptoms=True, include_reviews=False,
-                        filter_params=schemas.FindPatientMedicalBooks(
+                        filter_params=schemas.FindMedicalBooks(
                             patient_id=1, diagnosis_id=1, item_ids=[1, 2],
                             symptom_ids=[1, 2], match_all_symptoms=True)
                         ),
                    dict(include_symptoms=False, include_reviews=True,
-                        filter_params=schemas.FindPatientMedicalBooks(
+                        filter_params=schemas.FindMedicalBooks(
                             patient_id=1, diagnosis_id=1, item_ids=[1, 2],
                             symptom_ids=[1, 2], match_all_symptoms=True)
                         ),
                    dict(include_symptoms=True, include_reviews=True,
-                        filter_params=schemas.FindPatientMedicalBooks(
+                        filter_params=schemas.FindMedicalBooks(
                             patient_id=1, diagnosis_id=1, item_ids=[1, 2],
                             symptom_ids=[1, 2], match_all_symptoms=True)
                         )]
@@ -3186,35 +3022,35 @@ class TestFetchByPatientHelpedStatusAndItems(_TestOrderMixin,
     TEST_METHOD = 'fetch_by_patient_helped_status_and_items'
     TEST_KWARGS = [
         dict(include_symptoms=False, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, item_ids=[1, 2])
              ),
         dict(include_symptoms=False, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, item_ids=[1, 2])
              ),
         dict(include_symptoms=True, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, item_ids=[1, 2])
              ),
         dict(include_symptoms=True, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, item_ids=[1, 2])
              ),
         dict(include_symptoms=False, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, item_ids=[1, 2])
              ),
         dict(include_symptoms=False, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, item_ids=[1, 2])
              ),
         dict(include_symptoms=True, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, item_ids=[1, 2])
              ),
         dict(include_symptoms=True, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, item_ids=[1, 2])
              )
     ]
@@ -3269,35 +3105,35 @@ class TestFetchByPatientHelpedStatusDiagnosisAndItems(_TestOrderMixin,
     TEST_METHOD = 'fetch_by_patient_helped_status_diagnosis_and_items'
     TEST_KWARGS = [
         dict(include_symptoms=False, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, item_ids=[1, 2], diagnosis_id=1)
              ),
         dict(include_symptoms=False, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, item_ids=[1, 2], diagnosis_id=1)
              ),
         dict(include_symptoms=True, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, item_ids=[1, 2], diagnosis_id=1)
              ),
         dict(include_symptoms=True, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, item_ids=[1, 2], diagnosis_id=1)
              ),
         dict(include_symptoms=False, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, item_ids=[1, 2], diagnosis_id=1)
              ),
         dict(include_symptoms=False, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, item_ids=[1, 2], diagnosis_id=1)
              ),
         dict(include_symptoms=True, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, item_ids=[1, 2], diagnosis_id=1)
              ),
         dict(include_symptoms=True, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, item_ids=[1, 2], diagnosis_id=1)
              )
     ]
@@ -3357,42 +3193,42 @@ class TestFetchByPatientHelpedStatusItemsWithMatchingAllSymptoms(
     TEST_METHOD = 'fetch_by_patient_helped_status_items_with_matching_all_symptoms'
     TEST_KWARGS = [
         dict(include_symptoms=False, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, item_ids=[1, 2], symptom_ids=[1, 2],
                  match_all_symptoms=True)
              ),
         dict(include_symptoms=False, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, item_ids=[1, 2], symptom_ids=[1, 2],
                  match_all_symptoms=True)
              ),
         dict(include_symptoms=True, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, item_ids=[1, 2], symptom_ids=[1, 2],
                  match_all_symptoms=True)
              ),
         dict(include_symptoms=True, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, item_ids=[1, 2], symptom_ids=[1, 2],
                  match_all_symptoms=True)
              ),
         dict(include_symptoms=False, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, item_ids=[1, 2], symptom_ids=[1, 2],
                  match_all_symptoms=True)
              ),
         dict(include_symptoms=False, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, item_ids=[1, 2], symptom_ids=[1, 2],
                  match_all_symptoms=True)
              ),
         dict(include_symptoms=True, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, item_ids=[1, 2], symptom_ids=[1, 2],
                  match_all_symptoms=True)
              ),
         dict(include_symptoms=True, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, item_ids=[1, 2], symptom_ids=[1, 2],
                  match_all_symptoms=True)
              )
@@ -3476,42 +3312,42 @@ class TestFetchByPatientHelpedStatusDiagnosisItemsWithMatchingAllSymptoms(
     )
     TEST_KWARGS = [
         dict(include_symptoms=False, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, item_ids=[1, 2], symptom_ids=[1, 2],
                  match_all_symptoms=True, diagnosis_id=1)
              ),
         dict(include_symptoms=False, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, item_ids=[1, 2], symptom_ids=[1, 2],
                  match_all_symptoms=True, diagnosis_id=1)
              ),
         dict(include_symptoms=True, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, item_ids=[1, 2], symptom_ids=[1, 2],
                  match_all_symptoms=True, diagnosis_id=1)
              ),
         dict(include_symptoms=True, include_reviews=False,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, item_ids=[1, 2], symptom_ids=[1, 2],
                  match_all_symptoms=True, diagnosis_id=1)
              ),
         dict(include_symptoms=False, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, item_ids=[1, 2], symptom_ids=[1, 2],
                  match_all_symptoms=True, diagnosis_id=1)
              ),
         dict(include_symptoms=False, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, item_ids=[1, 2], symptom_ids=[1, 2],
                  match_all_symptoms=True, diagnosis_id=1)
              ),
         dict(include_symptoms=True, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=True, patient_id=1, item_ids=[1, 2], symptom_ids=[1, 2],
                  match_all_symptoms=True, diagnosis_id=1)
              ),
         dict(include_symptoms=True, include_reviews=True,
-             filter_params=schemas.FindPatientMedicalBooks(
+             filter_params=schemas.FindMedicalBooks(
                  is_helped=False, patient_id=1, item_ids=[1, 2], symptom_ids=[1, 2],
                  match_all_symptoms=True, diagnosis_id=1)
              )

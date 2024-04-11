@@ -180,7 +180,7 @@ class MedicalBooksRepo(ABC):
 
     @abstractmethod
     def fetch_by_patient(self,
-                         filter_params: schemas.FindPatientMedicalBooks,
+                         filter_params: schemas.FindMedicalBooks,
                          *,
                          include_symptoms: bool,
                          include_reviews: bool
@@ -193,7 +193,7 @@ class MedicalBooksRepo(ABC):
 
     @abstractmethod
     def fetch_by_patient_and_symptoms(self,
-                                      filter_params: schemas.FindPatientMedicalBooks,
+                                      filter_params: schemas.FindMedicalBooks,
                                       *,
                                       include_symptoms: bool,
                                       include_reviews: bool
@@ -207,7 +207,7 @@ class MedicalBooksRepo(ABC):
     @abstractmethod
     def fetch_by_patient_with_matching_all_symptoms(
         self,
-        filter_params: schemas.FindPatientMedicalBooks,
+        filter_params: schemas.FindMedicalBooks,
         *,
         include_symptoms: bool,
         include_reviews: bool
@@ -221,7 +221,7 @@ class MedicalBooksRepo(ABC):
     @abstractmethod
     def fetch_by_patient_and_helped_status(
         self,
-        filter_params: schemas.FindPatientMedicalBooks,
+        filter_params: schemas.FindMedicalBooks,
         *,
         include_symptoms: bool,
         include_reviews: bool
@@ -235,7 +235,7 @@ class MedicalBooksRepo(ABC):
     @abstractmethod
     def fetch_by_patient_helped_status_and_symptoms(
         self,
-        filter_params: schemas.FindPatientMedicalBooks,
+        filter_params: schemas.FindMedicalBooks,
         *,
         include_symptoms: bool,
         include_reviews: bool
@@ -249,7 +249,7 @@ class MedicalBooksRepo(ABC):
     @abstractmethod
     def fetch_by_patient_helped_status_with_matching_all_symptoms(
         self,
-        filter_params: schemas.FindPatientMedicalBooks,
+        filter_params: schemas.FindMedicalBooks,
         *,
         include_symptoms: bool,
         include_reviews: bool
@@ -263,7 +263,7 @@ class MedicalBooksRepo(ABC):
     @abstractmethod
     def fetch_by_patient_helped_status_and_diagnosis(
         self,
-        filter_params: schemas.FindPatientMedicalBooks,
+        filter_params: schemas.FindMedicalBooks,
         *,
         include_symptoms: bool,
         include_reviews: bool
@@ -277,7 +277,7 @@ class MedicalBooksRepo(ABC):
     @abstractmethod
     def fetch_by_patient_helped_status_diagnosis_and_symptoms(
         self,
-        filter_params: schemas.FindPatientMedicalBooks,
+        filter_params: schemas.FindMedicalBooks,
         *,
         include_symptoms: bool,
         include_reviews: bool
@@ -291,7 +291,7 @@ class MedicalBooksRepo(ABC):
     @abstractmethod
     def fetch_by_patient_helped_status_diagnosis_with_matching_all_symptoms(
         self,
-        filter_params: schemas.FindPatientMedicalBooks,
+        filter_params: schemas.FindMedicalBooks,
         *,
         include_symptoms: bool,
         include_reviews: bool
@@ -305,7 +305,7 @@ class MedicalBooksRepo(ABC):
     @abstractmethod
     def fetch_by_patient_diagnosis_with_matching_all_symptoms(
         self,
-        filter_params: schemas.FindPatientMedicalBooks,
+        filter_params: schemas.FindMedicalBooks,
         *,
         include_symptoms: bool,
         include_reviews: bool
@@ -319,7 +319,7 @@ class MedicalBooksRepo(ABC):
     @abstractmethod
     def fetch_by_patient_diagnosis_and_symptoms(
         self,
-        filter_params: schemas.FindPatientMedicalBooks,
+        filter_params: schemas.FindMedicalBooks,
         *,
         include_symptoms: bool,
         include_reviews: bool
@@ -333,7 +333,7 @@ class MedicalBooksRepo(ABC):
     @abstractmethod
     def fetch_by_patient_and_diagnosis(
         self,
-        filter_params: schemas.FindPatientMedicalBooks,
+        filter_params: schemas.FindMedicalBooks,
         *,
         include_symptoms: bool,
         include_reviews: bool
@@ -359,7 +359,7 @@ class MedicalBooksRepo(ABC):
 
     @abstractmethod
     def fetch_by_patient_and_items(self,
-                                   filter_params: schemas.FindPatientMedicalBooks,
+                                   filter_params: schemas.FindMedicalBooks,
                                    *,
                                    include_symptoms: bool,
                                    include_reviews: bool
@@ -482,7 +482,7 @@ class MedicalBooksRepo(ABC):
     @abstractmethod
     def fetch_by_patient_diagnosis_and_items(
         self,
-        filter_params: schemas.FindPatientMedicalBooks,
+        filter_params: schemas.FindMedicalBooks,
         *,
         include_symptoms: bool,
         include_reviews: bool
@@ -496,7 +496,7 @@ class MedicalBooksRepo(ABC):
     @abstractmethod
     def fetch_by_patient_diagnosis_items_with_matching_all_symptoms(
         self,
-        filter_params: schemas.FindPatientMedicalBooks,
+        filter_params: schemas.FindMedicalBooks,
         *,
         include_symptoms: bool,
         include_reviews: bool
@@ -510,7 +510,7 @@ class MedicalBooksRepo(ABC):
     @abstractmethod
     def fetch_by_patient_helped_status_and_items(
         self,
-        filter_params: schemas.FindPatientMedicalBooks,
+        filter_params: schemas.FindMedicalBooks,
         *,
         include_symptoms: bool,
         include_reviews: bool
@@ -524,7 +524,7 @@ class MedicalBooksRepo(ABC):
     @abstractmethod
     def fetch_by_patient_helped_status_diagnosis_and_items(
         self,
-        filter_params: schemas.FindPatientMedicalBooks,
+        filter_params: schemas.FindMedicalBooks,
         *,
         include_symptoms: bool,
         include_reviews: bool
@@ -538,7 +538,7 @@ class MedicalBooksRepo(ABC):
     @abstractmethod
     def fetch_by_patient_helped_status_items_with_matching_all_symptoms(
         self,
-        filter_params: schemas.FindPatientMedicalBooks,
+        filter_params: schemas.FindMedicalBooks,
         *,
         include_symptoms: bool,
         include_reviews: bool
@@ -552,7 +552,7 @@ class MedicalBooksRepo(ABC):
     @abstractmethod
     def fetch_by_patient_helped_status_diagnosis_items_with_matching_all_symptoms(
         self,
-        filter_params: schemas.FindPatientMedicalBooks,
+        filter_params: schemas.FindMedicalBooks,
         *,
         include_symptoms: bool,
         include_reviews: bool
