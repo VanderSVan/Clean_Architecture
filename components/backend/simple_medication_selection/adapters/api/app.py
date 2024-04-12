@@ -45,19 +45,19 @@ def create_app(symptom: services.Symptom,
     app.add_route('/medical_books/new',
                   controllers.MedicalBooks(medical_book=medical_book),
                   suffix='new')
-    app.add_route('/medical_books/{medical_book_id}',
+    app.add_route('/medical_books/{med_book_id}',
                   controllers.MedicalBooks(medical_book=medical_book),
                   suffix='by_id')
-    app.add_route('/medical_books/{medical_book_id}/symptoms',
+    app.add_route('/medical_books/{med_book_id}/symptoms',
                   controllers.MedicalBooks(medical_book=medical_book),
                   suffix='by_id_with_symptoms')
-    app.add_route('/medical_books/{medical_book_id}/reviews',
+    app.add_route('/medical_books/{med_book_id}/reviews',
                   controllers.MedicalBooks(medical_book=medical_book),
                   suffix='by_id_with_reviews')
-    app.add_route('/medical_books/{medical_book_id}/symptoms/reviews',
+    app.add_route('/medical_books/{med_book_id}/symptoms/reviews',
                   controllers.MedicalBooks(medical_book=medical_book),
                   suffix='by_id_with_symptoms_and_reviews')
-    app.add_route('/medical_books/{medical_book_id}/reviews/symptoms',
+    app.add_route('/medical_books/{med_book_id}/reviews/symptoms',
                   controllers.MedicalBooks(medical_book=medical_book),
                   suffix='by_id_with_symptoms_and_reviews')
     app.add_route('/medical_books/symptoms',

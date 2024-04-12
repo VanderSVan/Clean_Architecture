@@ -127,62 +127,62 @@ class MedicalBooks:
         resp.status = status_codes.HTTP_200
 
     @spectree.validate(
-        path_parameter_descriptions={"medical_book_id": "Integer"},
+        path_parameter_descriptions={"med_book_id": "Integer"},
         resp=Response(HTTP_200=dtos.MedicalBook),
         tags=["Medical books"]
     )
-    def on_get_by_id(self, req, resp, medical_book_id):
+    def on_get_by_id(self, req, resp, med_book_id):
         """
         Получение медицинской карты по идентификатору.
         """
-        med_book: dtos.MedicalBook = self.med_book.get_med_book(medical_book_id)
+        med_book: dtos.MedicalBook = self.med_book.get_med_book(med_book_id)
 
         resp.media = med_book.dict()
         resp.status = status_codes.HTTP_200
 
     @spectree.validate(
-        path_parameter_descriptions={"medical_book_id": "Integer"},
+        path_parameter_descriptions={"med_book_id": "Integer"},
         resp=Response(HTTP_200=dtos.MedicalBookWithSymptoms),
         tags=["Medical books with symptoms"]
     )
-    def on_get_by_id_with_symptoms(self, req, resp, medical_book_id):
+    def on_get_by_id_with_symptoms(self, req, resp, med_book_id):
         """
         Получение медицинской карты с симптомами по идентификатору.
         """
         med_book: dtos.MedicalBookWithSymptoms = (
-            self.med_book.get_med_book_with_symptoms(medical_book_id)
+            self.med_book.get_med_book_with_symptoms(med_book_id)
         )
 
         resp.media = med_book.dict()
         resp.status = status_codes.HTTP_200
 
     @spectree.validate(
-        path_parameter_descriptions={"medical_book_id": "Integer"},
+        path_parameter_descriptions={"med_book_id": "Integer"},
         resp=Response(HTTP_200=dtos.MedicalBookWithItemReviews),
         tags=["Medical books with reviews"]
     )
-    def on_get_by_id_with_reviews(self, req, resp, medical_book_id):
+    def on_get_by_id_with_reviews(self, req, resp, med_book_id):
         """
         Получение медицинской карты с отзывами по идентификатору.
         """
         med_book: dtos.MedicalBookWithItemReviews = (
-            self.med_book.get_med_book_with_reviews(medical_book_id)
+            self.med_book.get_med_book_with_reviews(med_book_id)
         )
 
         resp.media = med_book.dict()
         resp.status = status_codes.HTTP_200
 
     @spectree.validate(
-        path_parameter_descriptions={"medical_book_id": "Integer"},
+        path_parameter_descriptions={"med_book_id": "Integer"},
         resp=Response(HTTP_200=dtos.MedicalBookWithSymptomsAndItemReviews),
         tags=["Medical books with symptoms and reviews"]
     )
-    def on_get_by_id_with_symptoms_and_reviews(self, req, resp, medical_book_id):
+    def on_get_by_id_with_symptoms_and_reviews(self, req, resp, med_book_id):
         """
         Получение медицинской карты с симптомами и отзывами по идентификатору.
         """
         med_book: entities.MedicalBook = (
-            self.med_book.get_med_book_with_symptoms_and_reviews(medical_book_id)
+            self.med_book.get_med_book_with_symptoms_and_reviews(med_book_id)
         )
 
         resp.media = asdict(med_book)
@@ -204,16 +204,16 @@ class MedicalBooks:
         resp.status = status_codes.HTTP_201
 
     @spectree.validate(
-        path_parameter_descriptions={"medical_book_id": "Integer"},
+        path_parameter_descriptions={"med_book_id": "Integer"},
         json=dtos.UpdatedMedicalBookInfo,
         resp=Response(HTTP_200=dtos.MedicalBookWithSymptomsAndItemReviews),
         tags=["Medical books"]
     )
-    def on_put_by_id(self, req, resp, medical_book_id: int):
+    def on_put_by_id(self, req, resp, med_book_id: int):
         """
         Изменение медицинской карты.
         """
-        req.media.update({'id': medical_book_id})
+        req.media.update({'id': med_book_id})
         updated_med_book_info = dtos.UpdatedMedicalBookInfo(**req.media)
         updated_med_book: entities.MedicalBook = (
             self.med_book.change(updated_med_book_info)
@@ -223,15 +223,15 @@ class MedicalBooks:
         resp.status = status_codes.HTTP_200
 
     @spectree.validate(
-        path_parameter_descriptions={"medical_book_id": "Integer"},
+        path_parameter_descriptions={"med_book_id": "Integer"},
         resp=Response(HTTP_200=dtos.MedicalBookWithSymptomsAndItemReviews),
         tags=["Medical books"]
     )
-    def on_delete_by_id(self, req, resp, medical_book_id):
+    def on_delete_by_id(self, req, resp, med_book_id):
         """
         Удаление медицинской карты.
         """
-        removed_med_book: entities.MedicalBook = self.med_book.delete(medical_book_id)
+        removed_med_book: entities.MedicalBook = self.med_book.delete(med_book_id)
 
         resp.media = asdict(removed_med_book)
         resp.status = status_codes.HTTP_200

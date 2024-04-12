@@ -93,7 +93,7 @@ item_reviews = Table(
 medical_books_symptoms = Table(
     'medical_books_symptoms',
     metadata,
-    Column('medical_book_id',
+    Column('med_book_id',
            ForeignKey('medical_books.id', ondelete='CASCADE', onupdate='CASCADE'),
            primary_key=True,
            nullable=False),
@@ -106,7 +106,7 @@ medical_books_symptoms = Table(
 medical_books_item_reviews = Table(
     'medical_books_item_reviews',
     metadata,
-    Column('medical_book_id',
+    Column('med_book_id',
            ForeignKey('medical_books.id', ondelete='CASCADE', onupdate='CASCADE'),
            primary_key=True,
            nullable=False),
