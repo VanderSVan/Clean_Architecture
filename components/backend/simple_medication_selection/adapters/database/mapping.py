@@ -16,7 +16,10 @@ mapper.map_imperatively(
     tables.treatment_items,
     properties={
         'reviews': relationship(
-            entities.ItemReview, lazy='select', cascade='all, delete-orphan'
+            entities.ItemReview,
+            lazy='select',
+            cascade='all, delete-orphan',
+            order_by=tables.item_reviews.c.item_rating.desc()
         )
     }
 )
@@ -29,13 +32,15 @@ mapper.map_imperatively(
             entities.Symptom,
             secondary=tables.medical_books_symptoms,
             lazy='select',
-            cascade='save-update, merge'
+            cascade='save-update, merge',
+            order_by=tables.symptoms.c.name.asc()
         ),
         'item_reviews': relationship(
             entities.ItemReview,
             secondary=tables.medical_books_item_reviews,
             lazy='select',
-            cascade='save-update, merge'
+            cascade='save-update, merge',
+            order_by=tables.item_reviews.c.item_rating.desc()
         ),
         'diagnosis': relationship(
             entities.Diagnosis, uselist=False, lazy='select', backref='medical_books'
