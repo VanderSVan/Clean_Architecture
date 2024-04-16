@@ -11,15 +11,16 @@ class FindMedicalBooks(BaseSchema):
     symptom_ids: list[int] | None = Field(ge=1)
     match_all_symptoms: bool | None = Field(description='Полное совпадение со всеми '
                                                         'симптомами  одновременно')
-    sort_field: Literal['patient_id', 'diagnosis_id', 'title_history'] = 'diagnosis_id'
-    sort_direction: Literal['asc', 'desc'] = 'desc'
+    sort_field: Literal[
+                    'id', 'title_history', 'history', 'patient_id', 'diagnosis_id'] | None
+    sort_direction: Literal['asc', 'desc'] | None
     limit: int | None = Field(10, ge=1)
     offset: int | None = Field(0, ge=0)
 
     @validator('item_ids', pre=True)
     def fix_item_ids(cls, value):
         if value is not None and not isinstance(value, list):
-            return list(value)
+            return [value]
 
         if isinstance(value, list):
             return set(value)
@@ -29,7 +30,7 @@ class FindMedicalBooks(BaseSchema):
     @validator('symptom_ids', pre=True)
     def fix_symptom_ids(cls, value):
         if value is not None and not isinstance(value, list):
-            return list(value)
+            return [value]
 
         if isinstance(value, list):
             return set(value)
@@ -43,4 +44,3 @@ class FindMedicalBooks(BaseSchema):
             return values
 
         return values
-

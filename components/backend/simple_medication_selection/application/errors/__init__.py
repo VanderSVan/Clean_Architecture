@@ -3,6 +3,7 @@ from .base import Error, ErrorsList
 from .symptom import (
     SymptomNotFound,
     SymptomAlreadyExists,
+    SymptomExcludeAllFields
 )
 from .diagnosis import (
     DiagnosisNotFound,
@@ -22,7 +23,8 @@ from .item import (
 )
 from .item_review import (
     ItemReviewNotFound,
-    ItemReviewAlreadyExists
+    ItemReviewAlreadyExists,
+    ItemReviewExcludeAllFields,
 )
 from .patient import (
     PatientNotFound,
@@ -30,5 +32,7 @@ from .patient import (
 )
 from .medical_book import (
     MedicalBookNotFound,
-    MedicalBookAlreadyExists
+    MedicalBookAlreadyExists,
+    MedicalBookExcludeAllFields,
+    MedicalBookExcludeSortField,
 )

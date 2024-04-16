@@ -1,5 +1,5 @@
 from collections import namedtuple
-from typing import Sequence, Callable
+from typing import Callable
 
 from pydantic import validate_arguments
 
@@ -302,7 +302,7 @@ class MedicalBook:
     def find_med_books_with_symptoms_and_reviews(
         self,
         filter_params: schemas.FindMedicalBooks | schemas.FindMedicalBooks
-    ) -> Sequence[dtos.MedicalBook | None]:
+    ) -> list[dtos.MedicalBookWithSymptomsAndItemReviews | None]:
 
         search_strategy_selector = _MedBookSearchStrategySelector(self.med_books_repo)
         repo_method = search_strategy_selector.get_method(filter_params)
