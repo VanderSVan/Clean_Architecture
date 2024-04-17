@@ -39,7 +39,10 @@ class FindMedicalBooks(BaseSchema):
 
     @root_validator
     def fix_match_all_symptoms(cls, values):
-        if values['symptom_ids'] is None and values['match_all_symptoms'] is not None:
+        if (
+            values.get('symptom_ids') is None and
+            values.get('match_all_symptoms') is not None
+        ):
             values['match_all_symptoms'] = None
             return values
 

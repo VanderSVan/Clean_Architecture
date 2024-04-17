@@ -1,6 +1,7 @@
 from dataclasses import asdict
 from unittest.mock import call
 
+from simple_medication_selection.adapters.api import schemas as api_schemas
 from simple_medication_selection.application import entities, dtos, schemas
 
 # ---------------------------------------------------------------------------------------
@@ -47,34 +48,111 @@ MEDICAL_BOOK_2 = entities.MedicalBook(
     ]
 )
 MEDICAL_BOOK_LIST: list[entities.MedicalBook] = [MEDICAL_BOOK_1, MEDICAL_BOOK_2]
-FILTER_PARAMS = schemas.FindMedicalBooks(
+DEFAULT_FILTER_PARAMS = api_schemas.SearchMedicalBooks(exclude_med_book_fields=None)
+DEFAULT_FILTER_PARAMS_WITH_SYMPTOMS_EXCLUSION = (
+    api_schemas.SearchMedicalBooksWithSymptoms(exclude_med_book_fields=None,
+                                               exclude_symptom_fields=None)
+)
+DEFAULT_FILTER_PARAMS_WITH_REVIEWS_EXCLUSION = (
+    api_schemas.SearchMedicalBooksWithItemReviews(exclude_med_book_fields=None,
+                                                  exclude_item_review_fields=None)
+)
+DEFAULT_FILTER_PARAMS_WITH_SYMPTOMS_AND_REVIEWS_EXCLUSION = (
+    api_schemas.SearchMedicalBooksWithSymptomsAndItemReviews(
+        exclude_med_book_fields=None,
+        exclude_symptom_fields=None,
+        exclude_item_review_fields=None
+    )
+)
+
+FILTER_PARAMS = api_schemas.SearchMedicalBooks(
     patient_id=1,
     item_ids=[1, 2],
     is_helped=True,
     diagnosis_id=1,
     symptom_ids=[1, 2],
     match_all_symptoms=True,
+    exclude_med_book_fields=['id', 'history'],
     sort_field='diagnosis_id',
     sort_direction='desc',
     limit=10,
     offset=0
 )
-DEFAULT_FILTER_PARAMS = schemas.FindMedicalBooks()
-TEST_URL = (
-    '{path}?'
-    f'patient_id={FILTER_PARAMS.patient_id}&'
-    f'item_ids={FILTER_PARAMS.item_ids[0]}&'
-    f'item_ids={FILTER_PARAMS.item_ids[1]}&'
-    f'is_helped={FILTER_PARAMS.is_helped}&'
-    f'diagnosis_id={FILTER_PARAMS.diagnosis_id}&'
-    f'symptom_ids={FILTER_PARAMS.symptom_ids[0]}&'
-    f'symptom_ids={FILTER_PARAMS.symptom_ids[1]}&'
-    f'match_all_symptoms={FILTER_PARAMS.match_all_symptoms}&'
-    f'sort_field={FILTER_PARAMS.sort_field}&'
-    f'sort_direction={FILTER_PARAMS.sort_direction}&'
-    f'limit={FILTER_PARAMS.limit}&'
-    f'offset={FILTER_PARAMS.offset}'
+FILTER_PARAMS_WITH_SYMPTOMS_EXCLUSION = api_schemas.SearchMedicalBooksWithSymptoms(
+    patient_id=1,
+    item_ids=[1, 2],
+    is_helped=True,
+    diagnosis_id=1,
+    symptom_ids=[1, 2],
+    match_all_symptoms=True,
+    exclude_med_book_fields=['history'],
+    exclude_symptom_fields=['id'],
+    sort_field='diagnosis_id',
+    sort_direction='desc',
+    limit=10,
+    offset=0
 )
+FILTER_PARAMS_WITH_REVIEWS_EXCLUSION = api_schemas.SearchMedicalBooksWithItemReviews(
+    patient_id=1,
+    item_ids=[1, 2],
+    is_helped=True,
+    diagnosis_id=1,
+    symptom_ids=[1, 2],
+    match_all_symptoms=True,
+    exclude_med_book_fields=['id', 'history'],
+    exclude_item_review_fields=['id', 'usage_period'],
+    sort_field='diagnosis_id',
+    sort_direction='desc',
+    limit=10,
+    offset=0
+)
+FILTER_PARAMS_WITH_SYMPTOMS_AND_REVIEWS_EXCLUSION = (
+    api_schemas.SearchMedicalBooksWithSymptomsAndItemReviews(
+        patient_id=1,
+        item_ids=[1, 2],
+        is_helped=True,
+        diagnosis_id=1,
+        symptom_ids=[1, 2],
+        match_all_symptoms=True,
+        exclude_med_book_fields=['id', 'history'],
+        exclude_symptom_fields=['id'],
+        exclude_item_review_fields=['id', 'usage_period'],
+        sort_field='diagnosis_id',
+        sort_direction='desc',
+        limit=10,
+        offset=0
+    )
+)
+
+
+# TEST_URL = (
+#     '{path}?'
+#     f'patient_id={FILTER_PARAMS.patient_id}&'
+#     f'item_ids={FILTER_PARAMS.item_ids[0]}&'
+#     f'item_ids={FILTER_PARAMS.item_ids[1]}&'
+#     f'is_helped={FILTER_PARAMS.is_helped}&'
+#     f'diagnosis_id={FILTER_PARAMS.diagnosis_id}&'
+#     f'symptom_ids={FILTER_PARAMS.symptom_ids[0]}&'
+#     f'symptom_ids={FILTER_PARAMS.symptom_ids[1]}&'
+#     f'match_all_symptoms={FILTER_PARAMS.match_all_symptoms}&'
+#     f'exclude_med_book_fields={FILTER_PARAMS.exclude_med_book_fields[0]}&'
+#     f'exclude_med_book_fields={FILTER_PARAMS.exclude_med_book_fields[1]}&'
+#     f'sort_field={FILTER_PARAMS.sort_field}&'
+#     f'sort_direction={FILTER_PARAMS.sort_direction}&'
+#     f'limit={FILTER_PARAMS.limit}&'
+#     f'offset={FILTER_PARAMS.offset}'
+# )
+
+
+def generate_url(filter_params, path) -> str:
+    url = f'{path}?'
+    for key, value in filter_params.dict().items():
+        if isinstance(value, list):
+            for v in value:
+                url += f'{key}={v}&'
+        else:
+            url += f'{key}={value}&'
+    return url[:-1]  # remove the last '&'
 
 
 # ---------------------------------------------------------------------------------------
@@ -85,18 +163,20 @@ class TestOnGet:
         # Setup
         returned_med_books = [dtos.MedicalBook(**med_book.__dict__)
                               for med_book in MEDICAL_BOOK_LIST]
+        test_url: str = generate_url(FILTER_PARAMS, '{path}')
 
         # Тестовый вывод `find_med_books` может отличаться от реального вывода
         medical_book_service.find_med_books.return_value = returned_med_books
 
         # Call
-        response = client.simulate_get(TEST_URL.format(path='/medical_books'))
+        response = client.simulate_get(test_url.format(path='/medical_books'))
 
         # Assert
         assert response.status_code == 200
-        assert response.json == [
-            med_book.dict() for med_book in returned_med_books if med_book is not None
-        ]
+        assert len(response.json) == len(MEDICAL_BOOK_LIST)
+        for med_book in response.json:
+            for key in FILTER_PARAMS.exclude_med_book_fields:
+                assert key not in med_book.keys()
         assert medical_book_service.method_calls == [call.find_med_books(FILTER_PARAMS)]
 
     def test__on_get_without_filters(self, medical_book_service, client):
@@ -125,6 +205,8 @@ class TestOnGetWithSymptoms:
         # Setup
         returned_med_books = [dtos.MedicalBookWithSymptoms(**med_book.__dict__)
                               for med_book in MEDICAL_BOOK_LIST]
+        test_url: str = generate_url(FILTER_PARAMS_WITH_SYMPTOMS_EXCLUSION,
+                                     '/medical_books/symptoms')
 
         # Тестовый вывод `find_med_books` может отличаться от реального вывода
         medical_book_service.find_med_books_with_symptoms.return_value = (
@@ -132,13 +214,21 @@ class TestOnGetWithSymptoms:
         )
 
         # Call
-        response = client.simulate_get(TEST_URL.format(path='/medical_books/symptoms'))
+        response = client.simulate_get(test_url)
 
         # Assert
         assert response.status_code == 200
-        assert response.json == [med_book.dict() for med_book in returned_med_books]
+        assert len(response.json) == len(MEDICAL_BOOK_LIST)
+        for med_book in response.json:
+            for key in FILTER_PARAMS_WITH_SYMPTOMS_EXCLUSION.exclude_med_book_fields:
+                assert key not in med_book.keys()
+
+            for key in FILTER_PARAMS_WITH_SYMPTOMS_EXCLUSION.exclude_symptom_fields:
+                assert all(key not in symptom.keys()
+                           for symptom in med_book['symptoms'])
+
         assert medical_book_service.method_calls == [
-            call.find_med_books_with_symptoms(FILTER_PARAMS)
+            call.find_med_books_with_symptoms(FILTER_PARAMS_WITH_SYMPTOMS_EXCLUSION)
         ]
 
     def test__on_get_with_symptoms_without_filters(self, medical_book_service, client):
@@ -158,7 +248,9 @@ class TestOnGetWithSymptoms:
         assert response.status_code == 200
         assert response.json == [med_book.dict() for med_book in returned_med_books]
         assert medical_book_service.method_calls == [
-            call.find_med_books_with_symptoms(DEFAULT_FILTER_PARAMS)
+            call.find_med_books_with_symptoms(
+                DEFAULT_FILTER_PARAMS_WITH_SYMPTOMS_EXCLUSION
+            )
         ]
 
 
@@ -167,18 +259,28 @@ class TestOnGetWithReviews:
         # Setup
         returned_med_books = [dtos.MedicalBookWithItemReviews(**med_book.__dict__)
                               for med_book in MEDICAL_BOOK_LIST]
+        test_url: str = generate_url(FILTER_PARAMS_WITH_REVIEWS_EXCLUSION,
+                                     '/medical_books/reviews')
 
-        # Тестовый вывод `find_med_books` может отличаться от реального вывода
+        # Тестовый вывод может отличаться от реального вывода
         medical_book_service.find_med_books_with_reviews.return_value = returned_med_books
 
         # Call
-        response = client.simulate_get(TEST_URL.format(path='/medical_books/reviews'))
+        response = client.simulate_get(test_url)
 
         # Assert
         assert response.status_code == 200
-        assert response.json == [med_book.dict() for med_book in returned_med_books]
+        assert len(response.json) == len(MEDICAL_BOOK_LIST)
+        for med_book in response.json:
+            for key in FILTER_PARAMS_WITH_REVIEWS_EXCLUSION.exclude_med_book_fields:
+                assert key not in med_book.keys()
+
+            for key in FILTER_PARAMS_WITH_REVIEWS_EXCLUSION.exclude_item_review_fields:
+                assert all(key not in review.keys()
+                           for review in med_book['item_reviews'])
+
         assert medical_book_service.method_calls == [
-            call.find_med_books_with_reviews(FILTER_PARAMS)
+            call.find_med_books_with_reviews(FILTER_PARAMS_WITH_REVIEWS_EXCLUSION)
         ]
 
     def test__on_get_with_reviews_without_filters(self, medical_book_service, client):
@@ -196,37 +298,70 @@ class TestOnGetWithReviews:
         assert response.status_code == 200
         assert response.json == [med_book.dict() for med_book in returned_med_books]
         assert medical_book_service.method_calls == [
-            call.find_med_books_with_reviews(DEFAULT_FILTER_PARAMS)
+            call.find_med_books_with_reviews(
+                DEFAULT_FILTER_PARAMS_WITH_REVIEWS_EXCLUSION)
         ]
 
 
 class TestOnGetWithSymptomsAndReviews:
     def test__on_get_with_symptoms_and_reviews(self, medical_book_service, client):
         # Setup
-        # Тестовый вывод `find_med_books_with_symptoms_and_reviews` может отличаться от реального вывода
+        returned_med_books = [
+            dtos.MedicalBookWithSymptomsAndItemReviews(**med_book.__dict__)
+            for med_book in MEDICAL_BOOK_LIST
+        ]
+        test_url: str = generate_url(
+            FILTER_PARAMS_WITH_SYMPTOMS_AND_REVIEWS_EXCLUSION,
+            '/medical_books/symptoms/reviews'
+        )
+        # Тестовый вывод может отличаться от реального вывода
         medical_book_service.find_med_books_with_symptoms_and_reviews.return_value = (
-            MEDICAL_BOOK_LIST
+            returned_med_books
         )
 
         # Call
-        response = client.simulate_get(
-            TEST_URL.format(path='/medical_books/symptoms/reviews')
-        )
+        response = client.simulate_get(test_url)
 
         # Assert
         assert response.status_code == 200
-        assert response.json == [asdict(med_book) for med_book in MEDICAL_BOOK_LIST]
+        assert len(response.json) == len(MEDICAL_BOOK_LIST)
+        for med_book in response.json:
+            for key in (
+                DEFAULT_FILTER_PARAMS_WITH_SYMPTOMS_AND_REVIEWS_EXCLUSION
+                    .exclude_med_book_fields
+            ):
+                assert key not in med_book.keys()
+
+            for key in (
+                DEFAULT_FILTER_PARAMS_WITH_SYMPTOMS_AND_REVIEWS_EXCLUSION
+                    .exclude_symptom_fields
+            ):
+                assert all(key not in symptom.keys()
+                           for symptom in med_book['symptoms'])
+
+            for key in (
+                DEFAULT_FILTER_PARAMS_WITH_SYMPTOMS_AND_REVIEWS_EXCLUSION
+                    .exclude_item_review_fields
+            ):
+                assert all(key not in review.keys()
+                           for review in med_book['item_reviews'])
+
         assert medical_book_service.method_calls == [
-            call.find_med_books_with_symptoms_and_reviews(FILTER_PARAMS)
+            call.find_med_books_with_symptoms_and_reviews(
+                FILTER_PARAMS_WITH_SYMPTOMS_AND_REVIEWS_EXCLUSION
+            )
         ]
 
     def test__on_get_with_symptoms_and_reviews_without_filters(self, medical_book_service,
                                                                client):
         # Setup
-        # Тестовый вывод `find_med_books_with_symptoms_and_reviews` может отличаться от
-        # реального вывода
+        # Тестовый вывод может отличаться от реального вывода
+        returned_med_books = [
+            dtos.MedicalBookWithSymptomsAndItemReviews(**med_book.__dict__)
+            for med_book in MEDICAL_BOOK_LIST
+        ]
         medical_book_service.find_med_books_with_symptoms_and_reviews.return_value = (
-            MEDICAL_BOOK_LIST
+            returned_med_books
         )
 
         # Call
@@ -234,37 +369,72 @@ class TestOnGetWithSymptomsAndReviews:
 
         # Assert
         assert response.status_code == 200
+        assert len(response.json) == len(MEDICAL_BOOK_LIST)
         assert response.json == [asdict(med_book) for med_book in MEDICAL_BOOK_LIST]
         assert medical_book_service.method_calls == [
-            call.find_med_books_with_symptoms_and_reviews(DEFAULT_FILTER_PARAMS)
+            call.find_med_books_with_symptoms_and_reviews(
+                DEFAULT_FILTER_PARAMS_WITH_SYMPTOMS_AND_REVIEWS_EXCLUSION
+            )
         ]
 
     def test__on_get_with_reviews_and_symptoms(self, medical_book_service, client):
         # Setup
-        # Тестовый вывод `find_med_books_with_symptoms_and_reviews` может отличаться от
-        # реального вывода
+        returned_med_books = [
+            dtos.MedicalBookWithSymptomsAndItemReviews(**med_book.__dict__)
+            for med_book in MEDICAL_BOOK_LIST
+        ]
+        # Тестовый вывод может отличаться от реального вывода
         medical_book_service.find_med_books_with_symptoms_and_reviews.return_value = (
-            MEDICAL_BOOK_LIST
+            returned_med_books
+        )
+        test_url: str = generate_url(
+            FILTER_PARAMS_WITH_SYMPTOMS_AND_REVIEWS_EXCLUSION,
+            '/medical_books/reviews/symptoms'
         )
 
         # Call
-        response = client.simulate_get(
-            TEST_URL.format(path='/medical_books/reviews/symptoms')
-        )
+        response = client.simulate_get(test_url)
+
         # Assert
         assert response.status_code == 200
-        assert response.json == [asdict(med_book) for med_book in MEDICAL_BOOK_LIST]
+        assert len(response.json) == len(MEDICAL_BOOK_LIST)
+        for med_book in response.json:
+            for key in (
+                DEFAULT_FILTER_PARAMS_WITH_SYMPTOMS_AND_REVIEWS_EXCLUSION
+                    .exclude_med_book_fields
+            ):
+                assert key not in med_book.keys()
+
+            for key in (
+                DEFAULT_FILTER_PARAMS_WITH_SYMPTOMS_AND_REVIEWS_EXCLUSION
+                    .exclude_symptom_fields
+            ):
+                assert all(key not in symptom.keys()
+                           for symptom in med_book['symptoms'])
+
+            for key in (
+                DEFAULT_FILTER_PARAMS_WITH_SYMPTOMS_AND_REVIEWS_EXCLUSION
+                    .exclude_item_review_fields
+            ):
+                assert all(key not in review.keys()
+                           for review in med_book['item_reviews'])
+
         assert medical_book_service.method_calls == [
-            call.find_med_books_with_symptoms_and_reviews(FILTER_PARAMS)
+            call.find_med_books_with_symptoms_and_reviews(
+                FILTER_PARAMS_WITH_SYMPTOMS_AND_REVIEWS_EXCLUSION
+            )
         ]
 
     def test__on_get_with_reviews_and_symptoms_without_filters(self, medical_book_service,
                                                                client):
         # Setup
-        # Тестовый вывод `find_med_books_with_symptoms_and_reviews` может отличаться от
-        # реального вывода
+        returned_med_books = [
+            dtos.MedicalBookWithSymptomsAndItemReviews(**med_book.__dict__)
+            for med_book in MEDICAL_BOOK_LIST
+        ]
+        # Тестовый вывод может отличаться от реального вывода
         medical_book_service.find_med_books_with_symptoms_and_reviews.return_value = (
-            MEDICAL_BOOK_LIST
+            returned_med_books
         )
 
         # Call
@@ -274,7 +444,9 @@ class TestOnGetWithSymptomsAndReviews:
         assert response.status_code == 200
         assert response.json == [asdict(med_book) for med_book in MEDICAL_BOOK_LIST]
         assert medical_book_service.method_calls == [
-            call.find_med_books_with_symptoms_and_reviews(DEFAULT_FILTER_PARAMS)
+            call.find_med_books_with_symptoms_and_reviews(
+                DEFAULT_FILTER_PARAMS_WITH_SYMPTOMS_AND_REVIEWS_EXCLUSION
+            )
         ]
 
 
@@ -420,4 +592,3 @@ class TestOnDeleteById:
         assert response.status_code == 200
         assert response.json == asdict(MEDICAL_BOOK_1)
         assert medical_book_service.method_calls == [call.delete(str(med_book_id))]
-

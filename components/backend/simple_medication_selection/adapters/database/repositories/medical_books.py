@@ -1,5 +1,3 @@
-from typing import Sequence
-
 from sqlalchemy import select, desc, Select, asc, func
 from sqlalchemy.orm import joinedload, Session
 
@@ -32,12 +30,12 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
                   *,
                   include_symptoms: bool,
                   include_reviews: bool
-                  ) -> (Sequence[dtos.MedicalBook] |
+                  ) -> (list[dtos.MedicalBook] |
                         list[dtos.MedicalBook] |
                         list[dtos.MedicalBookWithSymptoms] |
                         list[dtos.MedicalBookWithItemReviews] |
                         list[None]):
-        query: Select = self.query_collection.fetch_all(filter_params)
+        query: Select = self.query_collection.fetch_all()
         query: Select = self.query_pagination.apply(query, filter_params)
         return self.query_executor.get_med_book_list(query,
                                                      include_symptoms,
@@ -48,7 +46,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
                           *,
                           include_symptoms: bool,
                           include_reviews: bool
-                          ) -> (Sequence[dtos.MedicalBook] |
+                          ) -> (list[dtos.MedicalBook] |
                                 list[dtos.MedicalBook] |
                                 list[dtos.MedicalBookWithSymptoms] |
                                 list[dtos.MedicalBookWithItemReviews] |
@@ -64,7 +62,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
                                        *,
                                        include_symptoms: bool,
                                        include_reviews: bool
-                                       ) -> (Sequence[dtos.MedicalBook] |
+                                       ) -> (list[dtos.MedicalBook] |
                                              list[dtos.MedicalBook] |
                                              list[dtos.MedicalBookWithSymptoms] |
                                              list[dtos.MedicalBookWithItemReviews] |
@@ -82,7 +80,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
                            *,
                            include_symptoms: bool,
                            include_reviews: bool
-                           ) -> (Sequence[dtos.MedicalBook] |
+                           ) -> (list[dtos.MedicalBook] |
                                  list[dtos.MedicalBook] |
                                  list[dtos.MedicalBookWithSymptoms] |
                                  list[dtos.MedicalBookWithItemReviews] |
@@ -98,7 +96,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
                                         *,
                                         include_symptoms: bool,
                                         include_reviews: bool
-                                        ) -> (Sequence[dtos.MedicalBook] |
+                                        ) -> (list[dtos.MedicalBook] |
                                               list[dtos.MedicalBook] |
                                               list[dtos.MedicalBookWithSymptoms] |
                                               list[dtos.MedicalBookWithItemReviews] |
@@ -117,7 +115,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
+    ) -> (list[dtos.MedicalBook] |
           list[dtos.MedicalBook] |
           list[dtos.MedicalBookWithSymptoms] |
           list[dtos.MedicalBookWithItemReviews] |
@@ -136,7 +134,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
                                *,
                                include_symptoms: bool,
                                include_reviews: bool
-                               ) -> (Sequence[dtos.MedicalBook] |
+                               ) -> (list[dtos.MedicalBook] |
                                      list[dtos.MedicalBook] |
                                      list[dtos.MedicalBookWithSymptoms] |
                                      list[dtos.MedicalBookWithItemReviews] |
@@ -152,7 +150,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
                                             *,
                                             include_symptoms: bool,
                                             include_reviews: bool
-                                            ) -> (Sequence[dtos.MedicalBook] |
+                                            ) -> (list[dtos.MedicalBook] |
                                                   list[dtos.MedicalBook] |
                                                   list[dtos.MedicalBookWithSymptoms] |
                                                   list[dtos.MedicalBookWithItemReviews] |
@@ -171,7 +169,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
+    ) -> (list[dtos.MedicalBook] |
           list[dtos.MedicalBook] |
           list[dtos.MedicalBookWithSymptoms] |
           list[dtos.MedicalBookWithItemReviews] |
@@ -191,7 +189,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
                                              *,
                                              include_symptoms: bool,
                                              include_reviews: bool
-                                             ) -> (Sequence[dtos.MedicalBook] |
+                                             ) -> (list[dtos.MedicalBook] |
                                                    list[dtos.MedicalBook] |
                                                    list[dtos.MedicalBookWithSymptoms] |
                                                    list[dtos.MedicalBookWithItemReviews] |
@@ -210,7 +208,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
+    ) -> (list[dtos.MedicalBook] |
           list[dtos.MedicalBook] |
           list[dtos.MedicalBookWithSymptoms] |
           list[dtos.MedicalBookWithItemReviews] |
@@ -231,7 +229,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
+    ) -> (list[dtos.MedicalBook] |
           list[dtos.MedicalBook] |
           list[dtos.MedicalBookWithSymptoms] |
           list[dtos.MedicalBookWithItemReviews] |
@@ -251,7 +249,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
                          *,
                          include_symptoms: bool,
                          include_reviews: bool
-                         ) -> (Sequence[dtos.MedicalBook] |
+                         ) -> (list[dtos.MedicalBook] |
                                list[dtos.MedicalBook] |
                                list[dtos.MedicalBookWithSymptoms] |
                                list[dtos.MedicalBookWithItemReviews] |
@@ -267,7 +265,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
                                       *,
                                       include_symptoms: bool,
                                       include_reviews: bool
-                                      ) -> (Sequence[dtos.MedicalBook] |
+                                      ) -> (list[dtos.MedicalBook] |
                                             list[dtos.MedicalBook] |
                                             list[dtos.MedicalBookWithSymptoms] |
                                             list[dtos.MedicalBookWithItemReviews] |
@@ -284,7 +282,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
+    ) -> (list[dtos.MedicalBook] |
           list[dtos.MedicalBook] |
           list[dtos.MedicalBookWithSymptoms] |
           list[dtos.MedicalBookWithItemReviews] |
@@ -305,7 +303,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
+    ) -> (list[dtos.MedicalBook] |
           list[dtos.MedicalBook] |
           list[dtos.MedicalBookWithSymptoms] |
           list[dtos.MedicalBookWithItemReviews] |
@@ -324,7 +322,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
+    ) -> (list[dtos.MedicalBook] |
           list[dtos.MedicalBook] |
           list[dtos.MedicalBookWithSymptoms] |
           list[dtos.MedicalBookWithItemReviews] |
@@ -345,7 +343,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
+    ) -> (list[dtos.MedicalBook] |
           list[dtos.MedicalBook] |
           list[dtos.MedicalBookWithSymptoms] |
           list[dtos.MedicalBookWithItemReviews] |
@@ -366,7 +364,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
+    ) -> (list[dtos.MedicalBook] |
           list[dtos.MedicalBook] |
           list[dtos.MedicalBookWithSymptoms] |
           list[dtos.MedicalBookWithItemReviews] |
@@ -387,7 +385,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
+    ) -> (list[dtos.MedicalBook] |
           list[dtos.MedicalBook] |
           list[dtos.MedicalBookWithSymptoms] |
           list[dtos.MedicalBookWithItemReviews] |
@@ -408,7 +406,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
+    ) -> (list[dtos.MedicalBook] |
           list[dtos.MedicalBook] |
           list[dtos.MedicalBookWithSymptoms] |
           list[dtos.MedicalBookWithItemReviews] |
@@ -431,7 +429,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
+    ) -> (list[dtos.MedicalBook] |
           list[dtos.MedicalBook] |
           list[dtos.MedicalBookWithSymptoms] |
           list[dtos.MedicalBookWithItemReviews] |
@@ -452,7 +450,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
+    ) -> (list[dtos.MedicalBook] |
           list[dtos.MedicalBook] |
           list[dtos.MedicalBookWithSymptoms] |
           list[dtos.MedicalBookWithItemReviews] |
@@ -471,7 +469,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
+    ) -> (list[dtos.MedicalBook] |
           list[dtos.MedicalBook] |
           list[dtos.MedicalBookWithSymptoms] |
           list[dtos.MedicalBookWithItemReviews] |
@@ -489,7 +487,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
                        *,
                        include_symptoms: bool,
                        include_reviews: bool
-                       ) -> (Sequence[dtos.MedicalBook] |
+                       ) -> (list[dtos.MedicalBook] |
                              list[dtos.MedicalBook] |
                              list[dtos.MedicalBookWithSymptoms] |
                              list[dtos.MedicalBookWithItemReviews] |
@@ -505,7 +503,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
                                    *,
                                    include_symptoms: bool,
                                    include_reviews: bool
-                                   ) -> (Sequence[dtos.MedicalBook] |
+                                   ) -> (list[dtos.MedicalBook] |
                                          list[dtos.MedicalBook] |
                                          list[dtos.MedicalBookWithSymptoms] |
                                          list[dtos.MedicalBookWithItemReviews] |
@@ -521,7 +519,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
                                          *,
                                          include_symptoms: bool,
                                          include_reviews: bool
-                                         ) -> (Sequence[dtos.MedicalBook] |
+                                         ) -> (list[dtos.MedicalBook] |
                                                list[dtos.MedicalBook] |
                                                list[dtos.MedicalBookWithSymptoms] |
                                                list[dtos.MedicalBookWithItemReviews] |
@@ -539,7 +537,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
                                      *,
                                      include_symptoms: bool,
                                      include_reviews: bool
-                                     ) -> (Sequence[dtos.MedicalBook] |
+                                     ) -> (list[dtos.MedicalBook] |
                                            list[dtos.MedicalBook] |
                                            list[dtos.MedicalBookWithSymptoms] |
                                            list[dtos.MedicalBookWithItemReviews] |
@@ -555,7 +553,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
                                     *,
                                     include_symptoms: bool,
                                     include_reviews: bool
-                                    ) -> (Sequence[dtos.MedicalBook] |
+                                    ) -> (list[dtos.MedicalBook] |
                                           list[dtos.MedicalBook] |
                                           list[dtos.MedicalBookWithSymptoms] |
                                           list[dtos.MedicalBookWithItemReviews] |
@@ -572,7 +570,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
+    ) -> (list[dtos.MedicalBook] |
           list[dtos.MedicalBook] |
           list[dtos.MedicalBookWithSymptoms] |
           list[dtos.MedicalBookWithItemReviews] |
@@ -591,7 +589,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
+    ) -> (list[dtos.MedicalBook] |
           list[dtos.MedicalBook] |
           list[dtos.MedicalBookWithSymptoms] |
           list[dtos.MedicalBookWithItemReviews] |
@@ -612,7 +610,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
+    ) -> (list[dtos.MedicalBook] |
           list[dtos.MedicalBook] |
           list[dtos.MedicalBookWithSymptoms] |
           list[dtos.MedicalBookWithItemReviews] |
@@ -633,7 +631,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
+    ) -> (list[dtos.MedicalBook] |
           list[dtos.MedicalBook] |
           list[dtos.MedicalBookWithSymptoms] |
           list[dtos.MedicalBookWithItemReviews] |
@@ -654,7 +652,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
+    ) -> (list[dtos.MedicalBook] |
           list[dtos.MedicalBook] |
           list[dtos.MedicalBookWithSymptoms] |
           list[dtos.MedicalBookWithItemReviews] |
@@ -677,7 +675,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
+    ) -> (list[dtos.MedicalBook] |
           list[dtos.MedicalBook] |
           list[dtos.MedicalBookWithSymptoms] |
           list[dtos.MedicalBookWithItemReviews] |
@@ -696,7 +694,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
+    ) -> (list[dtos.MedicalBook] |
           list[dtos.MedicalBook] |
           list[dtos.MedicalBookWithSymptoms] |
           list[dtos.MedicalBookWithItemReviews] |
@@ -719,7 +717,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
+    ) -> (list[dtos.MedicalBook] |
           list[dtos.MedicalBook] |
           list[dtos.MedicalBookWithSymptoms] |
           list[dtos.MedicalBookWithItemReviews] |
@@ -738,7 +736,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
+    ) -> (list[dtos.MedicalBook] |
           list[dtos.MedicalBook] |
           list[dtos.MedicalBookWithSymptoms] |
           list[dtos.MedicalBookWithItemReviews] |
@@ -759,7 +757,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
+    ) -> (list[dtos.MedicalBook] |
           list[dtos.MedicalBook] |
           list[dtos.MedicalBookWithSymptoms] |
           list[dtos.MedicalBookWithItemReviews] |
@@ -782,7 +780,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
+    ) -> (list[dtos.MedicalBook] |
           list[dtos.MedicalBook] |
           list[dtos.MedicalBookWithSymptoms] |
           list[dtos.MedicalBookWithItemReviews] |
@@ -952,7 +950,7 @@ class _MedicalBookQueryCollection:
         )
 
     @staticmethod
-    def fetch_all(filter_params: schemas.FindMedicalBooks) -> Select:
+    def fetch_all() -> Select:
         return (
             select(entities.MedicalBook)
             .distinct()

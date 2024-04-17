@@ -297,7 +297,8 @@ class TestFetchAll(_TestOrderMixin, _TestPaginationMixin, _TestUniquenessMixin):
                    dict(include_symptoms=True, include_reviews=True,
                         filter_params=schemas.FindMedicalBooks())]
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, entities.MedicalBook]
+                  dtos.MedicalBookWithItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_all(self, kwargs, output_obj, repo, session):
@@ -320,7 +321,8 @@ class TestFetchBySymptoms(_TestOrderMixin, _TestPaginationMixin, _TestUniqueness
                    dict(include_symptoms=True, include_reviews=True,
                         filter_params=schemas.FindMedicalBooks(symptom_ids=[3, 4]))]
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, entities.MedicalBook]
+                  dtos.MedicalBookWithItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_symptoms(self, kwargs, output_obj, repo, session, fill_db):
@@ -348,7 +350,7 @@ class TestFetchBySymptoms(_TestOrderMixin, _TestPaginationMixin, _TestUniqueness
 
             # check symptoms
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithSymptoms
             ):
                 fetched_med_book_symptom_ids: list[int] = [
@@ -379,7 +381,8 @@ class TestFetchByMatchingAllSymptoms(_TestOrderMixin,
                             symptom_ids=[1, 2], match_all_symptoms=True
                         ))]
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, entities.MedicalBook]
+                  dtos.MedicalBookWithItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_matching_all_symptoms(self, kwargs, output_obj, repo, session,
@@ -414,7 +417,7 @@ class TestFetchByMatchingAllSymptoms(_TestOrderMixin,
 
             # check symptoms
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithSymptoms
             ):
                 assert len(fetched_med_book.symptoms) >= len(symptom_ids)
@@ -438,7 +441,8 @@ class TestFetchByDiagnosis(_TestOrderMixin,
                    dict(include_symptoms=True, include_reviews=True,
                         filter_params=schemas.FindMedicalBooks(diagnosis_id=1))]
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, entities.MedicalBook]
+                  dtos.MedicalBookWithItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_diagnosis(self, kwargs, output_obj, repo, session, fill_db):
@@ -486,7 +490,8 @@ class TestFetchByDiagnosisAndSymptoms(_TestOrderMixin,
                             diagnosis_id=1, symptom_ids=[1, 2])
                         )]
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, entities.MedicalBook]
+                  dtos.MedicalBookWithItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_diagnosis_and_symptoms(self, kwargs, output_obj, repo, session,
@@ -519,7 +524,7 @@ class TestFetchByDiagnosisAndSymptoms(_TestOrderMixin,
 
             # check symptoms
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithSymptoms
             ):
                 med_book_symptom_ids: list[int] = [symptom.id
@@ -549,7 +554,8 @@ class TestFetchByDiagnosisWithMatchingAllSymptoms(_TestOrderMixin,
                             diagnosis_id=1, symptom_ids=[1, 2], match_all_symptoms=True)
                         )]
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, entities.MedicalBook]
+                  dtos.MedicalBookWithItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_diagnosis_with_matching_all_symptoms(self, kwargs, output_obj,
@@ -587,7 +593,7 @@ class TestFetchByDiagnosisWithMatchingAllSymptoms(_TestOrderMixin,
 
             # check symptoms
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithSymptoms
             ):
                 assert len(med_book.symptoms) >= len(symptom_ids)
@@ -622,7 +628,8 @@ class TestFetchByHelpedStatus(_TestOrderMixin,
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
                   dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
                   dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  entities.MedicalBook, entities.MedicalBook]
+                  dtos.MedicalBookWithSymptomsAndItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_helped_status(self, kwargs, output_obj, repo,
@@ -649,7 +656,7 @@ class TestFetchByHelpedStatus(_TestOrderMixin,
 
             # check helped status
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithItemReviews
             ):
                 assert filter_params.is_helped in [review.is_helped
@@ -697,7 +704,8 @@ class TestFetchByHelpedStatusAndSymptoms(_TestOrderMixin,
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
                   dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
                   dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  entities.MedicalBook, entities.MedicalBook]
+                  dtos.MedicalBookWithSymptomsAndItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_helped_status_and_symptoms(self, kwargs, output_obj, repo, session,
@@ -731,7 +739,7 @@ class TestFetchByHelpedStatusAndSymptoms(_TestOrderMixin,
 
             # check helped status
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithItemReviews
             ):
                 assert filter_params.is_helped in [review.is_helped
@@ -739,7 +747,7 @@ class TestFetchByHelpedStatusAndSymptoms(_TestOrderMixin,
 
             # check symptoms
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithSymptoms
             ):
                 med_book_symptom_ids: list[int] = [
@@ -790,7 +798,8 @@ class TestFetchByHelpedStatusWithMatchingAllSymptoms(_TestOrderMixin,
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
                   dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
                   dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  entities.MedicalBook, entities.MedicalBook]
+                  dtos.MedicalBookWithSymptomsAndItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_helped_status_with_matching_all_symptoms(self, kwargs, output_obj,
@@ -830,7 +839,7 @@ class TestFetchByHelpedStatusWithMatchingAllSymptoms(_TestOrderMixin,
 
             # check helped status
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithItemReviews
             ):
                 assert filter_params.is_helped in [review.is_helped
@@ -838,7 +847,7 @@ class TestFetchByHelpedStatusWithMatchingAllSymptoms(_TestOrderMixin,
 
             # check symptoms
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithSymptoms
             ):
                 med_book_symptom_ids: list[int] = [
@@ -889,7 +898,8 @@ class TestFetchByHelpedStatusAndDiagnosis(_TestOrderMixin,
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
                   dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
                   dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  entities.MedicalBook, entities.MedicalBook]
+                  dtos.MedicalBookWithSymptomsAndItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_helped_status_and_diagnosis(self, kwargs, output_obj, repo,
@@ -921,7 +931,7 @@ class TestFetchByHelpedStatusAndDiagnosis(_TestOrderMixin,
 
             # check helped status
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithItemReviews
             ):
                 assert filter_params.is_helped in [review.is_helped
@@ -969,7 +979,8 @@ class TestFetchByHelpedStatusDiagnosisAndSymptoms(_TestOrderMixin,
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
                   dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
                   dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  entities.MedicalBook, entities.MedicalBook]
+                  dtos.MedicalBookWithSymptomsAndItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_helped_status_diagnosis_and_symptoms(
@@ -1008,7 +1019,7 @@ class TestFetchByHelpedStatusDiagnosisAndSymptoms(_TestOrderMixin,
 
             # check helped status
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithItemReviews
             ):
                 assert filter_params.is_helped in [review.is_helped
@@ -1016,7 +1027,7 @@ class TestFetchByHelpedStatusDiagnosisAndSymptoms(_TestOrderMixin,
 
             # check symptoms
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithSymptoms
             ):
                 med_book_symptom_ids: list[int] = [
@@ -1075,7 +1086,8 @@ class TestFetchByHelpedStatusDiagnosisWithMatchingAllSymptoms(_TestOrderMixin,
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
                   dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
                   dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  entities.MedicalBook, entities.MedicalBook]
+                  dtos.MedicalBookWithSymptomsAndItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_helped_status_diagnosis_with_matching_all_symptoms(
@@ -1119,7 +1131,7 @@ class TestFetchByHelpedStatusDiagnosisWithMatchingAllSymptoms(_TestOrderMixin,
 
             # check helped status
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithItemReviews
             ):
                 assert filter_params.is_helped in [review.is_helped
@@ -1127,7 +1139,7 @@ class TestFetchByHelpedStatusDiagnosisWithMatchingAllSymptoms(_TestOrderMixin,
 
             # check symptoms
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithSymptoms
             ):
                 med_book_symptom_ids: list[int] = [
@@ -1149,7 +1161,8 @@ class TestFetchByPatient(_TestOrderMixin, _TestPaginationMixin, _TestUniquenessM
                    dict(include_symptoms=True, include_reviews=True,
                         filter_params=schemas.FindMedicalBooks(patient_id=1))]
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, entities.MedicalBook]
+                  dtos.MedicalBookWithItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_patient(self, kwargs, output_obj, repo, session, fill_db):
@@ -1188,7 +1201,8 @@ class TestFetchByPatientAndSymptoms(_TestOrderMixin,
                             patient_id=1, symptom_ids=[1, 2])
                         )]
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, entities.MedicalBook]
+                  dtos.MedicalBookWithItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_patient_and_symptoms(self, kwargs, output_obj, repo, session,
@@ -1220,7 +1234,7 @@ class TestFetchByPatientAndSymptoms(_TestOrderMixin,
 
             # check symptoms
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithSymptoms
             ):
                 med_book_symptom_ids: list[int] = [
@@ -1251,7 +1265,8 @@ class TestFetchByPatientWithMatchingAllSymptoms(_TestOrderMixin,
                             patient_id=1, symptom_ids=[1, 2], match_all_symptoms=True)
                         )]
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, entities.MedicalBook]
+                  dtos.MedicalBookWithItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_patient_matching_all_symptoms(
@@ -1290,7 +1305,7 @@ class TestFetchByPatientWithMatchingAllSymptoms(_TestOrderMixin,
 
             # check symptoms
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithSymptoms
             ):
                 med_book_symptom_ids: list[int] = [
@@ -1342,7 +1357,8 @@ class TestFetchByPatientAndHelpedStatus(_TestOrderMixin,
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
                   dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
                   dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  entities.MedicalBook, entities.MedicalBook]
+                  dtos.MedicalBookWithSymptomsAndItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_patient_and_helped_status(self, kwargs, output_obj, repo, session,
@@ -1373,7 +1389,7 @@ class TestFetchByPatientAndHelpedStatus(_TestOrderMixin,
 
             # check helped status
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithItemReviews
             ):
                 assert filter_params.is_helped in [review.is_helped
@@ -1421,7 +1437,8 @@ class TestFetchByPatientHelpedStatusAndSymptoms(_TestOrderMixin,
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
                   dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
                   dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  entities.MedicalBook, entities.MedicalBook]
+                  dtos.MedicalBookWithSymptomsAndItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_patient_helped_status_and_symptoms(self, kwargs, output_obj, repo,
@@ -1456,7 +1473,7 @@ class TestFetchByPatientHelpedStatusAndSymptoms(_TestOrderMixin,
 
             # check helped status
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithItemReviews
             ):
                 assert filter_params.is_helped in [review.is_helped
@@ -1464,7 +1481,7 @@ class TestFetchByPatientHelpedStatusAndSymptoms(_TestOrderMixin,
 
             # check symptoms
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithSymptoms
             ):
                 med_book_symptom_ids: list[int] = [
@@ -1523,7 +1540,8 @@ class TestFetchByPatientHelpedStatusWithMatchingAllSymptoms(_TestOrderMixin,
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
                   dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
                   dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  entities.MedicalBook, entities.MedicalBook]
+                  dtos.MedicalBookWithSymptomsAndItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_patient_helped_status_with_matching_all_symptoms(
@@ -1565,7 +1583,7 @@ class TestFetchByPatientHelpedStatusWithMatchingAllSymptoms(_TestOrderMixin,
 
             # check helped status
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithItemReviews
             ):
                 assert filter_params.is_helped in [review.is_helped
@@ -1573,7 +1591,7 @@ class TestFetchByPatientHelpedStatusWithMatchingAllSymptoms(_TestOrderMixin,
 
             # check symptoms
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithSymptoms
             ):
                 med_book_symptom_ids: list[int] = [
@@ -1625,7 +1643,8 @@ class TestFetchByPatientHelpedStatusAndDiagnosis(_TestOrderMixin,
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
                   dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
                   dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  entities.MedicalBook, entities.MedicalBook]
+                  dtos.MedicalBookWithSymptomsAndItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_patient_helped_status_and_diagnosis(
@@ -1661,7 +1680,7 @@ class TestFetchByPatientHelpedStatusAndDiagnosis(_TestOrderMixin,
 
             # check helped status
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithItemReviews
             ):
                 assert filter_params.is_helped in [review.is_helped
@@ -1709,7 +1728,8 @@ class TestFetchByPatientHelpedStatusDiagnosisAndSymptoms(_TestOrderMixin,
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
                   dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
                   dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  entities.MedicalBook, entities.MedicalBook]
+                  dtos.MedicalBookWithSymptomsAndItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_patient_helped_status_diagnosis_and_symptoms(
@@ -1749,7 +1769,7 @@ class TestFetchByPatientHelpedStatusDiagnosisAndSymptoms(_TestOrderMixin,
 
             # check helped status
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithItemReviews
             ):
                 assert filter_params.is_helped in [review.is_helped
@@ -1757,7 +1777,7 @@ class TestFetchByPatientHelpedStatusDiagnosisAndSymptoms(_TestOrderMixin,
 
             # check symptoms
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithSymptoms
             ):
                 med_book_symptom_ids: list[int] = [
@@ -1816,7 +1836,8 @@ class TestFetchByPatientHelpedStatusDiagnosisWithMatchingAllSymptoms(
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
                   dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
                   dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  entities.MedicalBook, entities.MedicalBook]
+                  dtos.MedicalBookWithSymptomsAndItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_patient_helped_status_diagnosis_with_matching_all_symptoms(
@@ -1865,7 +1886,7 @@ class TestFetchByPatientHelpedStatusDiagnosisWithMatchingAllSymptoms(
 
             # check helped status
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithItemReviews
             ):
                 assert filter_params.is_helped in [review.is_helped
@@ -1873,7 +1894,7 @@ class TestFetchByPatientHelpedStatusDiagnosisWithMatchingAllSymptoms(
 
             # check symptoms
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithSymptoms
             ):
                 med_book_symptom_ids: list[int] = [
@@ -1909,7 +1930,8 @@ class TestFetchByPatientDiagnosisWithMatchingAllSymptoms(_TestOrderMixin,
                             diagnosis_id=1)
                         )]
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, entities.MedicalBook]
+                  dtos.MedicalBookWithItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_patient_diagnosis_with_matching_all_symptoms(
@@ -1953,7 +1975,7 @@ class TestFetchByPatientDiagnosisWithMatchingAllSymptoms(_TestOrderMixin,
 
             # check symptoms
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithSymptoms
             ):
                 med_book_symptom_ids: list[int] = [
@@ -1985,7 +2007,8 @@ class TestFetchByPatientDiagnosisAndSymptoms(_TestOrderMixin,
                             patient_id=1, symptom_ids=[1, 2], diagnosis_id=1)
                         )]
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, entities.MedicalBook]
+                  dtos.MedicalBookWithItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_patient_diagnosis_and_symptoms(self, kwargs, output_obj, repo,
@@ -2022,7 +2045,7 @@ class TestFetchByPatientDiagnosisAndSymptoms(_TestOrderMixin,
 
             # check symptoms
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithSymptoms
             ):
                 med_book_symptom_ids: list[int] = [
@@ -2053,7 +2076,8 @@ class TestFetchByPatientAndDiagnosis(_TestOrderMixin,
                             patient_id=1, diagnosis_id=1)
                         )]
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, entities.MedicalBook]
+                  dtos.MedicalBookWithItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_patient_and_diagnosis(self, kwargs, output_obj, repo, session,
@@ -2096,7 +2120,8 @@ class TestFetchByItems(_TestOrderMixin, _TestPaginationMixin, _TestUniquenessMix
                    dict(include_symptoms=True, include_reviews=True,
                         filter_params=schemas.FindMedicalBooks(item_ids=[1, 2]))]
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, entities.MedicalBook]
+                  dtos.MedicalBookWithItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_items(self, kwargs, output_obj, repo, session, fill_db):
@@ -2124,7 +2149,7 @@ class TestFetchByItems(_TestOrderMixin, _TestPaginationMixin, _TestUniquenessMix
 
             # check items
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithItemReviews
             ):
                 assert any(review.item_id in item_ids for review in med_book.item_reviews)
@@ -2151,7 +2176,8 @@ class TestFetchByPatientAndItems(_TestOrderMixin,
                             patient_id=1, item_ids=[1, 2])
                         )]
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, entities.MedicalBook]
+                  dtos.MedicalBookWithItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_patient_and_items(self, kwargs, output_obj, repo, session,
@@ -2184,7 +2210,7 @@ class TestFetchByPatientAndItems(_TestOrderMixin,
 
             # check items
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithItemReviews
             ):
                 assert any(review.item_id in item_ids for review in med_book.item_reviews)
@@ -2215,7 +2241,8 @@ class TestFetchByItemsAndHelpedStatus(_TestOrderMixin,
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
                   dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
                   dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  entities.MedicalBook, entities.MedicalBook]
+                  dtos.MedicalBookWithSymptomsAndItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_items_and_helped_status(self, kwargs, output_obj, repo, session,
@@ -2245,7 +2272,7 @@ class TestFetchByItemsAndHelpedStatus(_TestOrderMixin,
 
             # check helped status and items
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithItemReviews
             ):
                 assert filter_params.is_helped in [review.is_helped
@@ -2274,7 +2301,8 @@ class TestFetchByItemsAndDiagnosis(_TestOrderMixin,
                             diagnosis_id=1, item_ids=[1, 2])
                         )]
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, entities.MedicalBook]
+                  dtos.MedicalBookWithItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_items_and_diagnosis(self, kwargs, output_obj, repo, session,
@@ -2307,7 +2335,7 @@ class TestFetchByItemsAndDiagnosis(_TestOrderMixin,
 
             # check items
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithItemReviews
             ):
                 assert any(review.item_id in item_ids for review in med_book.item_reviews)
@@ -2334,7 +2362,8 @@ class TestFetchByItemsAndSymptoms(_TestOrderMixin,
                             symptom_ids=[1, 2], item_ids=[1, 2])
                         )]
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, entities.MedicalBook]
+                  dtos.MedicalBookWithItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_items_and_symptoms(self, kwargs, output_obj, repo, session,
@@ -2367,7 +2396,7 @@ class TestFetchByItemsAndSymptoms(_TestOrderMixin,
 
             # check symptoms
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithSymptoms
             ):
                 med_book_symptom_ids: list[int] = [
@@ -2378,7 +2407,7 @@ class TestFetchByItemsAndSymptoms(_TestOrderMixin,
 
             # check items
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithItemReviews
             ):
                 assert any(review.item_id in item_ids for review in med_book.item_reviews)
@@ -2405,7 +2434,8 @@ class TestFetchByItemsWithMatchingAllSymptoms(_TestOrderMixin,
                             symptom_ids=[1, 2], item_ids=[1, 2], match_all_symptoms=True)
                         )]
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, entities.MedicalBook]
+                  dtos.MedicalBookWithItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_items_with_matching_all_symptoms(self, kwargs, output_obj, repo,
@@ -2444,14 +2474,14 @@ class TestFetchByItemsWithMatchingAllSymptoms(_TestOrderMixin,
 
             # check items
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithItemReviews
             ):
                 assert any(review.item_id in item_ids for review in med_book.item_reviews)
 
             # check symptoms
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithSymptoms
             ):
                 med_book_symptom_ids: list[int] = [
@@ -2487,7 +2517,8 @@ class TestFetchByDiagnosisItemsWithMatchingAllSymptoms(_TestOrderMixin,
                             diagnosis_id=1)
                         )]
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, entities.MedicalBook]
+                  dtos.MedicalBookWithItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_diagnosis_items_with_matching_all_symptoms(
@@ -2531,14 +2562,14 @@ class TestFetchByDiagnosisItemsWithMatchingAllSymptoms(_TestOrderMixin,
 
             # check items
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithItemReviews
             ):
                 assert any(review.item_id in item_ids for review in med_book.item_reviews)
 
             # check symptoms
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithSymptoms
             ):
                 med_book_symptom_ids: list[int] = [
@@ -2598,7 +2629,8 @@ class TestFetchByHelpedStatusItemsWithMatchingAllSymptoms(_TestOrderMixin,
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
                   dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
                   dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  entities.MedicalBook, entities.MedicalBook]
+                  dtos.MedicalBookWithSymptomsAndItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_helped_status_items_with_matching_all_symptoms(
@@ -2639,7 +2671,7 @@ class TestFetchByHelpedStatusItemsWithMatchingAllSymptoms(_TestOrderMixin,
 
             # check helped status and items
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithItemReviews
             ):
                 assert filter_params.is_helped in [review.is_helped
@@ -2648,7 +2680,7 @@ class TestFetchByHelpedStatusItemsWithMatchingAllSymptoms(_TestOrderMixin,
 
             # check symptoms
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithSymptoms
             ):
                 med_book_symptom_ids: list[int] = [
@@ -2700,7 +2732,8 @@ class TestFetchByHelpedStatusDiagnosisAndItems(_TestOrderMixin,
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
                   dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
                   dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  entities.MedicalBook, entities.MedicalBook]
+                  dtos.MedicalBookWithSymptomsAndItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_helped_status_diagnosis_and_items(
@@ -2735,7 +2768,7 @@ class TestFetchByHelpedStatusDiagnosisAndItems(_TestOrderMixin,
 
             # check helped status and items
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithItemReviews
             ):
                 assert filter_params.is_helped in [review.is_helped
@@ -2792,7 +2825,8 @@ class TestFetchByHelpedStatusDiagnosisItemsWithMatchingAllSymptoms(
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
                   dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
                   dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  entities.MedicalBook, entities.MedicalBook]
+                  dtos.MedicalBookWithSymptomsAndItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_helped_status_diagnosis_items_with_matching_all_symptoms(
@@ -2839,7 +2873,7 @@ class TestFetchByHelpedStatusDiagnosisItemsWithMatchingAllSymptoms(
 
             # check helped status and items
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithItemReviews
             ):
                 assert filter_params.is_helped in [review.is_helped
@@ -2848,7 +2882,7 @@ class TestFetchByHelpedStatusDiagnosisItemsWithMatchingAllSymptoms(
 
             # check symptoms
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithSymptoms
             ):
                 med_book_symptom_ids: list[int] = [
@@ -2880,7 +2914,8 @@ class TestFetchByPatientDiagnosisAndItems(_TestOrderMixin,
                             patient_id=1, diagnosis_id=1, item_ids=[1, 2])
                         )]
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, entities.MedicalBook]
+                  dtos.MedicalBookWithItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_patient_diagnosis_and_items(self, kwargs, output_obj, repo,
@@ -2917,7 +2952,7 @@ class TestFetchByPatientDiagnosisAndItems(_TestOrderMixin,
 
             # check items
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithItemReviews
             ):
                 assert any(review.item_id in item_ids for review in med_book.item_reviews)
@@ -2948,7 +2983,8 @@ class TestFetchByPatientDiagnosisItemsWithMatchingAllSymptoms(
                             symptom_ids=[1, 2], match_all_symptoms=True)
                         )]
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, entities.MedicalBook]
+                  dtos.MedicalBookWithItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_patient_diagnosis_items_with_matching_all_symptoms(
@@ -2998,7 +3034,7 @@ class TestFetchByPatientDiagnosisItemsWithMatchingAllSymptoms(
 
             # check symptoms
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithSymptoms
             ):
                 med_book_symptom_ids: list[int] = [
@@ -3010,7 +3046,7 @@ class TestFetchByPatientDiagnosisItemsWithMatchingAllSymptoms(
 
             # check items
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithItemReviews
             ):
                 assert any(review.item_id in item_ids for review in med_book.item_reviews)
@@ -3057,7 +3093,8 @@ class TestFetchByPatientHelpedStatusAndItems(_TestOrderMixin,
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
                   dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
                   dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  entities.MedicalBook, entities.MedicalBook]
+                  dtos.MedicalBookWithSymptomsAndItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_patient_helped_status_and_items(self, kwargs, output_obj, repo,
@@ -3091,7 +3128,7 @@ class TestFetchByPatientHelpedStatusAndItems(_TestOrderMixin,
 
             # check helped status and items
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithItemReviews
             ):
                 assert filter_params.is_helped in [review.is_helped
@@ -3140,7 +3177,8 @@ class TestFetchByPatientHelpedStatusDiagnosisAndItems(_TestOrderMixin,
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
                   dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
                   dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  entities.MedicalBook, entities.MedicalBook]
+                  dtos.MedicalBookWithSymptomsAndItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_patient_helped_status_diagnosis_and_items(
@@ -3179,7 +3217,7 @@ class TestFetchByPatientHelpedStatusDiagnosisAndItems(_TestOrderMixin,
 
             # check helped status and items
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithItemReviews
             ):
                 assert filter_params.is_helped in [review.is_helped
@@ -3236,7 +3274,8 @@ class TestFetchByPatientHelpedStatusItemsWithMatchingAllSymptoms(
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
                   dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
                   dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  entities.MedicalBook, entities.MedicalBook]
+                  dtos.MedicalBookWithSymptomsAndItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_patient_helped_status_items_with_matching_all_symptoms(
@@ -3284,7 +3323,7 @@ class TestFetchByPatientHelpedStatusItemsWithMatchingAllSymptoms(
 
             # check helped status and items
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithItemReviews
             ):
                 assert filter_params.is_helped in [review.is_helped
@@ -3293,7 +3332,7 @@ class TestFetchByPatientHelpedStatusItemsWithMatchingAllSymptoms(
 
             # check symptoms
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithSymptoms
             ):
                 med_book_symptom_ids: list[int] = [
@@ -3355,7 +3394,8 @@ class TestFetchByPatientHelpedStatusDiagnosisItemsWithMatchingAllSymptoms(
     OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
                   dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
                   dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  entities.MedicalBook, entities.MedicalBook]
+                  dtos.MedicalBookWithSymptomsAndItemReviews,
+                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
     @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
     def test__fetch_by_patient_helped_status_diagnosis_items_with_matching_all_symptoms(
@@ -3409,7 +3449,7 @@ class TestFetchByPatientHelpedStatusDiagnosisItemsWithMatchingAllSymptoms(
 
             # check helped status and items
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithItemReviews
             ):
                 assert filter_params.is_helped in [review.is_helped
@@ -3418,7 +3458,7 @@ class TestFetchByPatientHelpedStatusDiagnosisItemsWithMatchingAllSymptoms(
 
             # check symptoms
             if (
-                output_obj is entities.MedicalBook or
+                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
                 output_obj is dtos.MedicalBookWithSymptoms
             ):
                 med_book_symptom_ids: list[int] = [
