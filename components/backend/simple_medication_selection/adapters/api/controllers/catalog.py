@@ -41,7 +41,7 @@ class Catalog:
         resp.status = status_codes.HTTP_200
 
     @spectree.validate(
-        query=schemas.FindTreatmentItems,
+        query=schemas.FindTreatmentItemList,
         resp=Response(HTTP_200=list[dtos.TreatmentItem]),
         tags=["Items"]
     )
@@ -49,7 +49,7 @@ class Catalog:
         """
         Поиск items по параметрам.
         """
-        filter_params = schemas.FindTreatmentItems(
+        filter_params = schemas.FindTreatmentItemList(
             keywords=req.context.query.keywords,
             is_helped=req.context.query.is_helped,
             diagnosis_id=req.context.query.diagnosis_id,
@@ -76,15 +76,15 @@ class Catalog:
         resp.status = status_codes.HTTP_200
 
     @spectree.validate(
-        query=schemas.FindTreatmentItems,
-        resp=Response(HTTP_200=list[dtos.ItemWithReviews]),
+        query=schemas.FindTreatmentItemList,
+        resp=Response(HTTP_200=list[dtos.TreatmentItemWithReviews]),
         tags=["Items with reviews"]
     )
     def on_get_with_reviews(self, req, resp):
         """
         Поиск items с отзывами по параметрам.
         """
-        filter_params = schemas.FindTreatmentItems(
+        filter_params = schemas.FindTreatmentItemList(
             keywords=req.context.query.keywords,
             is_helped=req.context.query.is_helped,
             diagnosis_id=req.context.query.diagnosis_id,
@@ -111,15 +111,15 @@ class Catalog:
         resp.status = status_codes.HTTP_200
 
     @spectree.validate(
-        json=dtos.NewItemInfo,
-        resp=Response(HTTP_201=dtos.ItemWithReviews),
+        json=dtos.NewTreatmentItemInfo,
+        resp=Response(HTTP_201=dtos.TreatmentItemWithReviews),
         tags=["Items"]
     )
     def on_post_new(self, req, resp):
         """
         Создание item.
         """
-        new_item_info = dtos.NewItemInfo(**req.media)
+        new_item_info = dtos.NewTreatmentItemInfo(**req.media)
         new_item: entities.TreatmentItem = self.catalog.add_item(new_item_info)
 
         resp.media = new_item.to_dict()
@@ -127,8 +127,8 @@ class Catalog:
 
     @spectree.validate(
         path_parameter_descriptions={"item_id": "Integer"},
-        json=dtos.UpdatedItemInfo,
-        resp=Response(HTTP_200=dtos.ItemWithReviews),
+        json=dtos.UpdatedTreatmentItemInfo,
+        resp=Response(HTTP_200=dtos.TreatmentItemWithReviews),
         tags=["Items"]
     )
     def on_put_by_id(self, req, resp, item_id: int):
@@ -136,7 +136,7 @@ class Catalog:
         Изменение item.
         """
         req.media.update({'id': item_id})
-        updated_item_info = dtos.UpdatedItemInfo(**req.media)
+        updated_item_info = dtos.UpdatedTreatmentItemInfo(**req.media)
         updated_item: entities.TreatmentItem = self.catalog.change_item(updated_item_info)
 
         resp.media = updated_item.to_dict()

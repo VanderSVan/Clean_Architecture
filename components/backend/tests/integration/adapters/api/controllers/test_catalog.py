@@ -162,7 +162,7 @@ class TestOnGet:
             returned_items.append(dtos.TreatmentItem(**returned_item))
 
         catalog_service.find_items.return_value = returned_items
-        filter_params = schemas.FindTreatmentItems(
+        filter_params = schemas.FindTreatmentItemList(
             keywords='Продукт',
             is_helped=True,
             diagnosis_id=1,
@@ -238,7 +238,7 @@ class TestOnGetWithReviews:
             returned_items.append(item)
 
         catalog_service.find_items_with_reviews.return_value = returned_items
-        filter_params = schemas.FindTreatmentItems(
+        filter_params = schemas.FindTreatmentItemList(
             keywords='Продукт',
             is_helped=True,
             diagnosis_id=1,
@@ -289,7 +289,7 @@ class TestOnGetWithReviews:
     def test_on_get_with_reviews_default(self, catalog_service, client):
         # Setup
         catalog_service.find_items_with_reviews.return_value = ITEM_LIST
-        filter_params = schemas.FindTreatmentItems()
+        filter_params = schemas.FindTreatmentItemList()
 
         # Call
         response = client.simulate_get('/items/reviews')
@@ -321,7 +321,7 @@ class TestOnPostNew:
         assert response.status_code == 201
         assert response.json == returned_item.to_dict()
         assert catalog_service.method_calls == [
-            call.add_item(dtos.NewItemInfo(**item_info_to_create))
+            call.add_item(dtos.NewTreatmentItemInfo(**item_info_to_create))
         ]
 
 
@@ -343,7 +343,7 @@ class TestOnPutById:
         assert response.status_code == 200
         assert response.json == returned_item.to_dict()
         assert catalog_service.method_calls == [
-            call.change_item(dtos.UpdatedItemInfo(**updated_item_info))
+            call.change_item(dtos.UpdatedTreatmentItemInfo(**updated_item_info))
         ]
 
 

@@ -3,7 +3,17 @@ from typing import Literal
 from pydantic import BaseModel as BaseSchema, Field, validator, root_validator
 
 
-class FindTreatmentItems(BaseSchema):
+class GetTreatmentItem(BaseSchema):
+    item_id: int = Field(ge=1)
+    reviews_sort_field: Literal[
+        'id', 'item_id', 'is_helped', 'item_rating', 'item_count', 'usage_period'
+    ] | None = None
+    reviews_sort_direction: Literal['asc', 'desc'] | None = 'asc'
+    reviews_limit: int | None = Field(10, ge=1)
+    reviews_offset: int | None = Field(0, ge=0)
+
+
+class FindTreatmentItemList(BaseSchema):
     keywords: str | None = Field(max_length=255)
     is_helped: bool | None
     diagnosis_id: int | None = Field(ge=1)
@@ -21,6 +31,13 @@ class FindTreatmentItems(BaseSchema):
     limit: int | None = Field(10, ge=1)
     offset: int | None = Field(0, ge=0)
 
+    reviews_sort_field: Literal[
+        'id', 'item_id', 'is_helped', 'item_rating', 'item_count', 'usage_period'
+    ] | None = None
+    reviews_sort_direction: Literal['asc', 'desc'] | None = None
+    reviews_limit: int | None = Field(10, ge=1)
+    reviews_offset: int | None = Field(0, ge=0)
+
     @validator('symptom_ids', pre=True)
     def fix_symptom_ids(cls, value):
         if value is not None and not isinstance(value, list):
@@ -33,7 +50,10 @@ class FindTreatmentItems(BaseSchema):
 
     @root_validator
     def fix_match_all_symptoms(cls, values):
-        if values['symptom_ids'] is None and values['match_all_symptoms'] is not None:
+        if (
+            values.get('symptom_ids') is None and
+            values.get('match_all_symptoms') is not None
+        ):
             values['match_all_symptoms'] = None
             return values
 

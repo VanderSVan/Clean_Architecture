@@ -18,10 +18,10 @@ from .item_type import (
     ItemTypeUpdateSchema,
 )
 from .item import (
-    NewItemInfo,
+    NewTreatmentItemInfo,
     TreatmentItem,
-    ItemWithReviews,
-    UpdatedItemInfo,
+    TreatmentItemWithReviews,
+    UpdatedTreatmentItemInfo,
 )
 from .item_review import (
     ItemReviewCreateSchema,
