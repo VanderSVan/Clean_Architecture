@@ -10,3 +10,4 @@ from .medical_book import (
 )
 from .symptom import SymptomOutput
 from .item_review import ItemReviewOutput
+from .item_catalog import GetTreatmentItemWithReviews

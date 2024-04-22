@@ -1,11 +1,9 @@
-from typing import Sequence
-
 from falcon import status_codes
-
 from spectree import Response
-from ..spec import spectree
 
 from simple_medication_selection.application import services, entities, dtos, schemas
+from .. import schemas as api_schemas
+from ..spec import spectree
 
 
 class Catalog:
@@ -28,6 +26,7 @@ class Catalog:
 
     @spectree.validate(
         path_parameter_descriptions={"item_id": "Integer"},
+        query=api_schemas.GetTreatmentItemWithReviews,
         resp=Response(HTTP_200=dtos.TreatmentItem),
         tags=["Items with reviews"]
     )
@@ -35,9 +34,18 @@ class Catalog:
         """
         Получение item по его идентификатору.
         """
-        item: entities.TreatmentItem = self.catalog.get_item_with_reviews(item_id)
+        filter_params = schemas.GetTreatmentItemWithReviews(
+            item_id=item_id,
+            reviews_sort_field=req.context.query.reviews_sort_field,
+            reviews_sort_direction=req.context.query.reviews_sort_direction,
+            reviews_limit=req.context.query.reviews_limit,
+            reviews_offset=req.context.query.reviews_offset
+        )
+        item: dtos.TreatmentItemWithReviews = (
+            self.catalog.get_item_with_reviews(filter_params)
+        )
 
-        resp.media = item.to_dict()
+        resp.media = item.dict(decode=True)
         resp.status = status_codes.HTTP_200
 
     @spectree.validate(
@@ -76,7 +84,7 @@ class Catalog:
         resp.status = status_codes.HTTP_200
 
     @spectree.validate(
-        query=schemas.FindTreatmentItemList,
+        query=schemas.FindTreatmentItemListWithReviews,
         resp=Response(HTTP_200=list[dtos.TreatmentItemWithReviews]),
         tags=["Items with reviews"]
     )
@@ -84,7 +92,7 @@ class Catalog:
         """
         Поиск items с отзывами по параметрам.
         """
-        filter_params = schemas.FindTreatmentItemList(
+        filter_params = schemas.FindTreatmentItemListWithReviews(
             keywords=req.context.query.keywords,
             is_helped=req.context.query.is_helped,
             diagnosis_id=req.context.query.diagnosis_id,
@@ -99,14 +107,18 @@ class Catalog:
             sort_field=req.context.query.sort_field,
             sort_direction=req.context.query.sort_direction,
             limit=req.context.query.limit,
-            offset=req.context.query.offset
+            offset=req.context.query.offset,
+            reviews_sort_field=req.context.query.reviews_sort_field,
+            reviews_sort_direction=req.context.query.reviews_sort_direction,
+            reviews_limit=req.context.query.reviews_limit,
+            reviews_offset=req.context.query.reviews_offset
         )
-        found_items: Sequence[entities.TreatmentItem | None] = (
+        found_items: list[dtos.TreatmentItemWithReviews | None] = (
             self.catalog.find_items_with_reviews(filter_params)
         )
 
         resp.media = [
-            item.to_dict() for item in found_items if item is not None
+            item.dict(decode=True) for item in found_items if item is not None
         ]
         resp.status = status_codes.HTTP_200
 
