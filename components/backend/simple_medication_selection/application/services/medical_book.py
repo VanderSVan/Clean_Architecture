@@ -166,7 +166,7 @@ class _MedBookSearchStrategySelector:
 
     def _build_key(
         self,
-        filter_params: schemas.FindMedicalBooks | schemas.FindMedicalBooks
+        filter_params: schemas.FindMedicalBooks
     ) -> namedtuple:
 
         return self.StrategyKey(
@@ -182,7 +182,7 @@ class _MedBookSearchStrategySelector:
 
     def get_method(
         self,
-        filter_params: schemas.FindMedicalBooks | schemas.FindMedicalBooks
+        filter_params: schemas.FindMedicalBooks
     ) -> Callable:
 
         key: namedtuple = self._build_key(filter_params)
@@ -202,6 +202,9 @@ class MedicalBook:
         self.diagnoses_repo = diagnoses_repo
         self.symptoms_repo = symptoms_repo
         self.reviews_repo = reviews_repo
+        self._search_strategy_selector = _MedBookSearchStrategySelector(
+            medical_books_repo
+        )
 
     @register_method
     @validate_arguments
@@ -265,11 +268,10 @@ class MedicalBook:
     @validate_arguments
     def find_med_books(
         self,
-        filter_params: schemas.FindMedicalBooks | schemas.FindMedicalBooks
+        filter_params: schemas.FindMedicalBooks
     ) -> list[dtos.MedicalBook | None]:
 
-        search_strategy_selector = _MedBookSearchStrategySelector(self.med_books_repo)
-        repo_method = search_strategy_selector.get_method(filter_params)
+        repo_method: Callable = self._search_strategy_selector.get_method(filter_params)
 
         return repo_method(filter_params, include_symptoms=False, include_reviews=False)
 
@@ -277,11 +279,10 @@ class MedicalBook:
     @validate_arguments
     def find_med_books_with_symptoms(
         self,
-        filter_params: schemas.FindMedicalBooks | schemas.FindMedicalBooks
+        filter_params: schemas.FindMedicalBooks
     ) -> list[dtos.MedicalBookWithSymptoms | None]:
 
-        search_strategy_selector = _MedBookSearchStrategySelector(self.med_books_repo)
-        repo_method = search_strategy_selector.get_method(filter_params)
+        repo_method: Callable = self._search_strategy_selector.get_method(filter_params)
 
         return repo_method(filter_params, include_symptoms=True, include_reviews=False)
 
@@ -289,11 +290,10 @@ class MedicalBook:
     @validate_arguments
     def find_med_books_with_reviews(
         self,
-        filter_params: schemas.FindMedicalBooks | schemas.FindMedicalBooks
+        filter_params: schemas.FindMedicalBooks
     ) -> list[dtos.MedicalBookWithItemReviews | None]:
 
-        search_strategy_selector = _MedBookSearchStrategySelector(self.med_books_repo)
-        repo_method = search_strategy_selector.get_method(filter_params)
+        repo_method: Callable = self._search_strategy_selector.get_method(filter_params)
 
         return repo_method(filter_params, include_symptoms=False, include_reviews=True)
 
@@ -301,11 +301,10 @@ class MedicalBook:
     @validate_arguments
     def find_med_books_with_symptoms_and_reviews(
         self,
-        filter_params: schemas.FindMedicalBooks | schemas.FindMedicalBooks
+        filter_params: schemas.FindMedicalBooks
     ) -> list[dtos.MedicalBookWithSymptomsAndItemReviews | None]:
 
-        search_strategy_selector = _MedBookSearchStrategySelector(self.med_books_repo)
-        repo_method = search_strategy_selector.get_method(filter_params)
+        repo_method: Callable = self._search_strategy_selector.get_method(filter_params)
 
         return repo_method(filter_params, include_symptoms=True, include_reviews=True)
 
