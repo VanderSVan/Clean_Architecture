@@ -2,7 +2,7 @@ from typing import Sequence, Literal
 
 from sqlalchemy import select, desc, asc, between
 
-from simple_medication_selection.application import interfaces, entities
+from simple_medication_selection.application import interfaces, entities, schemas
 from .base import BaseRepository
 
 
@@ -32,24 +32,25 @@ class ItemReviewsRepo(BaseRepository, interfaces.ItemReviewsRepo):
         )
         return self.session.execute(query).scalars().all()
 
-    def fetch_all_by_item(self,
-                          item_id: int,
-                          order_field: str,
-                          order_direction: Literal['asc', 'desc'],
-                          limit: int | None,
-                          offset: int | None
-                          ) -> Sequence[entities.ItemReview | None]:
+    def fetch_by_item(self,
+                      filter_params: schemas.FindItemReviews,
+                      ) -> Sequence[entities.ItemReview | None]:
         query = (
             select(entities.ItemReview)
-            .where(entities.ItemReview.item_id == item_id)
-            .limit(limit)
-            .offset(offset)
-            .order_by(
-                desc(getattr(entities.ItemReview, order_field)).nullslast()
-                if order_direction == 'desc'
-                else asc(getattr(entities.ItemReview, order_field)).nullslast()
-            )
+            .where(entities.ItemReview.item_id.in_(filter_params.item_ids))
+            .limit(filter_params.limit)
+            .offset(filter_params.offset)
         )
+        sort_field = filter_params.sort_field
+        if sort_field:
+            query = (
+                query.
+                order_by(
+                    desc(getattr(entities.ItemReview, sort_field)).nullslast()
+                    if filter_params.sort_direction == 'desc'
+                    else asc(getattr(entities.ItemReview, sort_field)).nullslast()
+                )
+            )
         return self.session.execute(query).scalars().all()
 
     def fetch_reviews_by_patient(self,

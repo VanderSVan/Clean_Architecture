@@ -1,6 +1,7 @@
 from unittest.mock import Mock, call
 
 import pytest
+
 from simple_medication_selection.application import (
     dtos, entities, errors, interfaces, services, schemas
 )
@@ -43,27 +44,15 @@ def service(items_repo,
     )
 
 
-# diagnosis_id, symptom_ids, is_helped, repo_method
-filter_params_combinations: list[tuple] = [
-    (1, [1, 2], True, 'fetch_by_helped_status_diagnosis_symptoms'),
-    (1, [1, 2], False, 'fetch_by_helped_status_diagnosis_symptoms'),
-
-    (1, [1, 2], None, 'fetch_by_diagnosis_and_symptoms'),
-
-    (1, None, True, 'fetch_by_diagnosis_and_helped_status'),
-    (1, None, False, 'fetch_by_diagnosis_and_helped_status'),
-
-    (1, None, None, 'fetch_by_diagnosis'),
-
-    (None, [1, 2], True, 'fetch_by_symptoms_and_helped_status'),
-    (None, [1, 2], False, 'fetch_by_symptoms_and_helped_status'),
-
-    (None, [1, 2], None, 'fetch_by_symptoms'),
-
-    (None, None, True, 'fetch_by_helped_status'),
-    (None, None, False, 'fetch_by_helped_status'),
-
-    (None, None, None, 'fetch_all'),
+# reviews_limit, reviews_offset, reviews_sort_field
+FILTER_PARAMS_COMBINATIONS: list[tuple] = [
+    (10, None, None),
+    (None, 1, None),
+    (None, None, 'item_rating'),
+    (10, 1, None),
+    (10, None, 'item_rating'),
+    (None, 1, 'item_rating'),
+    (10, 1, 'item_rating'),
 ]
 
 
@@ -112,15 +101,15 @@ class TestGetItem:
 
 class TestGetItemWithReviews:
 
-    @pytest.mark.parametrize("items_repo_output, service_output", [
+    @pytest.mark.parametrize("repo_output, service_output", [
         (
             entities.TreatmentItem(
                 id=1, title="Продукт 1", category_id=2, type_id=3,
                 reviews=[
-                    dtos.ItemReview(id=1, item_id=1, is_helped=True, item_rating=7.5,
-                                    item_count=5, usage_period=2000000),
-                    dtos.ItemReview(id=2, item_id=1, is_helped=False, item_rating=2.5,
-                                    item_count=2, usage_period=1000000)
+                    entities.ItemReview(id=1, item_id=1, is_helped=True, item_rating=7.5,
+                                        item_count=5, usage_period=2000000),
+                    entities.ItemReview(id=2, item_id=1, is_helped=False, item_rating=2.5,
+                                        item_count=2, usage_period=1000000)
                 ]
             ),
             dtos.TreatmentItemWithReviews(
@@ -135,14 +124,14 @@ class TestGetItemWithReviews:
         )
     ])
     def test__get_items_with_reviews(
-        self, items_repo_output, service_output, service, items_repo, reviews_repo,
+        self, repo_output, service_output, service, items_repo, reviews_repo,
         categories_repo, types_repo
     ):
         # Setup
-        items_repo.fetch_by_id.return_value = items_repo_output
-        filter_params = schemas.GetTreatmentItem(item_id=items_repo_output.id,
-                                                 reviews_limit=None,
-                                                 reviews_offset=None)
+        items_repo.fetch_by_id.return_value = repo_output
+        filter_params = schemas.GetTreatmentItemWithReviews(item_id=repo_output.id,
+                                                            reviews_limit=None,
+                                                            reviews_offset=None)
 
         # Call
         result = service.get_item_with_reviews(filter_params)
@@ -186,7 +175,7 @@ class TestGetItemWithReviews:
                                 item_count=2, usage_period=1000000)
             ]
         )
-        items_filter_params = schemas.GetTreatmentItem(
+        items_filter_params = schemas.GetTreatmentItemWithReviews(
             item_id=items_repo_output.id, reviews_sort_field=reviews_sort_field,
             reviews_limit=reviews_limit, reviews_offset=reviews_offset
         )
@@ -227,13 +216,41 @@ class TestGetItemWithReviews:
 
 
 class TestFindItems:
-    @pytest.mark.parametrize("diagnosis_id, symptom_ids, is_helped, repo_method",
-                             filter_params_combinations)
-    def test__find_items(self, diagnosis_id, symptom_ids, is_helped, repo_method,
-                         service, items_repo, reviews_repo, categories_repo, types_repo):
+
+    def test__find_items(self, service, items_repo, reviews_repo, categories_repo,
+                         types_repo):
+        # Setup
+        filter_params = schemas.FindTreatmentItemList()
+        repo_output = [
+            entities.TreatmentItem(id=1, title="Продукт 1", category_id=2, type_id=3),
+            entities.TreatmentItem(id=2, title="Продукт 2", category_id=1, type_id=2),
+        ]
+        service_output = [
+            dtos.TreatmentItem(id=1, title="Продукт 1", category_id=2, type_id=3),
+            dtos.TreatmentItem(id=2, title="Продукт 2", category_id=1, type_id=2),
+        ]
+        items_repo.fetch_all.return_value = repo_output
+
+        # Call
+        result = service.find_items(filter_params=filter_params)
+
+        # Assert
+        assert result == service_output
+        assert items_repo.method_calls == [call.fetch_all(filter_params, False)]
+        assert reviews_repo.method_calls == []
+        assert categories_repo.method_calls == []
+        assert types_repo.method_calls == []
+
+    @pytest.mark.parametrize("reviews_limit, reviews_offset, reviews_sort_field",
+                             FILTER_PARAMS_COMBINATIONS)
+    def test__with_limit_offset_and_sorting(
+        self, reviews_limit, reviews_offset, reviews_sort_field, service, items_repo,
+        reviews_repo, categories_repo, types_repo
+    ):
         # Setup
         filter_params = schemas.FindTreatmentItemList(
-            diagnosis_id=diagnosis_id, symptom_ids=symptom_ids, is_helped=is_helped
+            reviews_limit=reviews_limit, reviews_offset=reviews_offset,
+            reviews_sort_field=reviews_sort_field
         )
         repo_output = [
             entities.TreatmentItem(id=1, title="Продукт 1", category_id=2, type_id=3),
@@ -243,31 +260,100 @@ class TestFindItems:
             dtos.TreatmentItem(id=1, title="Продукт 1", category_id=2, type_id=3),
             dtos.TreatmentItem(id=2, title="Продукт 2", category_id=1, type_id=2),
         ]
-        getattr(items_repo, repo_method).return_value = repo_output
+        items_repo.fetch_all.return_value = repo_output
 
         # Call
         result = service.find_items(filter_params=filter_params)
 
         # Assert
         assert result == service_output
-        getattr(items_repo, repo_method).assert_called_once_with(filter_params, False)
+        assert items_repo.method_calls == [call.fetch_all(filter_params, False)]
         assert reviews_repo.method_calls == []
         assert categories_repo.method_calls == []
         assert types_repo.method_calls == []
 
 
 class TestFindItemsWithReviews:
-    @pytest.mark.parametrize("diagnosis_id, symptom_ids, is_helped, repo_method",
-                             filter_params_combinations)
+
+    @pytest.mark.parametrize("items_repo_output, reviews_repo_output, service_output", [
+        (
+            # items_repo_output
+            [
+                entities.TreatmentItem(
+                    id=1, title="Продукт 1", category_id=2, type_id=3,
+                    reviews=[
+                        entities.ItemReview(id=1, item_id=1, is_helped=True,
+                                            item_rating=8.0,
+                                            item_count=5, usage_period=2000000),
+                    ]
+                ),
+                entities.TreatmentItem(
+                    id=2, title="Продукт 2", category_id=1, type_id=2,
+                    reviews=[
+                        entities.ItemReview(id=2, item_id=2, is_helped=False,
+                                            item_rating=2.5,
+                                            item_count=2, usage_period=1000000),
+                    ]
+                ),
+            ],
+            # reviews_repo_output
+            [
+                [entities.ItemReview(id=1, item_id=1, is_helped=True, item_rating=8.0,
+                                     item_count=5, usage_period=2000000)],
+                [entities.ItemReview(id=2, item_id=2, is_helped=False, item_rating=2.5,
+                                     item_count=2, usage_period=1000000)],
+            ],
+            # service_output
+            [
+                dtos.TreatmentItemWithReviews(
+                    id=1, title="Продукт 1", category_id=2, type_id=3,
+                    reviews=[
+                        dtos.ItemReview(id=1, item_id=1, is_helped=True, item_rating=8.0,
+                                        item_count=5, usage_period=2000000),
+                    ]
+                ),
+                dtos.TreatmentItemWithReviews(
+                    id=2, title="Продукт 2", category_id=1, type_id=2,
+                    reviews=[
+                        dtos.ItemReview(id=2, item_id=2, is_helped=False, item_rating=2.5,
+                                        item_count=2, usage_period=1000000),
+                    ]
+                ),
+            ]
+        )
+    ])
     def test__find_items_with_reviews(
-        self, diagnosis_id, symptom_ids, is_helped, repo_method, service, items_repo,
+        self, items_repo_output, reviews_repo_output, service_output, service,
+        items_repo, reviews_repo, categories_repo, types_repo
+    ):
+        # Setup
+        filter_params = schemas.FindTreatmentItemListWithReviews(reviews_limit=None,
+                                                                 reviews_offset=None)
+        items_repo.fetch_all.return_value = items_repo_output
+        reviews_repo.fetch_by_item.side_effect = reviews_repo_output
+
+        # Call
+        result = service.find_items_with_reviews(filter_params=filter_params)
+
+        # Assert
+        assert result == service_output
+        assert items_repo.method_calls == [call.fetch_all(filter_params, True)]
+        assert reviews_repo.method_calls == []
+        assert categories_repo.method_calls == []
+        assert types_repo.method_calls == []
+
+    @pytest.mark.parametrize("reviews_limit, reviews_offset, reviews_sort_field",
+                             FILTER_PARAMS_COMBINATIONS)
+    def test__with_limit_offset_and_sort(
+        self, reviews_limit, reviews_offset, reviews_sort_field, service, items_repo,
         reviews_repo, categories_repo, types_repo
     ):
         # Setup
-        filter_params = schemas.FindTreatmentItemList(
-            diagnosis_id=diagnosis_id, symptom_ids=symptom_ids, is_helped=is_helped
+        filter_params = schemas.FindTreatmentItemListWithReviews(
+            reviews_limit=reviews_limit, reviews_offset=reviews_offset,
+            reviews_sort_field=reviews_sort_field
         )
-        repo_output = [
+        items_repo_output = [
             entities.TreatmentItem(
                 id=1, title="Продукт 1", category_id=2, type_id=3,
                 reviews=[
@@ -283,6 +369,27 @@ class TestFindItemsWithReviews:
                 ]
             ),
         ]
+        first_review_filter_params = schemas.FindItemReviews(
+            item_ids=[items_repo_output[0].id],
+            sort_field=filter_params.reviews_sort_field,
+            sort_direction=filter_params.reviews_sort_direction,
+            limit=filter_params.reviews_limit,
+            offset=filter_params.reviews_offset
+        )
+        second_review_filter_params = schemas.FindItemReviews(
+            item_ids=[items_repo_output[1].id],
+            sort_field=filter_params.reviews_sort_field,
+            sort_direction=filter_params.reviews_sort_direction,
+            limit=filter_params.reviews_limit,
+            offset=filter_params.reviews_offset
+        )
+        reviews_repo_output = [
+            [entities.ItemReview(id=1, item_id=1, is_helped=True, item_rating=8.0,
+                                 item_count=5, usage_period=2000000)],
+            [entities.ItemReview(id=2, item_id=2, is_helped=False, item_rating=2.5,
+                                 item_count=2, usage_period=1000000)],
+        ]
+
         service_output = [
             dtos.TreatmentItemWithReviews(
                 id=1, title="Продукт 1", category_id=2, type_id=3,
@@ -300,15 +407,19 @@ class TestFindItemsWithReviews:
             ),
 
         ]
-        getattr(items_repo, repo_method).return_value = repo_output
+        items_repo.fetch_all.return_value = items_repo_output
+        reviews_repo.fetch_by_item.side_effect = reviews_repo_output
 
         # Call
         result = service.find_items_with_reviews(filter_params=filter_params)
 
         # Assert
         assert result == service_output
-        getattr(items_repo, repo_method).assert_called_once_with(filter_params, True)
-        assert reviews_repo.method_calls == []
+        assert items_repo.method_calls == [call.fetch_all(filter_params, False)]
+        assert reviews_repo.method_calls == [
+            call.fetch_by_item(first_review_filter_params),
+            call.fetch_by_item(second_review_filter_params)
+        ]
         assert categories_repo.method_calls == []
         assert types_repo.method_calls == []
 

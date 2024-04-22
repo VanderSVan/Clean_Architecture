@@ -14,7 +14,7 @@ from .item_type import (
     ItemType,
     decorated_function_registry as item_type_decorated_function_registry
 )
-from .catalog import (
+from .item_catalog import (
     TreatmentItemCatalog,
     decorated_function_registry as catalog_decorated_function_registry
 )

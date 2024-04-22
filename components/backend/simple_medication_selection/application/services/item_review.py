@@ -53,8 +53,8 @@ class ItemReview:
                             offset: int = 0
                             ) -> Sequence[entities.ItemReview | None]:
 
-        return self.reviews_repo.fetch_all_by_item(item_id, sort_field, sort_direction,
-                                                   limit, offset)
+        return self.reviews_repo.fetch_by_item(item_id, sort_field, sort_direction,
+                                               limit, offset)
 
     @register_method
     @validate_arguments

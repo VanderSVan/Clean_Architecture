@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Sequence, Literal
 
-from .. import entities
+from simple_medication_selection.application import entities, schemas
 
 
 class ItemReviewsRepo(ABC):
@@ -20,13 +20,9 @@ class ItemReviewsRepo(ABC):
         ...
 
     @abstractmethod
-    def fetch_all_by_item(self,
-                          item_id: int,
-                          order_field: str,
-                          order_direction: Literal['asc', 'desc'],
-                          limit: int,
-                          offset: int
-                          ) -> Sequence[entities.ItemReview | None]:
+    def fetch_by_item(self,
+                      filter_params: schemas.FindItemReviews,
+                      ) -> Sequence[entities.ItemReview | None]:
         ...
 
     @abstractmethod

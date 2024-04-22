@@ -73,7 +73,7 @@ class TestGetReviewsByItem:
     def test__get_reviews_by_item(self, returned_entity, service, reviews_repo,
                                   items_repo):
         # Setup
-        reviews_repo.fetch_all_by_item.return_value = returned_entity
+        reviews_repo.fetch_by_item.return_value = returned_entity
         default_sort_field = 'item_rating'
         default_sort_direction = 'desc'
         default_limit = 10
@@ -84,7 +84,7 @@ class TestGetReviewsByItem:
 
         # Assert
         assert reviews_repo.method_calls == [
-            call.fetch_all_by_item(
+            call.fetch_by_item(
                 returned_entity[0].item_id, default_sort_field, default_sort_direction,
                 default_limit, default_offset
             )

@@ -136,7 +136,12 @@ class TestOnGetByIdWithReviews:
     def test__on_get_by_id_with_reviews(self, catalog_service, client):
         # Setup
         item_id = ITEM_2.id
-        catalog_service.get_item_with_reviews.return_value = ITEM_2
+        catalog_service.get_item_with_reviews.return_value = (
+            dtos.TreatmentItemWithReviews(**ITEM_2.to_dict())
+        )
+        filter_params = schemas.GetTreatmentItemWithReviews(
+            item_id=item_id,
+        )
 
         # Call
         response = client.simulate_get(f'/items/{item_id}/reviews')
@@ -144,26 +149,27 @@ class TestOnGetByIdWithReviews:
         # Assert
         assert response.status_code == 200
         assert response.json == ITEM_2.to_dict()
-        assert catalog_service.method_calls == [call.get_item_with_reviews(str(item_id))]
+        assert catalog_service.method_calls == [call.get_item_with_reviews(filter_params)]
 
 
 class TestOnGet:
     def test__on_get(self, catalog_service, client):
         # Setup
+        keywords = 'Продукт'
         returned_items = []
         for item in ITEM_LIST:
             returned_item = item.to_dict()
             if returned_item.get("reviews"):
                 del returned_item["reviews"]
 
-            if returned_item["title"].find('Продукт'):
+            if not returned_item["title"].find(keywords):
                 continue
 
             returned_items.append(dtos.TreatmentItem(**returned_item))
 
         catalog_service.find_items.return_value = returned_items
         filter_params = schemas.FindTreatmentItemList(
-            keywords='Продукт',
+            keywords=keywords,
             is_helped=True,
             diagnosis_id=1,
             symptom_ids=[3, 4],
@@ -230,16 +236,19 @@ class TestOnGet:
 class TestOnGetWithReviews:
     def test__on_get_with_reviews(self, catalog_service, client):
         # Setup
+        keywords = 'Продукт'
         returned_items = []
         for item in ITEM_LIST:
-            if not item.to_dict()["title"].find('Процедура'):
+            returned_item = item.to_dict()
+
+            if not item.to_dict()["title"].find(keywords):
                 continue
 
-            returned_items.append(item)
+            returned_items.append(dtos.TreatmentItemWithReviews(**returned_item))
 
         catalog_service.find_items_with_reviews.return_value = returned_items
-        filter_params = schemas.FindTreatmentItemList(
-            keywords='Продукт',
+        filter_params = schemas.FindTreatmentItemListWithReviews(
+            keywords=keywords,
             is_helped=True,
             diagnosis_id=1,
             symptom_ids=[3, 4],
@@ -280,7 +289,7 @@ class TestOnGetWithReviews:
         # Assert
         assert response.status_code == 200
         assert response.json == [
-            item.to_dict() for item in returned_items if item is not None
+            item.dict(decode=True) for item in returned_items if item is not None
         ]
         assert catalog_service.method_calls == [
             call.find_items_with_reviews(filter_params)
@@ -288,8 +297,13 @@ class TestOnGetWithReviews:
 
     def test_on_get_with_reviews_default(self, catalog_service, client):
         # Setup
-        catalog_service.find_items_with_reviews.return_value = ITEM_LIST
-        filter_params = schemas.FindTreatmentItemList()
+        returned_items = []
+        for item in ITEM_LIST:
+            returned_item = item.to_dict()
+            returned_items.append(dtos.TreatmentItemWithReviews(**returned_item))
+
+        catalog_service.find_items_with_reviews.return_value = returned_items
+        filter_params = schemas.FindTreatmentItemListWithReviews()
 
         # Call
         response = client.simulate_get('/items/reviews')
@@ -297,7 +311,7 @@ class TestOnGetWithReviews:
         # Assert
         assert response.status_code == 200
         assert response.json == [
-            item.to_dict() for item in ITEM_LIST if item is not None
+            item.dict(decode=True) for item in returned_items if item is not None
         ]
         assert catalog_service.method_calls == [
             call.find_items_with_reviews(filter_params)

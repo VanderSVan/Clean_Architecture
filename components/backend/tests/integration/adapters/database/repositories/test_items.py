@@ -46,29 +46,70 @@ def repo(transaction_context):
 
 
 @pytest.fixture
-def filter_params_factory(request, fill_db):
+def kwargs_factory(request, fill_db) -> dict[str, bool | schemas.FindTreatmentItemList]:
     """
-    Фабрика параметров для фильтрации.
+    Fixture для обновления аргументов теста с корректными идентификаторами (id) при
+    необходимости.
+
+    Область работы сессии настроена на функцию, и после `rollback` идентификаторы
+    сохраняют инкрементированное значение из-за `autoincrement=True`. Эта фикстура
+    гарантирует, что аргументы теста всегда будут содержать корректные идентификаторы.
+
+    :param request: Объект _pytest.fixtures.SubRequest, содержащий параметры теста.
+    :param fill_db: Словарь с заполненными данными, используемыми для обновления
+        аргументов.
+    :return: Обновленный словарь с аргументами теста.
     """
-    new_params = schemas.FindTreatmentItems()
+    filter_params = request.param['filter_params']
 
-    for param, value in request.param.items():
-        if param == 'symptom_ids':
-            value = fill_db['symptom_ids']
+    params_to_change = {
+        'symptom_ids': fill_db['symptom_ids'],
+        'diagnosis_id': fill_db['diagnosis_ids'][0],
+    }
 
-        elif param == 'diagnosis_id':
-            value = fill_db['diagnosis_ids'][0]
+    for param, value in filter_params:
+        if value is None:
+            continue
+        setattr(filter_params, param, params_to_change.get(param, value))
 
-        setattr(new_params, param, value)
+    request.param['filter_params'] = filter_params
 
-    return new_params
+    return request.param
 
 
-def combine_data(main: list[dict], mixin: list[dict]) -> list[dict]:
+def _combine_data(main: list[dict], mixin: list[dict]) -> list[dict]:
     """
     Комбинирует данные main и mixin
     """
-    return [main_data | mixin_data for main_data, mixin_data in product(main, mixin)]
+    combined_data: list[dict[str, bool | schemas.FindTreatmentItemList]] = []
+    for main_data, mixin_data in product(main, mixin):
+
+        if 'filter_params' not in main_data or 'filter_params' not in mixin_data:
+            raise KeyError(f"`filter_params` not found in `{main_data=}`. "
+                           f"Check your test and parametrize data.")
+
+        main_filter_params_class = main_data['filter_params'].__class__
+        if not (isinstance(main_data['filter_params'], schemas.FindTreatmentItemList)):
+            raise TypeError(f"Expected `filter_params` to be an instance of "
+                            f"`{schemas.FindTreatmentItemList.__name__}`, "
+                            f"got `{main_filter_params_class.__name__}`.")
+
+        main_filter_params: dict = main_data['filter_params'].__dict__
+        mixin_filter_params: dict = mixin_data['filter_params'].__dict__
+
+        # Миксует данные из `main_filter_params` и `mixin_filter_params`,
+        # создавая новый экземпляр `new_main_filter_params`.
+        new_main_filter_params = main_filter_params_class(**main_filter_params)
+        for key, value in mixin_filter_params.items():
+            if value is not None:
+                setattr(new_main_filter_params, key, value)
+
+        combined_data.append({
+            'include_reviews': main_data['include_reviews'],
+            'filter_params': new_main_filter_params
+        })
+
+    return combined_data
 
 
 def pytest_generate_tests(metafunc):
@@ -82,12 +123,13 @@ def pytest_generate_tests(metafunc):
                             _TestUniquenessMixin)
 
     for mixin_class in mixin_classes:
-        if hasattr(mixin_class, metafunc.function.__name__):
-            filter_params: list[dict] = PARAMS_TO_MIX[metafunc.cls.TEST_METHOD]
-            mixin_params: list[dict] = PARAMS_TO_MIX[metafunc.function.__name__]
-            combined_params: list[dict] = combine_data(main=filter_params,
-                                                       mixin=mixin_params)
-            metafunc.parametrize('filter_params_factory', combined_params, indirect=True)
+        func_name: str = metafunc.function.__name__
+        if hasattr(mixin_class, func_name):
+            method_kwargs: list[dict] = metafunc.cls.TEST_KWARGS
+            mixin_kwargs: list[dict] = metafunc.cls.MIXIN_KWARGS[func_name]
+            combined_kwargs: list[dict] = _combine_data(main=method_kwargs,
+                                                        mixin=mixin_kwargs)
+            metafunc.parametrize('kwargs_factory', combined_kwargs, indirect=True)
 
 
 PARAMS_TO_MIX: dict[str, list[dict]] = dict(
@@ -138,114 +180,122 @@ PARAMS_TO_MIX: dict[str, list[dict]] = dict(
 # ---------------------------------------------------------------------------------------
 class _BaseMixin:
     TEST_METHOD: str
-    TEST_ARGS: tuple = tuple()
-    TEST_KWARGS: dict = dict()
+    TEST_KWARGS: list[dict]
+    MIXIN_KWARGS: dict[str, list[dict]] = dict(
+        test__order_is_asc=[
+            dict(filter_params=schemas.FindTreatmentItemList(sort_field='title',
+                                                             sort_direction='asc')),
+            dict(filter_params=schemas.FindTreatmentItemList(sort_field='price',
+                                                             sort_direction='asc')),
+            dict(filter_params=schemas.FindTreatmentItemList(sort_field='avg_rating',
+                                                             sort_direction='asc'))
+        ],
+        test__order_is_desc=[
+            dict(filter_params=schemas.FindTreatmentItemList(sort_field='title',
+                                                             sort_direction='desc')),
+            dict(filter_params=schemas.FindTreatmentItemList(sort_field='price',
+                                                             sort_direction='desc')),
+            dict(filter_params=schemas.FindTreatmentItemList(sort_field='avg_rating',
+                                                             sort_direction='desc'))
+        ],
+        test__with_limit=[dict(filter_params=schemas.FindTreatmentItemList(limit=1))],
+        test__with_offset=[dict(filter_params=schemas.FindTreatmentItemList(offset=1))],
+        test__unique_check=[dict(filter_params=schemas.FindTreatmentItemList())],
+        test__null_last=[dict(filter_params=schemas.FindTreatmentItemList())],
+    )
 
 
 class _TestOrderMixin(_BaseMixin):
 
-    def test__order_is_asc(self, filter_params_factory, repo):
+    def test__order_is_asc(self, kwargs_factory, repo):
+        # Setup
+        filter_params = kwargs_factory['filter_params']
+
         # Call
-        result = getattr(repo, self.TEST_METHOD)(
-            *self.TEST_ARGS if self.TEST_ARGS else [],
-            **self.TEST_KWARGS if self.TEST_KWARGS else {},
-            filter_params=filter_params_factory
-        )
+        result = getattr(repo, self.TEST_METHOD)(**kwargs_factory)
 
         # Assert
         assert len(result) > 0
         assert result == sorted(
             result,
-            key=lambda treatment_item: (
+            key=lambda med_book: (
                 float('inf')
-                if getattr(treatment_item, filter_params_factory.sort_field) is None
-                else getattr(treatment_item, filter_params_factory.sort_field)
+                if getattr(med_book, filter_params.sort_field) is None
+                else getattr(med_book, filter_params.sort_field)
             ),
             reverse=False
         )
 
-    def test__order_is_desc(self, filter_params_factory, repo):
+    def test__order_is_desc(self, kwargs_factory, repo):
+        # Setup
+        filter_params = kwargs_factory['filter_params']
+
         # Call
-        result = getattr(repo, self.TEST_METHOD)(
-            *self.TEST_ARGS if self.TEST_ARGS else [],
-            **self.TEST_KWARGS if self.TEST_KWARGS else {},
-            filter_params=filter_params_factory
-        )
+        result = getattr(repo, self.TEST_METHOD)(**kwargs_factory)
 
         # Assert
         assert len(result) > 0
         assert result == sorted(
             result,
-            key=lambda treatment_item: (
+            key=lambda med_book: (
                 float('-inf')
-                if getattr(treatment_item, filter_params_factory.sort_field) is None
-                else getattr(treatment_item, filter_params_factory.sort_field)
+                if getattr(med_book, filter_params.sort_field) is None
+                else getattr(med_book, filter_params.sort_field)
             ),
             reverse=True
         )
 
 
+class _TestPaginationMixin(_BaseMixin):
+
+    def test__with_limit(self, kwargs_factory, repo):
+        # Call
+        result = getattr(repo, self.TEST_METHOD)(**kwargs_factory)
+
+        # Assert
+        assert len(result) == kwargs_factory['filter_params'].limit
+
+    def test__with_offset(self, kwargs_factory, repo):
+        # Setup
+        offset = kwargs_factory['filter_params'].offset
+        filter_params = kwargs_factory['filter_params']
+
+        # Call
+        result_with_offset = getattr(repo, self.TEST_METHOD)(**kwargs_factory)
+
+        # Setup
+        new_filter_params = filter_params.__class__(**filter_params.__dict__)
+        new_filter_params.offset = 0
+
+        kwargs_factory['filter_params'] = new_filter_params
+        result_without_offset = getattr(repo, self.TEST_METHOD)(**kwargs_factory)
+
+        # Assert
+        assert len(result_without_offset) > len(result_with_offset)
+        assert len(result_with_offset) == len(result_without_offset) - offset
+
+
+class _TestUniquenessMixin(_BaseMixin):
+
+    def test__unique_check(self, kwargs_factory, repo):
+        # Call
+        result = getattr(repo, self.TEST_METHOD)(**kwargs_factory)
+
+        # Assert
+        assert len(result) > 0
+        assert len(result) == len(set(result))
+
+
 class _TestNullsLastMixin(_BaseMixin):
 
-    def test__null_last(self, filter_params_factory, repo):
+    def test__null_last(self, kwargs_factory, repo):
         # Call
-        result = getattr(repo, self.TEST_METHOD)(
-            *self.TEST_ARGS if self.TEST_ARGS else [],
-            **self.TEST_KWARGS if self.TEST_KWARGS else {},
-            filter_params=filter_params_factory
-        )
+        result = getattr(repo, self.TEST_METHOD)(**kwargs_factory)
 
         # Assert
         assert len(result) > 0
         assert result[0].avg_rating is not None
         assert result[-1].avg_rating is None
-
-
-class _TestPaginationMixin(_BaseMixin):
-
-    def test__with_limit(self, filter_params_factory, repo):
-        # Call
-        result = getattr(repo, self.TEST_METHOD)(
-            *self.TEST_ARGS if self.TEST_ARGS else [],
-            **self.TEST_KWARGS if self.TEST_KWARGS else {},
-            filter_params=filter_params_factory
-        )
-
-        # Assert
-        assert len(result) == filter_params_factory.limit
-
-    def test__with_offset(self, filter_params_factory, repo):
-        # Call
-        result_with_offset = getattr(repo, self.TEST_METHOD)(
-            *self.TEST_ARGS if self.TEST_ARGS else [],
-            **self.TEST_KWARGS if self.TEST_KWARGS else {},
-            filter_params=filter_params_factory
-        )
-
-        filter_params_factory.offset = 0
-        result_without_offset = getattr(repo, self.TEST_METHOD)(
-            *self.TEST_ARGS if self.TEST_ARGS else [],
-            **self.TEST_KWARGS if self.TEST_KWARGS else {},
-            filter_params=filter_params_factory
-        )
-
-        # Assert
-        assert len(result_without_offset) > len(result_with_offset)
-
-
-class _TestUniquenessMixin(_BaseMixin):
-
-    def test__unique_check(self, filter_params_factory, repo):
-        # Call
-        result = getattr(repo, self.TEST_METHOD)(
-            *self.TEST_ARGS if self.TEST_ARGS else [],
-            **self.TEST_KWARGS if self.TEST_KWARGS else {},
-            filter_params=filter_params_factory
-        )
-
-        # Assert
-        assert len(result) > 0
-        assert len(result) == len(set(result))
 
 
 class TestFetchById:
@@ -257,7 +307,7 @@ class TestFetchById:
         result = repo.fetch_by_id(expected_item_id, False)
 
         # Assert
-        assert isinstance(result, dtos.TreatmentItem)
+        assert isinstance(result, entities.TreatmentItem)
         assert result.id == expected_item_id
 
     def test__item_not_found(self, repo, session, fill_db):
@@ -296,58 +346,45 @@ class TestFetchByIdWithReviews:
 
 
 class TestFetchAll(_TestOrderMixin,
-                   _TestNullsLastMixin,
                    _TestPaginationMixin,
-                   _TestUniquenessMixin):
+                   _TestUniquenessMixin,
+                   _TestNullsLastMixin):
     TEST_METHOD = 'fetch_all'
-    TEST_KWARGS = dict(with_reviews=False)
+    TEST_KWARGS = [
+        dict(include_reviews=False, filter_params=schemas.FindTreatmentItemList()),
+        dict(include_reviews=True, filter_params=schemas.FindTreatmentItemList())
+    ]
 
-    def test__fetch_all(self, repo, session, fill_db):
-        # Setup
-        filter_params = schemas.FindTreatmentItems()
-
+    @pytest.mark.parametrize('kwargs', [*TEST_KWARGS])
+    def test__fetch_all(self, kwargs, repo, session, fill_db):
         # Call
-        result = repo.fetch_all(filter_params, False)
+        result = repo.fetch_all(**kwargs)
 
         # Assert
-        assert isinstance(result, list)
-        assert len(result) > 0
-        assert len(result) == len(test_data.ITEMS_DATA)
-        for item in result:
-            assert isinstance(item, dtos.TreatmentItem)
-
-
-class TestFetchAllWithReviews(_TestOrderMixin,
-                              _TestNullsLastMixin,
-                              _TestPaginationMixin,
-                              _TestUniquenessMixin):
-    TEST_METHOD = 'fetch_all'
-    TEST_KWARGS = dict(with_reviews=True)
-
-    def test__fetch_all_with_reviews(self, repo, session, fill_db):
-        # Setup
-        filter_params = schemas.FindTreatmentItems()
-
-        # Call
-        result = repo.fetch_all(filter_params, True)
-
-        # Assert
-        assert isinstance(result, Sequence)
         assert len(result) > 0
         assert len(result) == len(test_data.ITEMS_DATA)
         assert all(isinstance(item, entities.TreatmentItem) for item in result)
-        assert any(len(item.reviews) > 0 for item in result)
 
 
 class TestFetchByHelpedStatus(_TestOrderMixin,
                               _TestPaginationMixin,
                               _TestUniquenessMixin):
-    TEST_METHOD = 'fetch_by_helped_status'
-    TEST_KWARGS = dict(with_reviews=False)
+    TEST_METHOD = 'fetch_all'
+    TEST_KWARGS = [
+        dict(include_reviews=False,
+             filter_params=schemas.FindTreatmentItemList(is_helped=True)),
+        dict(include_reviews=False,
+             filter_params=schemas.FindTreatmentItemList(is_helped=False)),
+        dict(include_reviews=True,
+             filter_params=schemas.FindTreatmentItemList(is_helped=True)),
+        dict(include_reviews=True,
+             filter_params=schemas.FindTreatmentItemList(is_helped=False))
+    ]
 
-    @pytest.mark.parametrize('helped_status', [True, False])
-    def test__fetch_by_helped_status(self, helped_status, repo, session, fill_db):
+    @pytest.mark.parametrize('kwargs', [*TEST_KWARGS])
+    def test__fetch_by_helped_status(self, kwargs, repo, session, fill_db):
         # Setup
+        helped_status = kwargs['filter_params'].is_helped
         expected_item_ids: list[int] = (
             session.execute(
                 select(entities.TreatmentItem.id)
@@ -356,62 +393,46 @@ class TestFetchByHelpedStatus(_TestOrderMixin,
                 .distinct(entities.TreatmentItem.id)
             ).scalars().all()
         )
-        filter_params = schemas.FindTreatmentItems(is_helped=helped_status)
 
         # Call
-        result = repo.fetch_by_helped_status(filter_params, False)
+        result = repo.fetch_all(**kwargs)
 
         # Assert
-        assert isinstance(result, list)
         assert len(result) > 0
         assert len(result) == len(expected_item_ids)
-        for item in result:
-            assert isinstance(item, dtos.TreatmentItem)
-            assert item.id in expected_item_ids
-
-
-class TestFetchByHelpedStatusWithReviews(_TestOrderMixin,
-                                         _TestPaginationMixin,
-                                         _TestUniquenessMixin):
-    TEST_METHOD = 'fetch_by_helped_status'
-    TEST_KWARGS = dict(with_reviews=True)
-
-    @pytest.mark.parametrize('helped_status', [True, False])
-    def test__fetch_by_helped_status(self, helped_status, repo, session, fill_db):
-        # Setup
-        expected_item_ids: list[int] = (
-            session.execute(
-                select(entities.TreatmentItem.id)
-                .join(entities.TreatmentItem.reviews)
-                .where(entities.ItemReview.is_helped == helped_status)
-                .distinct(entities.TreatmentItem.id)
-            ).scalars().all()
-        )
-        filter_params = schemas.FindTreatmentItems(is_helped=helped_status)
-
-        # Call
-        result = repo.fetch_by_helped_status(filter_params, True)
-
-        # Assert
-        assert isinstance(result, Sequence)
-        assert len(result) > 0
-        assert len(result) == len(expected_item_ids)
-        assert any(len(item.reviews) > 0 for item in result)
         for item in result:
             assert isinstance(item, entities.TreatmentItem)
             assert item.id in expected_item_ids
 
 
 class TestFetchBySymptoms(_TestOrderMixin, _TestPaginationMixin, _TestUniquenessMixin):
-    TEST_METHOD = 'fetch_by_symptoms'
-    TEST_KWARGS = dict(with_reviews=False)
+    TEST_METHOD = 'fetch_all'
+    TEST_KWARGS = [
+        dict(include_reviews=False,
+             filter_params=schemas.FindTreatmentItemList(
+                 symptom_ids=[3, 4], match_all_symptoms=True)
+             ),
+        dict(include_reviews=False,
+             filter_params=schemas.FindTreatmentItemList(
+                 symptom_ids=[3, 4], match_all_symptoms=False)
+             ),
+        dict(include_reviews=True,
+             filter_params=schemas.FindTreatmentItemList(
+                 symptom_ids=[3, 4], match_all_symptoms=True)
+             ),
+        dict(include_reviews=True,
+             filter_params=schemas.FindTreatmentItemList(
+                 symptom_ids=[3, 4], match_all_symptoms=False)
+             ),
+    ]
 
-    @pytest.mark.parametrize('match_all_symptoms', [True, False])
-    def test__fetch_by_symptoms(self, match_all_symptoms, repo, session, fill_db):
+    @pytest.mark.parametrize('kwargs', [*TEST_KWARGS])
+    def test__fetch_by_symptoms(self, kwargs, repo, session, fill_db):
         # Setup
-        symptom_ids: list[int] = fill_db['symptom_ids'][2:]
-        filter_params = schemas.FindTreatmentItems(symptom_ids=symptom_ids,
-                                                   match_all_symptoms=match_all_symptoms)
+        symptom_ids: list[int] = fill_db['symptom_ids'][:2]
+        match_all_symptoms: bool = kwargs['filter_params'].match_all_symptoms
+        kwargs['filter_params'].symptom_ids = symptom_ids
+
         query = (
             select(entities.ItemReview.item_id)
             .join(entities.MedicalBook.item_reviews)
@@ -428,63 +449,31 @@ class TestFetchBySymptoms(_TestOrderMixin, _TestPaginationMixin, _TestUniqueness
         expected_item_ids: list[int] = session.execute(query).scalars().all()
 
         # Call
-        result = repo.fetch_by_symptoms(filter_params, False)
+        result = repo.fetch_all(**kwargs)
 
         # Assert
-        assert isinstance(result, list)
         assert len(result) > 0
         assert len(result) == len(expected_item_ids)
-        for item in result:
-            assert isinstance(item, dtos.TreatmentItem)
-            assert item.id in expected_item_ids
-
-
-class TestFetchBySymptomsWithReviews(_TestOrderMixin, _TestPaginationMixin,
-                                     _TestUniquenessMixin):
-    TEST_METHOD = 'fetch_by_symptoms'
-    TEST_KWARGS = dict(with_reviews=True)
-
-    @pytest.mark.parametrize('match_all_symptoms', [True, False])
-    def test__fetch_by_symptoms(self, match_all_symptoms, repo, session, fill_db):
-        # Setup
-        symptom_ids: list[int] = fill_db['symptom_ids'][2:]
-        filter_params = schemas.FindTreatmentItems(symptom_ids=symptom_ids,
-                                                   match_all_symptoms=match_all_symptoms)
-        query = (
-            select(entities.ItemReview.item_id)
-            .join(entities.MedicalBook.item_reviews)
-            .join(entities.MedicalBook.symptoms)
-            .where(entities.Symptom.id.in_(symptom_ids))
-            .group_by(entities.ItemReview.item_id)
-        )
-        if match_all_symptoms:
-            query = (query
-                     .having(func.count(entities.Symptom.id.distinct()) ==
-                             len(symptom_ids))
-                     )
-
-        expected_item_ids: list[int] = session.execute(query).scalars().all()
-
-        # Call
-        result = repo.fetch_by_symptoms(filter_params, True)
-
-        # Assert
-        assert isinstance(result, Sequence)
-        assert len(result) > 0
-        assert len(result) == len(expected_item_ids)
-        assert any(len(item.reviews) > 0 for item in result)
         for item in result:
             assert isinstance(item, entities.TreatmentItem)
             assert item.id in expected_item_ids
 
 
 class TestFetchByDiagnosis(_TestOrderMixin, _TestPaginationMixin, _TestUniquenessMixin):
-    TEST_METHOD = 'fetch_by_diagnosis'
-    TEST_KWARGS = dict(with_reviews=False)
+    TEST_METHOD = 'fetch_all'
+    TEST_KWARGS = [
+        dict(include_reviews=False,
+             filter_params=schemas.FindTreatmentItemList(diagnosis_id=1)),
+        dict(include_reviews=True,
+             filter_params=schemas.FindTreatmentItemList(diagnosis_id=1))
+    ]
 
-    def test__fetch_by_diagnosis(self, repo, session, fill_db):
+    @pytest.mark.parametrize('kwargs', [*TEST_KWARGS])
+    def test__fetch_by_diagnosis(self, kwargs, repo, session, fill_db):
         # Setup
-        diagnosis_id: int = fill_db['diagnosis_ids'][2]
+        diagnosis_id = fill_db['diagnosis_ids'][0]
+        kwargs['filter_params'].diagnosis_id = diagnosis_id
+
         expected_item_ids: list[int] = (
             session.execute(
                 select(entities.ItemReview.item_id)
@@ -493,46 +482,13 @@ class TestFetchByDiagnosis(_TestOrderMixin, _TestPaginationMixin, _TestUniquenes
                 .distinct(entities.ItemReview.item_id)
             ).scalars().all()
         )
-        filter_params = schemas.FindTreatmentItems(diagnosis_id=diagnosis_id)
 
         # Call
-        result = repo.fetch_by_diagnosis(filter_params, False)
+        result = repo.fetch_all(**kwargs)
 
         # Assert
-        assert isinstance(result, list)
         assert len(result) > 0
         assert len(result) == len(expected_item_ids)
-        for item in result:
-            assert isinstance(item, dtos.TreatmentItem)
-            assert item.id in expected_item_ids
-
-
-class TestFetchByDiagnosisWithReviews(_TestOrderMixin, _TestPaginationMixin,
-                                      _TestUniquenessMixin):
-    TEST_METHOD = 'fetch_by_diagnosis'
-    TEST_KWARGS = dict(with_reviews=True)
-
-    def test__fetch_by_diagnosis_with_reviews(self, repo, session, fill_db):
-        # Setup
-        diagnosis_id: int = fill_db['diagnosis_ids'][0]
-        expected_item_ids: list[int] = (
-            session.execute(
-                select(entities.ItemReview.item_id)
-                .join(entities.MedicalBook.item_reviews)
-                .where(entities.MedicalBook.diagnosis_id == diagnosis_id)
-                .distinct(entities.ItemReview.item_id)
-            ).scalars().all()
-        )
-        filter_params = schemas.FindTreatmentItems(diagnosis_id=diagnosis_id)
-
-        # Call
-        result = repo.fetch_by_diagnosis(filter_params, True)
-
-        # Assert
-        assert isinstance(result, Sequence)
-        assert len(result) > 0
-        assert len(result) == len(expected_item_ids)
-        assert any(len(item.reviews) > 0 for item in result)
         for item in result:
             assert isinstance(item, entities.TreatmentItem)
             assert item.id in expected_item_ids
@@ -540,22 +496,50 @@ class TestFetchByDiagnosisWithReviews(_TestOrderMixin, _TestPaginationMixin,
 
 class TestFetchBySymptomsAndHelpedStatus(_TestOrderMixin, _TestPaginationMixin,
                                          _TestUniquenessMixin):
-    TEST_METHOD = 'fetch_by_symptoms_and_helped_status'
-    TEST_KWARGS = dict(with_reviews=False)
+    TEST_METHOD = 'fetch_all'
+    TEST_KWARGS = [
+        dict(include_reviews=False,
+             filter_params=schemas.FindTreatmentItemList(
+                 symptom_ids=[3, 4], match_all_symptoms=True, is_helped=True)
+             ),
+        dict(include_reviews=False,
+             filter_params=schemas.FindTreatmentItemList(
+                 symptom_ids=[3, 4], match_all_symptoms=True, is_helped=False)
+             ),
+        dict(include_reviews=False,
+             filter_params=schemas.FindTreatmentItemList(
+                 symptom_ids=[3, 4], match_all_symptoms=False, is_helped=True)
+             ),
+        dict(include_reviews=False,
+             filter_params=schemas.FindTreatmentItemList(
+                 symptom_ids=[3, 4], match_all_symptoms=False, is_helped=False)
+             ),
+        dict(include_reviews=True,
+             filter_params=schemas.FindTreatmentItemList(
+                 symptom_ids=[3, 4], match_all_symptoms=True, is_helped=True)
+             ),
+        dict(include_reviews=True,
+             filter_params=schemas.FindTreatmentItemList(
+                 symptom_ids=[3, 4], match_all_symptoms=True, is_helped=False)
+             ),
+        dict(include_reviews=True,
+             filter_params=schemas.FindTreatmentItemList(
+                 symptom_ids=[3, 4], match_all_symptoms=False, is_helped=True)
+             ),
+        dict(include_reviews=True,
+             filter_params=schemas.FindTreatmentItemList(
+                 symptom_ids=[3, 4], match_all_symptoms=False, is_helped=False)
+             ),
+    ]
 
-    @pytest.mark.parametrize('helped_status, match_all_symptoms', [
-        (True, True),
-        (False, False),
-        (True, False),
-        (False, True),
-    ])
-    def test__fetch_by_symptoms_and_helped_status(self, helped_status, match_all_symptoms,
-                                                  repo, session, fill_db):
+    @pytest.mark.parametrize('kwargs', [*TEST_KWARGS])
+    def test__fetch_by_symptoms_and_helped_status(self, kwargs, repo, session, fill_db):
         # Setup
-        symptom_ids: list[int] = fill_db['symptom_ids'][1:2]
-        filter_params = schemas.FindTreatmentItems(symptom_ids=symptom_ids,
-                                                   match_all_symptoms=match_all_symptoms,
-                                                   is_helped=helped_status)
+        symptom_ids = fill_db['symptom_ids'][:2]
+        helped_status = kwargs['filter_params'].is_helped
+        match_all_symptoms = kwargs['filter_params'].match_all_symptoms
+        kwargs['filter_params'].symptom_ids = symptom_ids
+
         query = (
             select(entities.ItemReview.item_id)
             .join(entities.MedicalBook.item_reviews)
@@ -573,60 +557,11 @@ class TestFetchBySymptomsAndHelpedStatus(_TestOrderMixin, _TestPaginationMixin,
         expected_item_ids: list[int] = session.execute(query).scalars().all()
 
         # Call
-        result = repo.fetch_by_symptoms_and_helped_status(filter_params, False)
+        result = repo.fetch_all(**kwargs)
 
         # Assert
-        assert isinstance(result, list)
         assert len(result) > 0
         assert len(result) == len(expected_item_ids)
-        for item in result:
-            assert isinstance(item, dtos.TreatmentItem)
-            assert item.id in expected_item_ids
-
-
-class TestFetchBySymptomsAndHelpedStatusWithReviews(_TestOrderMixin,
-                                                    _TestPaginationMixin,
-                                                    _TestUniquenessMixin):
-    TEST_METHOD = 'fetch_by_symptoms_and_helped_status'
-    TEST_KWARGS = dict(with_reviews=True)
-
-    @pytest.mark.parametrize('helped_status, match_all_symptoms', [
-        (True, True),
-        (False, False),
-        (True, False),
-        (False, True),
-    ])
-    def test__fetch_by_symptoms_and_helped_status(self, helped_status, match_all_symptoms,
-                                                  repo, session, fill_db):
-        # Setup
-        symptom_ids: list[int] = fill_db['symptom_ids'][1:2]
-        filter_params = schemas.FindTreatmentItems(symptom_ids=symptom_ids,
-                                                   match_all_symptoms=match_all_symptoms,
-                                                   is_helped=helped_status)
-        query = (
-            select(entities.ItemReview.item_id)
-            .join(entities.MedicalBook.item_reviews)
-            .join(entities.MedicalBook.symptoms)
-            .where(entities.ItemReview.is_helped == helped_status,
-                   entities.Symptom.id.in_(symptom_ids))
-            .group_by(entities.ItemReview.item_id)
-        )
-        if match_all_symptoms:
-            query = (query
-                     .having(func.count(entities.Symptom.id.distinct()) ==
-                             len(symptom_ids))
-                     )
-
-        expected_item_ids: list[int] = session.execute(query).scalars().all()
-
-        # Call
-        result = repo.fetch_by_symptoms_and_helped_status(filter_params, True)
-
-        # Assert
-        assert isinstance(result, Sequence)
-        assert len(result) > 0
-        assert len(result) == len(expected_item_ids)
-        assert any(len(item.reviews) > 0 for item in result)
         for item in result:
             assert isinstance(item, entities.TreatmentItem)
             assert item.id in expected_item_ids
@@ -634,16 +569,33 @@ class TestFetchBySymptomsAndHelpedStatusWithReviews(_TestOrderMixin,
 
 class TestFetchByDiagnosisAndHelpedStatus(_TestOrderMixin, _TestPaginationMixin,
                                           _TestUniquenessMixin):
-    TEST_METHOD = 'fetch_by_diagnosis_and_helped_status'
-    TEST_KWARGS = dict(with_reviews=False)
+    TEST_METHOD = 'fetch_all'
+    TEST_KWARGS = [
+        dict(include_reviews=False,
+             filter_params=schemas.FindTreatmentItemList(
+                 diagnosis_id=1, is_helped=True)
+             ),
+        dict(include_reviews=False,
+             filter_params=schemas.FindTreatmentItemList(
+                 diagnosis_id=1, is_helped=False)
+             ),
+        dict(include_reviews=True,
+             filter_params=schemas.FindTreatmentItemList(
+                 diagnosis_id=1, is_helped=True)
+             ),
+        dict(include_reviews=True,
+             filter_params=schemas.FindTreatmentItemList(
+                 diagnosis_id=1, is_helped=False)
+             ),
+    ]
 
-    @pytest.mark.parametrize('helped_status', [True, False])
-    def test__fetch_by_diagnosis_and_helped_status(self, helped_status, repo, session,
-                                                   fill_db):
+    @pytest.mark.parametrize('kwargs', [*TEST_KWARGS])
+    def test__fetch_by_diagnosis_and_helped_status(self, kwargs, repo, session, fill_db):
         # Setup
         diagnosis_id: int = fill_db['diagnosis_ids'][0]
-        filter_params = schemas.FindTreatmentItems(diagnosis_id=diagnosis_id,
-                                                   is_helped=helped_status)
+        helped_status = kwargs['filter_params'].is_helped
+        kwargs['filter_params'].diagnosis_id = diagnosis_id
+
         query = (
             select(entities.ItemReview.item_id)
             .join(entities.MedicalBook.item_reviews)
@@ -655,48 +607,11 @@ class TestFetchByDiagnosisAndHelpedStatus(_TestOrderMixin, _TestPaginationMixin,
         expected_item_ids: list[int] = session.execute(query).scalars().all()
 
         # Call
-        result = repo.fetch_by_diagnosis_and_helped_status(filter_params, False)
+        result = repo.fetch_all(**kwargs)
 
         # Assert
-        assert isinstance(result, list)
         assert len(result) > 0
         assert len(result) == len(expected_item_ids)
-        for item in result:
-            assert isinstance(item, dtos.TreatmentItem)
-            assert item.id in expected_item_ids
-
-
-class TestFetchByDiagnosisAndHelpedStatusWithReviews(_TestOrderMixin,
-                                                     _TestPaginationMixin,
-                                                     _TestUniquenessMixin):
-    TEST_METHOD = 'fetch_by_diagnosis_and_helped_status'
-    TEST_KWARGS = dict(with_reviews=True)
-
-    @pytest.mark.parametrize('helped_status', [True, False])
-    def test__fetch_by_diagnosis_and_helped_status(self, helped_status, repo, session,
-                                                   fill_db):
-        # Setup
-        diagnosis_id: int = fill_db['diagnosis_ids'][0]
-        filter_params = schemas.FindTreatmentItems(diagnosis_id=diagnosis_id,
-                                                   is_helped=helped_status)
-        query = (
-            select(entities.ItemReview.item_id)
-            .join(entities.MedicalBook.item_reviews)
-            .where(entities.ItemReview.is_helped == helped_status,
-                   entities.MedicalBook.diagnosis_id == diagnosis_id)
-            .group_by(entities.ItemReview.item_id)
-        )
-
-        expected_item_ids: list[int] = session.execute(query).scalars().all()
-
-        # Call
-        result = repo.fetch_by_diagnosis_and_helped_status(filter_params, True)
-
-        # Assert
-        assert isinstance(result, Sequence)
-        assert len(result) > 0
-        assert len(result) == len(expected_item_ids)
-        assert any(len(item.reviews) > 0 for item in result)
         for item in result:
             assert isinstance(item, entities.TreatmentItem)
             assert item.id in expected_item_ids
@@ -705,18 +620,35 @@ class TestFetchByDiagnosisAndHelpedStatusWithReviews(_TestOrderMixin,
 class TestFetchByDiagnosisSymptoms(_TestOrderMixin,
                                    _TestPaginationMixin,
                                    _TestUniquenessMixin):
-    TEST_METHOD = 'fetch_by_diagnosis_and_symptoms'
-    TEST_KWARGS = dict(with_reviews=False)
+    TEST_METHOD = 'fetch_all'
+    TEST_KWARGS = [
+        dict(include_reviews=False,
+             filter_params=schemas.FindTreatmentItemList(
+                 diagnosis_id=1, symptom_ids=[3, 4], match_all_symptoms=True)
+             ),
+        dict(include_reviews=False,
+             filter_params=schemas.FindTreatmentItemList(
+                 diagnosis_id=1, symptom_ids=[3, 4], match_all_symptoms=False)
+             ),
+        dict(include_reviews=True,
+             filter_params=schemas.FindTreatmentItemList(
+                 diagnosis_id=1, symptom_ids=[3, 4], match_all_symptoms=True)
+             ),
+        dict(include_reviews=True,
+             filter_params=schemas.FindTreatmentItemList(
+                 diagnosis_id=1, symptom_ids=[3, 4], match_all_symptoms=False)
+             ),
+    ]
 
-    @pytest.mark.parametrize('match_all_symptoms', [True, False])
-    def test__fetch_by_diagnosis_and_symptoms(self, match_all_symptoms, repo, session,
-                                              fill_db):
+    @pytest.mark.parametrize('kwargs', [*TEST_KWARGS])
+    def test__fetch_by_diagnosis_and_symptoms(self, kwargs, repo, session, fill_db):
         # Setup
-        diagnosis_id: int = fill_db['diagnosis_ids'][0]
-        symptom_ids: list[int] = fill_db['symptom_ids']
-        filter_params = schemas.FindTreatmentItems(diagnosis_id=diagnosis_id,
-                                                   symptom_ids=symptom_ids,
-                                                   match_all_symptoms=match_all_symptoms)
+        diagnosis_id = fill_db['diagnosis_ids'][1]
+        symptom_ids = fill_db['symptom_ids'][:2]
+        match_all_symptoms = kwargs['filter_params'].match_all_symptoms
+        kwargs['filter_params'].diagnosis_id = diagnosis_id
+        kwargs['filter_params'].symptom_ids = symptom_ids
+
         query = (
             select(entities.ItemReview.item_id)
             .join(entities.MedicalBook.item_reviews)
@@ -734,56 +666,11 @@ class TestFetchByDiagnosisSymptoms(_TestOrderMixin,
         expected_item_ids: list[int] = session.execute(query).scalars().all()
 
         # Call
-        result = repo.fetch_by_diagnosis_and_symptoms(filter_params, False)
+        result = repo.fetch_all(**kwargs)
 
         # Assert
-        assert isinstance(result, list)
         assert len(result) > 0
         assert len(result) == len(expected_item_ids)
-        for item in result:
-            assert isinstance(item, dtos.TreatmentItem)
-            assert item.id in expected_item_ids
-
-
-class TestFetchByDiagnosisSymptomsWithReviews(_TestOrderMixin,
-                                              _TestPaginationMixin,
-                                              _TestUniquenessMixin):
-    TEST_METHOD = 'fetch_by_diagnosis_and_symptoms'
-    TEST_KWARGS = dict(with_reviews=True)
-
-    @pytest.mark.parametrize('match_all_symptoms', [True, False])
-    def test__fetch_by_diagnosis_and_symptoms_with_reviews(self, match_all_symptoms, repo,
-                                                           session, fill_db):
-        # Setup
-        diagnosis_id: int = fill_db['diagnosis_ids'][0]
-        symptom_ids: list[int] = fill_db['symptom_ids']
-        filter_params = schemas.FindTreatmentItems(diagnosis_id=diagnosis_id,
-                                                   symptom_ids=symptom_ids,
-                                                   match_all_symptoms=match_all_symptoms)
-        query = (
-            select(entities.ItemReview.item_id)
-            .join(entities.MedicalBook.item_reviews)
-            .join(entities.MedicalBook.symptoms)
-            .where(entities.MedicalBook.diagnosis_id == diagnosis_id,
-                   entities.Symptom.id.in_(symptom_ids))
-            .group_by(entities.ItemReview.item_id)
-        )
-        if match_all_symptoms:
-            query = (query
-                     .having(func.count(entities.Symptom.id.distinct()) ==
-                             len(symptom_ids))
-                     )
-
-        expected_item_ids: list[int] = session.execute(query).scalars().all()
-
-        # Call
-        result = repo.fetch_by_diagnosis_and_symptoms(filter_params, True)
-
-        # Assert
-        assert isinstance(result, Sequence)
-        assert len(result) > 0
-        assert len(result) == len(expected_item_ids)
-        assert any(len(item.reviews) > 0 for item in result)
         for item in result:
             assert isinstance(item, entities.TreatmentItem)
             assert item.id in expected_item_ids
@@ -792,25 +679,61 @@ class TestFetchByDiagnosisSymptomsWithReviews(_TestOrderMixin,
 class TestFetchByHelpedStatusDiagnosisSymptoms(_TestOrderMixin,
                                                _TestPaginationMixin,
                                                _TestUniquenessMixin):
-    TEST_METHOD = 'fetch_by_helped_status_diagnosis_symptoms'
-    TEST_KWARGS = dict(with_reviews=False)
+    TEST_METHOD = 'fetch_all'
+    TEST_KWARGS = [
+        dict(include_reviews=False,
+             filter_params=schemas.FindTreatmentItemList(
+                 symptom_ids=[3, 4], match_all_symptoms=True, is_helped=True,
+                 diagnosis_id=1)
+             ),
+        dict(include_reviews=False,
+             filter_params=schemas.FindTreatmentItemList(
+                 symptom_ids=[3, 4], match_all_symptoms=True, is_helped=False,
+                 diagnosis_id=1)
+             ),
+        dict(include_reviews=False,
+             filter_params=schemas.FindTreatmentItemList(
+                 symptom_ids=[3, 4], match_all_symptoms=False, is_helped=True,
+                 diagnosis_id=1)
+             ),
+        dict(include_reviews=False,
+             filter_params=schemas.FindTreatmentItemList(
+                 symptom_ids=[3, 4], match_all_symptoms=False, is_helped=False,
+                 diagnosis_id=1)
+             ),
+        dict(include_reviews=True,
+             filter_params=schemas.FindTreatmentItemList(
+                 symptom_ids=[3, 4], match_all_symptoms=True, is_helped=True,
+                 diagnosis_id=1)
+             ),
+        dict(include_reviews=True,
+             filter_params=schemas.FindTreatmentItemList(
+                 symptom_ids=[3, 4], match_all_symptoms=True, is_helped=False,
+                 diagnosis_id=1)
+             ),
+        dict(include_reviews=True,
+             filter_params=schemas.FindTreatmentItemList(
+                 symptom_ids=[3, 4], match_all_symptoms=False, is_helped=True,
+                 diagnosis_id=1)
+             ),
+        dict(include_reviews=True,
+             filter_params=schemas.FindTreatmentItemList(
+                 symptom_ids=[3, 4], match_all_symptoms=False, is_helped=False,
+                 diagnosis_id=1)
+             ),
+    ]
 
-    @pytest.mark.parametrize('helped_status, match_all_symptoms', [
-        (True, True),
-        (False, False),
-        (True, False),
-        (False, True),
-    ])
-    def test__fetch_by_helped_status_diagnosis_symptoms(self, helped_status,
-                                                        match_all_symptoms, repo, session,
+    @pytest.mark.parametrize('kwargs', [*TEST_KWARGS])
+    def test__fetch_by_helped_status_diagnosis_symptoms(self, kwargs, repo, session,
                                                         fill_db):
         # Setup
-        diagnosis_id: int = fill_db['diagnosis_ids'][1]
-        symptom_ids: list[int] = fill_db['symptom_ids'][:2]
-        filter_params = schemas.FindTreatmentItems(symptom_ids=symptom_ids,
-                                                   diagnosis_id=diagnosis_id,
-                                                   match_all_symptoms=match_all_symptoms,
-                                                   is_helped=helped_status)
+        diagnosis_id = fill_db['diagnosis_ids'][0]
+        symptom_ids = fill_db['symptom_ids'][2:4]
+        helped_status = kwargs['filter_params'].is_helped
+        match_all_symptoms = kwargs['filter_params'].match_all_symptoms
+        kwargs['filter_params'].diagnosis_id = diagnosis_id
+        kwargs['filter_params'].symptom_ids = symptom_ids
+
         query = (
             select(entities.ItemReview.item_id)
             .join(entities.MedicalBook.item_reviews)
@@ -829,64 +752,11 @@ class TestFetchByHelpedStatusDiagnosisSymptoms(_TestOrderMixin,
         expected_item_ids: list[int] = session.execute(query).scalars().all()
 
         # Call
-        result = repo.fetch_by_helped_status_diagnosis_symptoms(filter_params, False)
+        result = repo.fetch_all(**kwargs)
 
         # Assert
-        assert isinstance(result, list)
         assert len(result) > 0
         assert len(result) == len(expected_item_ids)
-        for item in result:
-            assert isinstance(item, dtos.TreatmentItem)
-            assert item.id in expected_item_ids
-
-
-class TestFetchByHelpedStatusDiagnosisSymptomsWithReviews(_TestOrderMixin,
-                                                          _TestPaginationMixin,
-                                                          _TestUniquenessMixin):
-    TEST_METHOD = 'fetch_by_helped_status_diagnosis_symptoms'
-    TEST_KWARGS = dict(with_reviews=True)
-
-    @pytest.mark.parametrize('helped_status, match_all_symptoms', [
-        (True, True),
-        (False, False),
-        (True, False),
-        (False, True),
-    ])
-    def test__fetch_by_helped_status_diagnosis_symptoms(self, helped_status,
-                                                        match_all_symptoms, repo, session,
-                                                        fill_db):
-        # Setup
-        diagnosis_id: int = fill_db['diagnosis_ids'][1]
-        symptom_ids: list[int] = fill_db['symptom_ids'][:2]
-        filter_params = schemas.FindTreatmentItems(symptom_ids=symptom_ids,
-                                                   diagnosis_id=diagnosis_id,
-                                                   match_all_symptoms=match_all_symptoms,
-                                                   is_helped=helped_status)
-        query = (
-            select(entities.ItemReview.item_id)
-            .join(entities.MedicalBook.item_reviews)
-            .join(entities.MedicalBook.symptoms)
-            .where(entities.ItemReview.is_helped == helped_status,
-                   entities.MedicalBook.diagnosis_id == diagnosis_id,
-                   entities.Symptom.id.in_(symptom_ids))
-            .group_by(entities.ItemReview.item_id)
-        )
-        if match_all_symptoms:
-            query = (query
-                     .having(func.count(entities.Symptom.id.distinct()) ==
-                             len(symptom_ids))
-                     )
-
-        expected_item_ids: list[int] = session.execute(query).scalars().all()
-
-        # Call
-        result = repo.fetch_by_helped_status_diagnosis_symptoms(filter_params, True)
-
-        # Assert
-        assert isinstance(result, Sequence)
-        assert len(result) > 0
-        assert len(result) == len(expected_item_ids)
-        assert any(len(item.reviews) > 0 for item in result)
         for item in result:
             assert isinstance(item, entities.TreatmentItem)
             assert item.id in expected_item_ids
