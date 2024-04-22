@@ -5,6 +5,7 @@ from pydantic import BaseModel as BaseSchema, Field
 
 class FindItemReviews(BaseSchema):
     item_ids: list[int] | None = Field(ge=1)
+    patient_id: int | None = Field(ge=1)
     is_helped: bool | None
     min_rating: float | None = Field(ge=0, le=10)
     max_rating: float | None = Field(ge=1, le=10)
