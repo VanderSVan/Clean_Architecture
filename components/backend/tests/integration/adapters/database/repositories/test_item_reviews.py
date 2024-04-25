@@ -148,7 +148,7 @@ class TestFetchAll:
         assert len(result) == len(test_data.REVIEWS_DATA) - filter_params.offset
 
 
-class TestFetchByItem:
+class TestFetchByItems:
 
     def test__fetch_by_item(self, repo, session, fill_db):
         # Setup
@@ -165,7 +165,7 @@ class TestFetchByItem:
         ).scalar()
 
         # Call
-        result = repo.fetch_by_item(filter_params)
+        result = repo.fetch_by_items(filter_params)
 
         # Assert
         assert len(result) == review_count_by_item
@@ -184,7 +184,7 @@ class TestFetchByItem:
             sort_direction='desc'
         )
         # Call
-        result = repo.fetch_by_item(filter_params)
+        result = repo.fetch_by_items(filter_params)
 
         # Assert
         assert result[0].usage_period is not None
@@ -208,7 +208,7 @@ class TestFetchByItem:
         )
 
         # Call
-        result = repo.fetch_by_item(filter_params)
+        result = repo.fetch_by_items(filter_params)
 
         # Assert
         assert result == sorted(
@@ -238,7 +238,7 @@ class TestFetchByItem:
         )
 
         # Call
-        result = repo.fetch_by_item(filter_params)
+        result = repo.fetch_by_items(filter_params)
 
         # Assert
         assert result == sorted(
@@ -264,7 +264,7 @@ class TestFetchByItem:
         )
 
         # Call
-        result = repo.fetch_by_item(filter_params)
+        result = repo.fetch_by_items(filter_params)
 
         # Assert
         assert len(result) == filter_params.limit
@@ -287,7 +287,7 @@ class TestFetchByItem:
         )
 
         # Call
-        result = repo.fetch_by_item(filter_params)
+        result = repo.fetch_by_items(filter_params)
 
         # Assert
         assert len(result) == review_count_by_item - filter_params.offset

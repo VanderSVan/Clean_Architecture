@@ -15,4 +15,7 @@ class FindItemReviews(BaseSchema):
     sort_direction: Literal['asc', 'desc'] | None = 'desc'
     limit: int | None = Field(10, ge=1)
     offset: int | None = Field(0, ge=0)
+    exclude_review_fields: list[Literal[
+        'id', 'item_id', 'is_helped', 'item_rating', 'item_count', 'usage_period'
+    ]] | None = None
 

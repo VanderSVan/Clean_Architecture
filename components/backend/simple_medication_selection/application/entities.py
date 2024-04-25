@@ -1,9 +1,9 @@
 # Domain слой
 import inspect
 from dataclasses import dataclass, field, is_dataclass, asdict
-from statistics import mean
-from typing import Iterable, Union, TypeAlias, Literal
 from decimal import Decimal
+from statistics import mean
+from typing import Iterable, Union, TypeAlias
 
 
 @dataclass(kw_only=True)
@@ -53,6 +53,15 @@ class ItemReview:
     item_count: int  # какое количество процедур или продуктов потребовалось
     usage_period: int | None = None  # период использования в секундах
 
+    @classmethod
+    def get_field_names(cls, exclude_fields: list[str] | None = None) -> list[str]:
+        fields: list[str] = cls.__dataclass_fields__.keys()
+
+        if exclude_fields is None:
+            return fields
+
+        return [field_name for field_name in fields if field_name not in exclude_fields]
+
 
 @dataclass(kw_only=True)
 class TreatmentItem:
@@ -78,6 +87,21 @@ class TreatmentItem:
         return (self.id == other.id and
                 self.title == other.title and
                 self.price == other.price)
+
+    @classmethod
+    def get_field_names(cls,
+                        exclude_fields: list[str] | None = None,
+                        exclude_nested_fields: bool = False
+                        ) -> list[str]:
+        fields: list[str] = cls.__dataclass_fields__.keys()
+
+        if exclude_fields is None:
+            return fields
+
+        elif exclude_fields and exclude_nested_fields and 'reviews' not in exclude_fields:
+            exclude_fields.append('reviews')
+
+        return [field_name for field_name in fields if field_name not in exclude_fields]
 
     def get_avg_rating(self) -> float | None:
         if self.reviews and not self.avg_rating:

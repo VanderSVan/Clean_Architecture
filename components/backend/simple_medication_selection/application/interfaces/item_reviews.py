@@ -17,9 +17,9 @@ class ItemReviewsRepo(ABC):
         ...
 
     @abstractmethod
-    def fetch_by_item(self,
-                      filter_params: schemas.FindItemReviews,
-                      ) -> Sequence[entities.ItemReview | None]:
+    def fetch_by_items(self,
+                       filter_params: schemas.FindItemReviews,
+                       ) -> Sequence[entities.ItemReview | None]:
         ...
 
     @abstractmethod
@@ -44,6 +44,75 @@ class ItemReviewsRepo(ABC):
     def fetch_by_helped_status(self,
                                filter_params: schemas.FindItemReviews,
                                ) -> Sequence[entities.ItemReview | None]:
+        ...
+
+    @abstractmethod
+    def fetch_by_items_and_patient(self,
+                                   filter_params: schemas.FindItemReviews,
+                                   ) -> Sequence[entities.ItemReview | None]:
+        ...
+
+    @abstractmethod
+    def fetch_by_items_and_helped_status(self,
+                                         filter_params: schemas.FindItemReviews,
+                                         ) -> Sequence[entities.ItemReview | None]:
+        ...
+
+    @abstractmethod
+    def fetch_by_items_and_rating(self,
+                                  filter_params: schemas.FindItemReviews,
+                                  ) -> Sequence[entities.ItemReview | None]:
+        ...
+
+    @abstractmethod
+    def fetch_by_patient_and_helped_status(self,
+                                           filter_params: schemas.FindItemReviews,
+                                           ) -> Sequence[entities.ItemReview | None]:
+        ...
+
+    @abstractmethod
+    def fetch_by_patient_and_rating(self,
+                                    filter_params: schemas.FindItemReviews,
+                                    ) -> Sequence[entities.ItemReview | None]:
+        ...
+
+    @abstractmethod
+    def fetch_by_helped_status_and_rating(self,
+                                          filter_params: schemas.FindItemReviews,
+                                          ) -> Sequence[entities.ItemReview | None]:
+        ...
+
+    @abstractmethod
+    def fetch_by_items_patient_and_helped_status(
+        self,
+        filter_params: schemas.FindItemReviews,
+    ) -> Sequence[entities.ItemReview | None]:
+        ...
+
+    @abstractmethod
+    def fetch_by_items_patient_and_rating(self,
+                                          filter_params: schemas.FindItemReviews,
+                                          ) -> Sequence[entities.ItemReview | None]:
+        ...
+
+    @abstractmethod
+    def fetch_by_items_helped_status_and_rating(self,
+                                                filter_params: schemas.FindItemReviews,
+                                                ) -> Sequence[entities.ItemReview | None]:
+        ...
+
+    @abstractmethod
+    def fetch_by_patient_helped_status_and_rating(
+        self,
+        filter_params: schemas.FindItemReviews,
+    ) -> Sequence[entities.ItemReview | None]:
+        ...
+
+    @abstractmethod
+    def fetch_by_items_patient_helped_status_and_rating(
+        self,
+        filter_params: schemas.FindItemReviews,
+    ) -> Sequence[entities.ItemReview | None]:
         ...
 
     @abstractmethod

@@ -1,8 +1,10 @@
 from unittest.mock import Mock, call
 
 import pytest
-from simple_medication_selection.application import (dtos, entities, errors, interfaces,
-                                                     services)
+
+from simple_medication_selection.application import (
+    dtos, entities, errors, interfaces, services, schemas
+)
 
 
 # ---------------------------------------------------------------------------------------
@@ -27,102 +29,122 @@ def service(reviews_repo, items_repo) -> services.ItemReview:
 # ---------------------------------------------------------------------------------------
 # TESTS
 # ---------------------------------------------------------------------------------------
-class TestGetPatientReviewByItem:
+class TestGetReview:
     @pytest.mark.parametrize("returned_entity", [
+        entities.ItemReview(
+            id=1, item_id=1, is_helped=True, item_rating=8, item_count=2,
+            usage_period=7776000
+        )
+    ])
+    def test__get_review(self, returned_entity, service, reviews_repo, items_repo):
+        # Setup
+        reviews_repo.fetch_by_id.return_value = returned_entity
+        review_id = 1
+
+        # Call
+        result = service.get_review(review_id=review_id)
+
+        # Assert
+        assert reviews_repo.method_calls == [call.fetch_by_id(review_id)]
+        assert result == returned_entity
+        assert items_repo.method_calls == []
+
+
+class TestFindReviews:
+    @pytest.mark.parametrize(
+        "item_ids, patient_id, is_helped, min_rating, max_rating, repo_method",
         [
+            ([1, 2], 1, True, 3.0, 8.5,
+             'fetch_by_items_patient_helped_status_and_rating'),
+            ([1, 2], 1, True, None, 8.5,
+             'fetch_by_items_patient_helped_status_and_rating'),
+            ([1, 2], 1, True, 3.0, None,
+             'fetch_by_items_patient_helped_status_and_rating'),
+            ([1, 2], 1, False, 3.0, 8.5,
+             'fetch_by_items_patient_helped_status_and_rating'),
+            ([1, 2], 1, False, None, 8.5,
+             'fetch_by_items_patient_helped_status_and_rating'),
+            ([1, 2], 1, False, 3.0, None,
+             'fetch_by_items_patient_helped_status_and_rating'),
+
+            (None, 1, True, 3.0, 8.5, 'fetch_by_patient_helped_status_and_rating'),
+            (None, 1, True, None, 8.5, 'fetch_by_patient_helped_status_and_rating'),
+            (None, 1, True, 3.0, None, 'fetch_by_patient_helped_status_and_rating'),
+            (None, 1, False, 3.0, 8.5, 'fetch_by_patient_helped_status_and_rating'),
+            (None, 1, False, None, 8.5, 'fetch_by_patient_helped_status_and_rating'),
+            (None, 1, False, 3.0, None, 'fetch_by_patient_helped_status_and_rating'),
+
+            ([1, 2], None, True, 3.0, 8.5, 'fetch_by_items_helped_status_and_rating'),
+            ([1, 2], None, True, 3.0, None, 'fetch_by_items_helped_status_and_rating'),
+            ([1, 2], None, True, None, 8.5, 'fetch_by_items_helped_status_and_rating'),
+            ([1, 2], None, False, 3.0, 8.5, 'fetch_by_items_helped_status_and_rating'),
+            ([1, 2], None, False, 3.0, None, 'fetch_by_items_helped_status_and_rating'),
+            ([1, 2], None, False, None, 8.5, 'fetch_by_items_helped_status_and_rating'),
+
+            ([1, 2], 1, None, 3.0, 8.5, 'fetch_by_items_patient_and_rating'),
+            ([1, 2], 1, None, 3.0, None, 'fetch_by_items_patient_and_rating'),
+            ([1, 2], 1, None, None, 8.5, 'fetch_by_items_patient_and_rating'),
+
+            ([1, 2], 1, True, None, None, 'fetch_by_items_patient_and_helped_status'),
+            ([1, 2], 1, False, None, None, 'fetch_by_items_patient_and_helped_status'),
+
+            (None, None, True, 3.0, 8.5, 'fetch_by_helped_status_and_rating'),
+            (None, None, True, None, 8.5, 'fetch_by_helped_status_and_rating'),
+            (None, None, True, 3.0, None, 'fetch_by_helped_status_and_rating'),
+            (None, None, False, 3.0, 8.5, 'fetch_by_helped_status_and_rating'),
+            (None, None, False, None, 8.5, 'fetch_by_helped_status_and_rating'),
+            (None, None, False, 3.0, None, 'fetch_by_helped_status_and_rating'),
+
+            (None, 1, None, 3.0, 8.5, 'fetch_by_patient_and_rating'),
+            (None, 1, None, 3.0, None, 'fetch_by_patient_and_rating'),
+            (None, 1, None, None, 8.5, 'fetch_by_patient_and_rating'),
+
+            (None, 1, True, None, None, 'fetch_by_patient_and_helped_status'),
+            (None, 1, False, None, None, 'fetch_by_patient_and_helped_status'),
+
+            ([1, 2], None, None, 3.0, 8.5, 'fetch_by_items_and_rating'),
+            ([1, 2], None, None, 3.0, None, 'fetch_by_items_and_rating'),
+            ([1, 2], None, None, None, 8.5, 'fetch_by_items_and_rating'),
+
+            ([1, 2], None, True, None, None, 'fetch_by_items_and_helped_status'),
+            ([1, 2], None, False, None, None, 'fetch_by_items_and_helped_status'),
+
+            ([1, 2], 1, None, None, None, 'fetch_by_items_and_patient'),
+
+            (None, None, None, 3.0, 8.5, 'fetch_by_rating'),
+            (None, None, None, 3.0, None, 'fetch_by_rating'),
+            (None, None, None, None, 8.5, 'fetch_by_rating'),
+
+            (None, None, True, None, None, 'fetch_by_helped_status'),
+            (None, None, False, None, None, 'fetch_by_helped_status'),
+
+            (None, 1, None, None, None, 'fetch_by_patient'),
+
+            ([1, 2], None, None, None, None, 'fetch_by_items'),
+
+            (None, None, None, None, None, 'fetch_all'),
+        ])
+    def test__find_reviews(self, item_ids, patient_id, is_helped, min_rating, max_rating,
+                           repo_method, service, reviews_repo, items_repo):
+        # Setup
+        filter_params = schemas.FindItemReviews(
+            item_ids=item_ids, patient_id=patient_id, is_helped=is_helped,
+            min_rating=min_rating, max_rating=max_rating
+        )
+        repo_output = [
             entities.ItemReview(
-                id=2, item_id=1, is_helped=True, item_rating=8, item_count=2,
+                id=1, item_id=1, is_helped=True, item_rating=8, item_count=2,
                 usage_period=7776000
             )
         ]
-    ])
-    def test__get_patient_review_by_item(self, returned_entity, service, reviews_repo,
-                                         items_repo):
-        # Setup
-        reviews_repo.fetch_patient_reviews_by_item.return_value = returned_entity
-        patient_id = 1
-        default_sort_field = 'item_rating'
-        default_sort_direction = 'desc'
-        default_limit = 10
-        default_offset = 0
+        getattr(reviews_repo, repo_method).return_value = repo_output
 
         # Call
-        result = service.get_patient_reviews_by_item(patient_id=patient_id,
-                                                     item_id=returned_entity[0].item_id)
+        result = service.find_reviews(filter_params=filter_params)
 
         # Assert
-        assert reviews_repo.method_calls == [
-            call.fetch_patient_reviews_by_item(
-                patient_id, returned_entity[0].item_id, default_sort_field,
-                default_sort_direction, default_limit, default_offset
-            )
-        ]
-        assert result == returned_entity
-        assert items_repo.method_calls == []
-
-
-class TestGetReviewsByItem:
-    @pytest.mark.parametrize("returned_entity", [
-        [
-            entities.ItemReview(
-                id=1, item_id=1, is_helped=False, item_rating=4, item_count=2,
-                usage_period=2592000
-            )
-        ]
-    ])
-    def test__get_reviews_by_item(self, returned_entity, service, reviews_repo,
-                                  items_repo):
-        # Setup
-        reviews_repo.fetch_by_item.return_value = returned_entity
-        default_sort_field = 'item_rating'
-        default_sort_direction = 'desc'
-        default_limit = 10
-        default_offset = 0
-
-        # Call
-        result = service.get_reviews_by_item(item_id=returned_entity[0].item_id)
-
-        # Assert
-        assert reviews_repo.method_calls == [
-            call.fetch_by_item(
-                returned_entity[0].item_id, default_sort_field, default_sort_direction,
-                default_limit, default_offset
-            )
-        ]
-        assert result == returned_entity
-        assert items_repo.method_calls == []
-
-
-class TestGetPatientReviews:
-    @pytest.mark.parametrize("returned_entity", [
-        [
-            entities.ItemReview(
-                id=1, item_id=1, is_helped=False, item_rating=4, item_count=2,
-                usage_period=2592000
-            )
-        ]
-    ])
-    def test__get_patient_reviews(self, returned_entity, service, reviews_repo,
-                                  items_repo):
-        # Setup
-        reviews_repo.fetch_reviews_by_patient.return_value = returned_entity
-        patient_id = 1
-        default_sort_field = 'item_rating'
-        default_sort_direction = 'desc'
-        default_limit = 10
-        default_offset = 0
-
-        # Call
-        result = service.get_patient_reviews(patient_id=patient_id)
-
-        # Assert
-        assert reviews_repo.method_calls == [
-            call.fetch_reviews_by_patient(
-                patient_id, default_sort_field, default_sort_direction, default_limit,
-                default_offset
-            )
-        ]
-        assert result == returned_entity
+        getattr(reviews_repo, repo_method).assert_called_once_with(filter_params)
+        assert result == repo_output
         assert items_repo.method_calls == []
 
 
@@ -133,7 +155,7 @@ class TestAdd:
                 item_id=1, is_helped=False, item_rating=4, item_count=2,
                 usage_period=2592000
             ),
-            dtos.ItemReviewCreateSchema(
+            dtos.NewItemReviewInfo(
                 item_id=1, is_helped=False, item_rating=4, item_count=2,
                 usage_period=2592000
             ),
@@ -153,13 +175,15 @@ class TestAdd:
         result = service.add(new_review_info=dto)
 
         # Assert
-        assert items_repo.method_calls == [call.fetch_by_id(dto.item_id)]
+        assert items_repo.method_calls == [
+            call.fetch_by_id(dto.item_id, False), call.update_avg_rating(dto.item_id)
+        ]
         assert reviews_repo.method_calls == [call.add(new_entity)]
         assert result == created_entity
 
     @pytest.mark.parametrize("dto", [
         (
-            dtos.ItemReviewCreateSchema(
+            dtos.NewItemReviewInfo(
                 item_id=10001, is_helped=False, item_rating=4, item_count=2,
                 usage_period=2592000
             )
@@ -175,7 +199,7 @@ class TestAdd:
 
         # Assert
         assert reviews_repo.method_calls == []
-        assert items_repo.method_calls == [call.fetch_by_id(dto.item_id)]
+        assert items_repo.method_calls == [call.fetch_by_id(dto.item_id, False)]
 
 
 class TestChange:
@@ -185,7 +209,7 @@ class TestChange:
                 id=1, item_id=1, is_helped=False, item_rating=4, item_count=2,
                 usage_period=2592000
             ),
-            dtos.ItemReviewUpdateSchema(
+            dtos.UpdatedItemReviewInfo(
                 id=1, item_id=10, is_helped=True, item_rating=9.5, item_count=5,
                 usage_period=2592000
             ),
@@ -206,17 +230,21 @@ class TestChange:
 
         # Assert
         assert reviews_repo.method_calls == [call.fetch_by_id(dto.id)]
-        assert items_repo.method_calls == [call.fetch_by_id(dto.item_id)]
+        assert items_repo.method_calls == [
+            call.fetch_by_id(dto.item_id, False),
+            call.fetch_by_id(dto.item_id, False),
+            call.update_avg_rating(dto.item_id)
+        ]
         assert result == updated_entity
 
     @pytest.mark.parametrize("dto", [
-        dtos.ItemReviewUpdateSchema(
+        dtos.UpdatedItemReviewInfo(
             id=1,
             item_id=10001, is_helped=False, item_rating=4, item_count=2,
             usage_period=2592000
         )
     ])
-    def test__non_existing_review(self, dto, service, reviews_repo, items_repo):
+    def test__review_not_found(self, dto, service, reviews_repo, items_repo):
         # Setup
         reviews_repo.fetch_by_id.return_value = None
 
@@ -233,14 +261,14 @@ class TestChange:
                 id=1, item_id=1, is_helped=False, item_rating=4, item_count=2,
                 usage_period=2592000
             ),
-            dtos.ItemReviewUpdateSchema(
+            dtos.UpdatedItemReviewInfo(
                 id=1,
                 item_id=10001
             )
         )
     ])
-    def test__non_existing_item(self, existing_entity, dto, service, reviews_repo,
-                                items_repo):
+    def test__item_not_found(self, existing_entity, dto, service, reviews_repo,
+                             items_repo):
         # Setup
         reviews_repo.fetch_by_id.return_value = existing_entity
         items_repo.fetch_by_id.return_value = None
@@ -250,7 +278,7 @@ class TestChange:
             service.change(new_review_info=dto)
 
         assert reviews_repo.method_calls == [call.fetch_by_id(dto.id)]
-        assert items_repo.method_calls == [call.fetch_by_id(dto.item_id)]
+        assert items_repo.method_calls == [call.fetch_by_id(dto.item_id, False)]
 
 
 class TestDelete:

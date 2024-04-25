@@ -24,9 +24,9 @@ from .item import (
     UpdatedTreatmentItemInfo,
 )
 from .item_review import (
-    ItemReviewCreateSchema,
+    NewItemReviewInfo,
     ItemReview,
-    ItemReviewUpdateSchema,
+    UpdatedItemReviewInfo,
 )
 from .patient import (
     PatientCreateSchema,
