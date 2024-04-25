@@ -21,7 +21,7 @@ class Catalog:
         """
         item: dtos.TreatmentItem = self.catalog.get_item(item_id)
 
-        resp.media = item.dict(decode=True)
+        resp.media = item.dict(decode=True, exclude_none=True, exclude_unset=True)
         resp.status = status_codes.HTTP_200
 
     @spectree.validate(
@@ -39,17 +39,18 @@ class Catalog:
             reviews_sort_field=req.context.query.reviews_sort_field,
             reviews_sort_direction=req.context.query.reviews_sort_direction,
             reviews_limit=req.context.query.reviews_limit,
-            reviews_offset=req.context.query.reviews_offset
+            reviews_offset=req.context.query.reviews_offset,
+            exclude_review_fields=req.context.query.exclude_review_fields
         )
         item: dtos.TreatmentItemWithReviews = (
             self.catalog.get_item_with_reviews(filter_params)
         )
 
-        resp.media = item.dict(decode=True)
+        resp.media = item.dict(decode=True, exclude_none=True, exclude_unset=True)
         resp.status = status_codes.HTTP_200
 
     @spectree.validate(
-        query=schemas.FindTreatmentItemList,
+        query=schemas.FindTreatmentItems,
         resp=Response(HTTP_200=list[dtos.TreatmentItem]),
         tags=["Items"]
     )
@@ -57,42 +58,7 @@ class Catalog:
         """
         Поиск items по параметрам.
         """
-        filter_params = schemas.FindTreatmentItemList(
-            keywords=req.context.query.keywords,
-            is_helped=req.context.query.is_helped,
-            diagnosis_id=req.context.query.diagnosis_id,
-            symptom_ids=req.context.query.symptom_ids,
-            match_all_symptoms=req.context.query.match_all_symptoms,
-            min_rating=req.context.query.min_rating,
-            max_rating=req.context.query.max_rating,
-            min_price=req.context.query.min_price,
-            max_price=req.context.query.max_price,
-            category_id=req.context.query.category_id,
-            type_id=req.context.query.type_id,
-            sort_field=req.context.query.sort_field,
-            sort_direction=req.context.query.sort_direction,
-            limit=req.context.query.limit,
-            offset=req.context.query.offset
-        )
-        found_items: list[dtos.TreatmentItem | None] = (
-            self.catalog.find_items(filter_params)
-        )
-
-        resp.media = [
-            item.dict(decode=True) for item in found_items if item is not None
-        ]
-        resp.status = status_codes.HTTP_200
-
-    @spectree.validate(
-        query=schemas.FindTreatmentItemListWithReviews,
-        resp=Response(HTTP_200=list[dtos.TreatmentItemWithReviews]),
-        tags=["Items with reviews"]
-    )
-    def on_get_with_reviews(self, req, resp):
-        """
-        Поиск items с отзывами по параметрам.
-        """
-        filter_params = schemas.FindTreatmentItemListWithReviews(
+        filter_params = schemas.FindTreatmentItems(
             keywords=req.context.query.keywords,
             is_helped=req.context.query.is_helped,
             diagnosis_id=req.context.query.diagnosis_id,
@@ -108,17 +74,57 @@ class Catalog:
             sort_direction=req.context.query.sort_direction,
             limit=req.context.query.limit,
             offset=req.context.query.offset,
+            exclude_item_fields=req.context.query.exclude_item_fields
+        )
+        found_items: list[dtos.TreatmentItem | None] = (
+            self.catalog.find_items(filter_params)
+        )
+
+        resp.media = [
+            item.dict(decode=True, exclude_none=True, exclude_unset=True)
+            for item in found_items if item is not None
+        ]
+        resp.status = status_codes.HTTP_200
+
+    @spectree.validate(
+        query=schemas.FindTreatmentItemsWithReviews,
+        resp=Response(HTTP_200=list[dtos.TreatmentItemWithReviews]),
+        tags=["Items with reviews"]
+    )
+    def on_get_with_reviews(self, req, resp):
+        """
+        Поиск items с отзывами по параметрам.
+        """
+        filter_params = schemas.FindTreatmentItemsWithReviews(
+            keywords=req.context.query.keywords,
+            is_helped=req.context.query.is_helped,
+            diagnosis_id=req.context.query.diagnosis_id,
+            symptom_ids=req.context.query.symptom_ids,
+            match_all_symptoms=req.context.query.match_all_symptoms,
+            min_rating=req.context.query.min_rating,
+            max_rating=req.context.query.max_rating,
+            min_price=req.context.query.min_price,
+            max_price=req.context.query.max_price,
+            category_id=req.context.query.category_id,
+            type_id=req.context.query.type_id,
+            sort_field=req.context.query.sort_field,
+            sort_direction=req.context.query.sort_direction,
+            limit=req.context.query.limit,
+            offset=req.context.query.offset,
+            exclude_item_fields=req.context.query.exclude_item_fields,
             reviews_sort_field=req.context.query.reviews_sort_field,
             reviews_sort_direction=req.context.query.reviews_sort_direction,
             reviews_limit=req.context.query.reviews_limit,
-            reviews_offset=req.context.query.reviews_offset
+            reviews_offset=req.context.query.reviews_offset,
+            exclude_review_fields=req.context.query.exclude_review_fields
         )
         found_items: list[dtos.TreatmentItemWithReviews | None] = (
             self.catalog.find_items_with_reviews(filter_params)
         )
 
         resp.media = [
-            item.dict(decode=True) for item in found_items if item is not None
+            item.dict(decode=True, exclude_none=True, exclude_unset=True)
+            for item in found_items if item is not None
         ]
         resp.status = status_codes.HTTP_200
 

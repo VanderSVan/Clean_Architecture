@@ -46,7 +46,7 @@ def repo(transaction_context):
 
 
 @pytest.fixture
-def kwargs_factory(request, fill_db) -> dict[str, bool | schemas.FindTreatmentItemList]:
+def kwargs_factory(request, fill_db) -> dict[str, bool | schemas.FindTreatmentItems]:
     """
     Fixture для обновления аргументов теста с корректными идентификаторами (id) при
     необходимости.
@@ -81,7 +81,7 @@ def _combine_data(main: list[dict], mixin: list[dict]) -> list[dict]:
     """
     Комбинирует данные main и mixin
     """
-    combined_data: list[dict[str, bool | schemas.FindTreatmentItemList]] = []
+    combined_data: list[dict[str, bool | schemas.FindTreatmentItems]] = []
     for main_data, mixin_data in product(main, mixin):
 
         if 'filter_params' not in main_data or 'filter_params' not in mixin_data:
@@ -89,9 +89,9 @@ def _combine_data(main: list[dict], mixin: list[dict]) -> list[dict]:
                            f"Check your test and parametrize data.")
 
         main_filter_params_class = main_data['filter_params'].__class__
-        if not (isinstance(main_data['filter_params'], schemas.FindTreatmentItemList)):
+        if not (isinstance(main_data['filter_params'], schemas.FindTreatmentItems)):
             raise TypeError(f"Expected `filter_params` to be an instance of "
-                            f"`{schemas.FindTreatmentItemList.__name__}`, "
+                            f"`{schemas.FindTreatmentItems.__name__}`, "
                             f"got `{main_filter_params_class.__name__}`.")
 
         main_filter_params: dict = main_data['filter_params'].__dict__
@@ -183,25 +183,25 @@ class _BaseMixin:
     TEST_KWARGS: list[dict]
     MIXIN_KWARGS: dict[str, list[dict]] = dict(
         test__order_is_asc=[
-            dict(filter_params=schemas.FindTreatmentItemList(sort_field='title',
+            dict(filter_params=schemas.FindTreatmentItems(sort_field='title',
                                                              sort_direction='asc')),
-            dict(filter_params=schemas.FindTreatmentItemList(sort_field='price',
+            dict(filter_params=schemas.FindTreatmentItems(sort_field='price',
                                                              sort_direction='asc')),
-            dict(filter_params=schemas.FindTreatmentItemList(sort_field='avg_rating',
+            dict(filter_params=schemas.FindTreatmentItems(sort_field='avg_rating',
                                                              sort_direction='asc'))
         ],
         test__order_is_desc=[
-            dict(filter_params=schemas.FindTreatmentItemList(sort_field='title',
+            dict(filter_params=schemas.FindTreatmentItems(sort_field='title',
                                                              sort_direction='desc')),
-            dict(filter_params=schemas.FindTreatmentItemList(sort_field='price',
+            dict(filter_params=schemas.FindTreatmentItems(sort_field='price',
                                                              sort_direction='desc')),
-            dict(filter_params=schemas.FindTreatmentItemList(sort_field='avg_rating',
+            dict(filter_params=schemas.FindTreatmentItems(sort_field='avg_rating',
                                                              sort_direction='desc'))
         ],
-        test__with_limit=[dict(filter_params=schemas.FindTreatmentItemList(limit=1))],
-        test__with_offset=[dict(filter_params=schemas.FindTreatmentItemList(offset=1))],
-        test__unique_check=[dict(filter_params=schemas.FindTreatmentItemList())],
-        test__null_last=[dict(filter_params=schemas.FindTreatmentItemList())],
+        test__with_limit=[dict(filter_params=schemas.FindTreatmentItems(limit=1))],
+        test__with_offset=[dict(filter_params=schemas.FindTreatmentItems(offset=1))],
+        test__unique_check=[dict(filter_params=schemas.FindTreatmentItems())],
+        test__null_last=[dict(filter_params=schemas.FindTreatmentItems())],
     )
 
 
@@ -351,8 +351,8 @@ class TestFetchAll(_TestOrderMixin,
                    _TestNullsLastMixin):
     TEST_METHOD = 'fetch_all'
     TEST_KWARGS = [
-        dict(include_reviews=False, filter_params=schemas.FindTreatmentItemList()),
-        dict(include_reviews=True, filter_params=schemas.FindTreatmentItemList())
+        dict(include_reviews=False, filter_params=schemas.FindTreatmentItems()),
+        dict(include_reviews=True, filter_params=schemas.FindTreatmentItems())
     ]
 
     @pytest.mark.parametrize('kwargs', [*TEST_KWARGS])
@@ -372,13 +372,13 @@ class TestFetchByHelpedStatus(_TestOrderMixin,
     TEST_METHOD = 'fetch_all'
     TEST_KWARGS = [
         dict(include_reviews=False,
-             filter_params=schemas.FindTreatmentItemList(is_helped=True)),
+             filter_params=schemas.FindTreatmentItems(is_helped=True)),
         dict(include_reviews=False,
-             filter_params=schemas.FindTreatmentItemList(is_helped=False)),
+             filter_params=schemas.FindTreatmentItems(is_helped=False)),
         dict(include_reviews=True,
-             filter_params=schemas.FindTreatmentItemList(is_helped=True)),
+             filter_params=schemas.FindTreatmentItems(is_helped=True)),
         dict(include_reviews=True,
-             filter_params=schemas.FindTreatmentItemList(is_helped=False))
+             filter_params=schemas.FindTreatmentItems(is_helped=False))
     ]
 
     @pytest.mark.parametrize('kwargs', [*TEST_KWARGS])
@@ -409,19 +409,19 @@ class TestFetchBySymptoms(_TestOrderMixin, _TestPaginationMixin, _TestUniqueness
     TEST_METHOD = 'fetch_all'
     TEST_KWARGS = [
         dict(include_reviews=False,
-             filter_params=schemas.FindTreatmentItemList(
+             filter_params=schemas.FindTreatmentItems(
                  symptom_ids=[3, 4], match_all_symptoms=True)
              ),
         dict(include_reviews=False,
-             filter_params=schemas.FindTreatmentItemList(
+             filter_params=schemas.FindTreatmentItems(
                  symptom_ids=[3, 4], match_all_symptoms=False)
              ),
         dict(include_reviews=True,
-             filter_params=schemas.FindTreatmentItemList(
+             filter_params=schemas.FindTreatmentItems(
                  symptom_ids=[3, 4], match_all_symptoms=True)
              ),
         dict(include_reviews=True,
-             filter_params=schemas.FindTreatmentItemList(
+             filter_params=schemas.FindTreatmentItems(
                  symptom_ids=[3, 4], match_all_symptoms=False)
              ),
     ]
@@ -463,9 +463,9 @@ class TestFetchByDiagnosis(_TestOrderMixin, _TestPaginationMixin, _TestUniquenes
     TEST_METHOD = 'fetch_all'
     TEST_KWARGS = [
         dict(include_reviews=False,
-             filter_params=schemas.FindTreatmentItemList(diagnosis_id=1)),
+             filter_params=schemas.FindTreatmentItems(diagnosis_id=1)),
         dict(include_reviews=True,
-             filter_params=schemas.FindTreatmentItemList(diagnosis_id=1))
+             filter_params=schemas.FindTreatmentItems(diagnosis_id=1))
     ]
 
     @pytest.mark.parametrize('kwargs', [*TEST_KWARGS])
@@ -499,35 +499,35 @@ class TestFetchBySymptomsAndHelpedStatus(_TestOrderMixin, _TestPaginationMixin,
     TEST_METHOD = 'fetch_all'
     TEST_KWARGS = [
         dict(include_reviews=False,
-             filter_params=schemas.FindTreatmentItemList(
+             filter_params=schemas.FindTreatmentItems(
                  symptom_ids=[3, 4], match_all_symptoms=True, is_helped=True)
              ),
         dict(include_reviews=False,
-             filter_params=schemas.FindTreatmentItemList(
+             filter_params=schemas.FindTreatmentItems(
                  symptom_ids=[3, 4], match_all_symptoms=True, is_helped=False)
              ),
         dict(include_reviews=False,
-             filter_params=schemas.FindTreatmentItemList(
+             filter_params=schemas.FindTreatmentItems(
                  symptom_ids=[3, 4], match_all_symptoms=False, is_helped=True)
              ),
         dict(include_reviews=False,
-             filter_params=schemas.FindTreatmentItemList(
+             filter_params=schemas.FindTreatmentItems(
                  symptom_ids=[3, 4], match_all_symptoms=False, is_helped=False)
              ),
         dict(include_reviews=True,
-             filter_params=schemas.FindTreatmentItemList(
+             filter_params=schemas.FindTreatmentItems(
                  symptom_ids=[3, 4], match_all_symptoms=True, is_helped=True)
              ),
         dict(include_reviews=True,
-             filter_params=schemas.FindTreatmentItemList(
+             filter_params=schemas.FindTreatmentItems(
                  symptom_ids=[3, 4], match_all_symptoms=True, is_helped=False)
              ),
         dict(include_reviews=True,
-             filter_params=schemas.FindTreatmentItemList(
+             filter_params=schemas.FindTreatmentItems(
                  symptom_ids=[3, 4], match_all_symptoms=False, is_helped=True)
              ),
         dict(include_reviews=True,
-             filter_params=schemas.FindTreatmentItemList(
+             filter_params=schemas.FindTreatmentItems(
                  symptom_ids=[3, 4], match_all_symptoms=False, is_helped=False)
              ),
     ]
@@ -572,19 +572,19 @@ class TestFetchByDiagnosisAndHelpedStatus(_TestOrderMixin, _TestPaginationMixin,
     TEST_METHOD = 'fetch_all'
     TEST_KWARGS = [
         dict(include_reviews=False,
-             filter_params=schemas.FindTreatmentItemList(
+             filter_params=schemas.FindTreatmentItems(
                  diagnosis_id=1, is_helped=True)
              ),
         dict(include_reviews=False,
-             filter_params=schemas.FindTreatmentItemList(
+             filter_params=schemas.FindTreatmentItems(
                  diagnosis_id=1, is_helped=False)
              ),
         dict(include_reviews=True,
-             filter_params=schemas.FindTreatmentItemList(
+             filter_params=schemas.FindTreatmentItems(
                  diagnosis_id=1, is_helped=True)
              ),
         dict(include_reviews=True,
-             filter_params=schemas.FindTreatmentItemList(
+             filter_params=schemas.FindTreatmentItems(
                  diagnosis_id=1, is_helped=False)
              ),
     ]
@@ -623,19 +623,19 @@ class TestFetchByDiagnosisSymptoms(_TestOrderMixin,
     TEST_METHOD = 'fetch_all'
     TEST_KWARGS = [
         dict(include_reviews=False,
-             filter_params=schemas.FindTreatmentItemList(
+             filter_params=schemas.FindTreatmentItems(
                  diagnosis_id=1, symptom_ids=[3, 4], match_all_symptoms=True)
              ),
         dict(include_reviews=False,
-             filter_params=schemas.FindTreatmentItemList(
+             filter_params=schemas.FindTreatmentItems(
                  diagnosis_id=1, symptom_ids=[3, 4], match_all_symptoms=False)
              ),
         dict(include_reviews=True,
-             filter_params=schemas.FindTreatmentItemList(
+             filter_params=schemas.FindTreatmentItems(
                  diagnosis_id=1, symptom_ids=[3, 4], match_all_symptoms=True)
              ),
         dict(include_reviews=True,
-             filter_params=schemas.FindTreatmentItemList(
+             filter_params=schemas.FindTreatmentItems(
                  diagnosis_id=1, symptom_ids=[3, 4], match_all_symptoms=False)
              ),
     ]
@@ -682,42 +682,42 @@ class TestFetchByHelpedStatusDiagnosisSymptoms(_TestOrderMixin,
     TEST_METHOD = 'fetch_all'
     TEST_KWARGS = [
         dict(include_reviews=False,
-             filter_params=schemas.FindTreatmentItemList(
+             filter_params=schemas.FindTreatmentItems(
                  symptom_ids=[3, 4], match_all_symptoms=True, is_helped=True,
                  diagnosis_id=1)
              ),
         dict(include_reviews=False,
-             filter_params=schemas.FindTreatmentItemList(
+             filter_params=schemas.FindTreatmentItems(
                  symptom_ids=[3, 4], match_all_symptoms=True, is_helped=False,
                  diagnosis_id=1)
              ),
         dict(include_reviews=False,
-             filter_params=schemas.FindTreatmentItemList(
+             filter_params=schemas.FindTreatmentItems(
                  symptom_ids=[3, 4], match_all_symptoms=False, is_helped=True,
                  diagnosis_id=1)
              ),
         dict(include_reviews=False,
-             filter_params=schemas.FindTreatmentItemList(
+             filter_params=schemas.FindTreatmentItems(
                  symptom_ids=[3, 4], match_all_symptoms=False, is_helped=False,
                  diagnosis_id=1)
              ),
         dict(include_reviews=True,
-             filter_params=schemas.FindTreatmentItemList(
+             filter_params=schemas.FindTreatmentItems(
                  symptom_ids=[3, 4], match_all_symptoms=True, is_helped=True,
                  diagnosis_id=1)
              ),
         dict(include_reviews=True,
-             filter_params=schemas.FindTreatmentItemList(
+             filter_params=schemas.FindTreatmentItems(
                  symptom_ids=[3, 4], match_all_symptoms=True, is_helped=False,
                  diagnosis_id=1)
              ),
         dict(include_reviews=True,
-             filter_params=schemas.FindTreatmentItemList(
+             filter_params=schemas.FindTreatmentItems(
                  symptom_ids=[3, 4], match_all_symptoms=False, is_helped=True,
                  diagnosis_id=1)
              ),
         dict(include_reviews=True,
-             filter_params=schemas.FindTreatmentItemList(
+             filter_params=schemas.FindTreatmentItems(
                  symptom_ids=[3, 4], match_all_symptoms=False, is_helped=False,
                  diagnosis_id=1)
              ),
@@ -760,6 +760,37 @@ class TestFetchByHelpedStatusDiagnosisSymptoms(_TestOrderMixin,
         for item in result:
             assert isinstance(item, entities.TreatmentItem)
             assert item.id in expected_item_ids
+
+
+class TestUpdateAvgRating:
+    def test__update_avg_rating(self, repo, session, fill_db):
+        # Setup
+        item_id: int = fill_db['item_ids'][0]
+        item: entities.TreatmentItem = (
+            session.query(entities.TreatmentItem)
+            .filter(entities.TreatmentItem.id == item_id)
+            .scalar()
+        )
+        before_avg_rating: float = item.avg_rating
+
+        new_item_review = entities.ItemReview(
+            item_id=item_id, is_helped=True, item_rating=10, item_count=1
+        )
+        session.add(new_item_review)
+        session.flush()
+
+        # Call
+        repo.update_avg_rating(item)
+
+        # Setup
+        after_avg_rating = (
+            session.query(func.avg(entities.TreatmentItem.avg_rating))
+            .filter(entities.TreatmentItem.id == item_id)
+            .scalar()
+        )
+
+        # Assert
+        assert after_avg_rating != before_avg_rating
 
 
 class TestAdd:

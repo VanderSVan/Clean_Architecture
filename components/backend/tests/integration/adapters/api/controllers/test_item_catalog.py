@@ -168,7 +168,7 @@ class TestOnGet:
             returned_items.append(dtos.TreatmentItem(**returned_item))
 
         catalog_service.find_items.return_value = returned_items
-        filter_params = schemas.FindTreatmentItemList(
+        filter_params = schemas.FindTreatmentItems(
             keywords=keywords,
             is_helped=True,
             diagnosis_id=1,
@@ -183,12 +183,13 @@ class TestOnGet:
             sort_field='avg_rating',
             sort_direction='desc',
             limit=10,
-            offset=0
+            offset=0,
+            exclude_item_fields=['title', 'description']
         )
-
-        # Call
-        response = client.simulate_get(
-            f'/items?keywords={filter_params.keywords}&'
+        exclude_item_fields: str = ','.join(filter_params.exclude_item_fields)
+        url: str = (
+            f'/items?'
+            f'keywords={filter_params.keywords}&'
             f'is_helped={filter_params.is_helped}&'
             f'diagnosis_id={filter_params.diagnosis_id}&'
             f'symptom_ids={filter_params.symptom_ids[0]}&'
@@ -203,13 +204,18 @@ class TestOnGet:
             f'sort_field={filter_params.sort_field}&'
             f'sort_direction={filter_params.sort_direction}&'
             f'limit={filter_params.limit}&'
-            f'offset={filter_params.offset}'
+            f'offset={filter_params.offset}&'
+            f'exclude_item_fields={exclude_item_fields}'
         )
+
+        # Call
+        response = client.simulate_get(url)
 
         # Assert
         assert response.status_code == 200
         assert response.json == [
-            item.dict(decode=True) for item in returned_items if item is not None
+            item.dict(decode=True, exclude_none=True, exclude_unset=True)
+            for item in returned_items if item is not None
         ]
         assert catalog_service.method_calls == [call.find_items(filter_params)]
 
@@ -229,26 +235,20 @@ class TestOnGet:
         # Assert
         assert response.status_code == 200
         assert response.json == [
-            item.dict(decode=True) for item in returned_items if item is not None
+            item.dict(decode=True, exclude_none=True, exclude_unset=True)
+            for item in returned_items if item is not None
         ]
 
 
 class TestOnGetWithReviews:
     def test__on_get_with_reviews(self, catalog_service, client):
         # Setup
-        keywords = 'Продукт'
-        returned_items = []
-        for item in ITEM_LIST:
-            returned_item = item.to_dict()
-
-            if not item.to_dict()["title"].find(keywords):
-                continue
-
-            returned_items.append(dtos.TreatmentItemWithReviews(**returned_item))
+        returned_items = [dtos.TreatmentItemWithReviews(**item.to_dict())
+                          for item in ITEM_LIST]
 
         catalog_service.find_items_with_reviews.return_value = returned_items
-        filter_params = schemas.FindTreatmentItemListWithReviews(
-            keywords=keywords,
+        filter_params = schemas.FindTreatmentItemsWithReviews(
+            keywords='Продукт',
             is_helped=True,
             diagnosis_id=1,
             symptom_ids=[3, 4],
@@ -262,11 +262,16 @@ class TestOnGetWithReviews:
             sort_field='avg_rating',
             sort_direction='desc',
             limit=10,
-            offset=0
+            offset=0,
+            exclude_item_fields=['title', 'description'],
+            reviews_sort_field='item_rating',
+            reviews_sort_direction='desc',
+            reviews_limit=10,
+            reviews_offset=0,
+            exclude_review_fields=['id', 'item_id']
         )
-
-        # Call
-        response = client.simulate_get(
+        exclude_review_fields: str = ','.join(filter_params.exclude_review_fields)
+        url: str = (
             f'/items/reviews?'
             f'keywords={filter_params.keywords}&'
             f'is_helped={filter_params.is_helped}&'
@@ -283,13 +288,24 @@ class TestOnGetWithReviews:
             f'sort_field={filter_params.sort_field}&'
             f'sort_direction={filter_params.sort_direction}&'
             f'limit={filter_params.limit}&'
-            f'offset={filter_params.offset}'
+            f'offset={filter_params.offset}&'
+            f'exclude_item_fields={filter_params.exclude_item_fields[0]}&'
+            f'exclude_item_fields={filter_params.exclude_item_fields[1]}&'
+            f'reviews_sort_field={filter_params.reviews_sort_field}&'
+            f'reviews_sort_direction={filter_params.reviews_sort_direction}&'
+            f'reviews_limit={filter_params.reviews_limit}&'
+            f'reviews_offset={filter_params.reviews_offset}&'
+            f'exclude_review_fields={exclude_review_fields}'
         )
+
+        # Call
+        response = client.simulate_get(url)
 
         # Assert
         assert response.status_code == 200
         assert response.json == [
-            item.dict(decode=True) for item in returned_items if item is not None
+            item.dict(decode=True, exclude_none=True, exclude_unset=True)
+            for item in returned_items if item is not None
         ]
         assert catalog_service.method_calls == [
             call.find_items_with_reviews(filter_params)
@@ -297,13 +313,12 @@ class TestOnGetWithReviews:
 
     def test_on_get_with_reviews_default(self, catalog_service, client):
         # Setup
-        returned_items = []
-        for item in ITEM_LIST:
-            returned_item = item.to_dict()
-            returned_items.append(dtos.TreatmentItemWithReviews(**returned_item))
+        returned_items = [dtos.TreatmentItemWithReviews(**item.to_dict())
+                          for item in ITEM_LIST]
 
         catalog_service.find_items_with_reviews.return_value = returned_items
-        filter_params = schemas.FindTreatmentItemListWithReviews()
+        filter_params = schemas.FindTreatmentItemsWithReviews(exclude_item_fields=[],
+                                                              exclude_review_fields=[])
 
         # Call
         response = client.simulate_get('/items/reviews')
@@ -311,7 +326,8 @@ class TestOnGetWithReviews:
         # Assert
         assert response.status_code == 200
         assert response.json == [
-            item.dict(decode=True) for item in returned_items if item is not None
+            item.dict(decode=True, exclude_none=True, exclude_unset=True)
+            for item in returned_items if item is not None
         ]
         assert catalog_service.method_calls == [
             call.find_items_with_reviews(filter_params)

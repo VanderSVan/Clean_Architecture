@@ -152,7 +152,7 @@ class TestGetItemWithReviews:
         (None, 1, 'item_rating'),
         (10, 1, 'item_rating'),
     ])
-    def test__with_limit_offset_and_sort(
+    def test__with_reviews_limit_offset_and_sort(
         self, service, reviews_limit, reviews_offset, reviews_sort_field, items_repo,
         reviews_repo, categories_repo, types_repo
     ):
@@ -187,7 +187,7 @@ class TestGetItemWithReviews:
             offset=items_filter_params.reviews_offset
         )
         items_repo.fetch_by_id.return_value = items_repo_output
-        reviews_repo.fetch_by_item.return_value = reviews_repo_output
+        reviews_repo.fetch_by_items.return_value = reviews_repo_output
 
         # Call
         result = service.get_item_with_reviews(items_filter_params)
@@ -195,7 +195,7 @@ class TestGetItemWithReviews:
         # Assert
         assert result == service_output
         assert items_repo.method_calls == [call.fetch_by_id(items_repo_output.id, False)]
-        assert reviews_repo.method_calls == [call.fetch_by_item(reviews_filter_params)]
+        assert reviews_repo.method_calls == [call.fetch_by_items(reviews_filter_params)]
         assert categories_repo.method_calls == []
         assert types_repo.method_calls == []
 
@@ -220,7 +220,7 @@ class TestFindItems:
     def test__find_items(self, service, items_repo, reviews_repo, categories_repo,
                          types_repo):
         # Setup
-        filter_params = schemas.FindTreatmentItemList()
+        filter_params = schemas.FindTreatmentItems()
         repo_output = [
             entities.TreatmentItem(id=1, title="Продукт 1", category_id=2, type_id=3),
             entities.TreatmentItem(id=2, title="Продукт 2", category_id=1, type_id=2),
@@ -248,7 +248,7 @@ class TestFindItems:
         reviews_repo, categories_repo, types_repo
     ):
         # Setup
-        filter_params = schemas.FindTreatmentItemList(
+        filter_params = schemas.FindTreatmentItems(
             reviews_limit=reviews_limit, reviews_offset=reviews_offset,
             reviews_sort_field=reviews_sort_field
         )
@@ -327,10 +327,10 @@ class TestFindItemsWithReviews:
         items_repo, reviews_repo, categories_repo, types_repo
     ):
         # Setup
-        filter_params = schemas.FindTreatmentItemListWithReviews(reviews_limit=None,
-                                                                 reviews_offset=None)
+        filter_params = schemas.FindTreatmentItemsWithReviews(reviews_limit=None,
+                                                              reviews_offset=None)
         items_repo.fetch_all.return_value = items_repo_output
-        reviews_repo.fetch_by_item.side_effect = reviews_repo_output
+        reviews_repo.fetch_by_items.side_effect = reviews_repo_output
 
         # Call
         result = service.find_items_with_reviews(filter_params=filter_params)
@@ -344,12 +344,12 @@ class TestFindItemsWithReviews:
 
     @pytest.mark.parametrize("reviews_limit, reviews_offset, reviews_sort_field",
                              FILTER_PARAMS_COMBINATIONS)
-    def test__with_limit_offset_and_sort(
+    def test__with_reviews_limit_offset_and_sort(
         self, reviews_limit, reviews_offset, reviews_sort_field, service, items_repo,
         reviews_repo, categories_repo, types_repo
     ):
         # Setup
-        filter_params = schemas.FindTreatmentItemListWithReviews(
+        filter_params = schemas.FindTreatmentItemsWithReviews(
             reviews_limit=reviews_limit, reviews_offset=reviews_offset,
             reviews_sort_field=reviews_sort_field
         )
@@ -408,7 +408,7 @@ class TestFindItemsWithReviews:
 
         ]
         items_repo.fetch_all.return_value = items_repo_output
-        reviews_repo.fetch_by_item.side_effect = reviews_repo_output
+        reviews_repo.fetch_by_items.side_effect = reviews_repo_output
 
         # Call
         result = service.find_items_with_reviews(filter_params=filter_params)
@@ -417,8 +417,8 @@ class TestFindItemsWithReviews:
         assert result == service_output
         assert items_repo.method_calls == [call.fetch_all(filter_params, False)]
         assert reviews_repo.method_calls == [
-            call.fetch_by_item(first_review_filter_params),
-            call.fetch_by_item(second_review_filter_params)
+            call.fetch_by_items(first_review_filter_params),
+            call.fetch_by_items(second_review_filter_params)
         ]
         assert categories_repo.method_calls == []
         assert types_repo.method_calls == []

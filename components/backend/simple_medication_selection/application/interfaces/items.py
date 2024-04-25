@@ -15,9 +15,20 @@ class TreatmentItemsRepo(ABC):
 
     @abstractmethod
     def fetch_all(self,
-                  filter_params: schemas.FindTreatmentItemList,
+                  filter_params: schemas.FindTreatmentItems,
                   include_reviews: bool
                   ) -> Sequence[dtos.TreatmentItem | entities.TreatmentItem | None]:
+        ...
+
+    @abstractmethod
+    def fetch_all_with_selected_columns(
+        self,
+        filter_params: schemas.FindTreatmentItems,
+    ) -> list[dtos.TreatmentItem | None]:
+        ...
+
+    @abstractmethod
+    def update_avg_rating(self, item: entities.TreatmentItem) -> entities.TreatmentItem:
         ...
 
     @abstractmethod

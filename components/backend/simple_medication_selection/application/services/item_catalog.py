@@ -43,7 +43,8 @@ class TreatmentItemCatalog:
         include_all_reviews: bool = not (
             filter_params.reviews_limit or
             filter_params.reviews_offset or
-            filter_params.reviews_sort_field
+            filter_params.reviews_sort_field or
+            filter_params.exclude_review_fields
         )
         item: entities.TreatmentItem | None = (
             self.items_repo.fetch_by_id(filter_params.item_id, include_all_reviews)
@@ -60,66 +61,65 @@ class TreatmentItemCatalog:
             sort_field=filter_params.reviews_sort_field,
             sort_direction=filter_params.reviews_sort_direction,
             limit=filter_params.reviews_limit,
-            offset=filter_params.reviews_offset
+            offset=filter_params.reviews_offset,
+            exclude_review_fields=filter_params.exclude_review_fields
         )
         reviews: Sequence[entities.ItemReview] = (
-            self.reviews_repo.fetch_by_item(review_filter_params)
+            self.reviews_repo.fetch_by_items(review_filter_params)
         )
         return dtos.TreatmentItemWithReviews(**item_info.dict(), reviews=reviews)
 
     @register_method
     @validate_arguments
     def find_items(self,
-                   filter_params: schemas.FindTreatmentItemList
+                   filter_params: schemas.FindTreatmentItems
                    ) -> list[dtos.TreatmentItem | None]:
 
-        result: Sequence[entities.TreatmentItem | None] = (
+        if filter_params.exclude_item_fields:
+            return self.items_repo.fetch_all_with_selected_columns(filter_params)
+
+        items: Sequence[entities.TreatmentItem | None] = (
             self.items_repo.fetch_all(filter_params, False)
         )
-        return [dtos.TreatmentItem.from_orm(row) for row in result]
+        return [dtos.TreatmentItem.from_orm(item) for item in items]
 
     @register_method
     @validate_arguments
     def find_items_with_reviews(self,
-                                filter_params: schemas.FindTreatmentItemListWithReviews
+                                filter_params: schemas.FindTreatmentItemsWithReviews
                                 ) -> list[dtos.TreatmentItemWithReviews | None]:
-
-        include_all_reviews: bool = not (
-            filter_params.reviews_limit or
-            filter_params.reviews_offset or
-            filter_params.reviews_sort_field
+        items_with_selected_fields: bool = (
+            True if filter_params.exclude_item_fields else False
+        )
+        reviews_filter_params: bool = (
+            True if any(
+                [filter_params.reviews_sort_field,
+                 filter_params.reviews_sort_direction,
+                 filter_params.reviews_limit,
+                 filter_params.reviews_offset,
+                 filter_params.exclude_review_fields]
+            ) else False
         )
 
-        result: Sequence[entities.TreatmentItem | None] = (
-            self.items_repo.fetch_all(filter_params, include_all_reviews)
+        if not items_with_selected_fields and not reviews_filter_params:
+            return self._get_items_with_reviews(filter_params)
+
+        if not items_with_selected_fields:
+            items_without_reviews: list[dtos.TreatmentItem | None] = (
+                self._get_only_items(filter_params)
+            )
+            return self._add_reviews_to_items(items_without_reviews, filter_params)
+
+        items_without_reviews: list[dtos.TreatmentItem | None] = (
+            self._get_only_items_with_selected_fields(filter_params)
         )
-
-        if include_all_reviews:
-            return [dtos.TreatmentItemWithReviews.from_orm(item) for item in result]
-
-        items_with_limited_reviews: list[dtos.TreatmentItemWithReviews] = []
-        for item in result:
-            item_info = dtos.TreatmentItem.from_orm(item)
-            review_filter_params = schemas.FindItemReviews(
-                item_ids=[item_info.id],
-                sort_field=filter_params.reviews_sort_field,
-                sort_direction=filter_params.reviews_sort_direction,
-                limit=filter_params.reviews_limit,
-                offset=filter_params.reviews_offset
-            )
-            reviews: Sequence[entities.ItemReview] = (
-                self.reviews_repo.fetch_by_item(review_filter_params)
-            )
-            items_with_limited_reviews.append(
-                dtos.TreatmentItemWithReviews(**item_info.dict(), reviews=reviews)
-            )
-
-        return items_with_limited_reviews
+        return self._add_reviews_to_items(items_without_reviews, filter_params)
 
     @register_method
     @validate_arguments
     def add_item(self,
-                 new_item_info: dtos.NewTreatmentItemInfo) -> entities.TreatmentItem:
+                 new_item_info: dtos.NewTreatmentItemInfo
+                 ) -> entities.TreatmentItem:
 
         category: entities.ItemCategory = self.categories_repo.fetch_by_id(
             new_item_info.category_id)
@@ -169,3 +169,54 @@ class TreatmentItemCatalog:
             raise errors.TreatmentItemNotFound(id=item_id)
 
         return self.items_repo.remove(item)
+
+    def _get_items_with_reviews(self,
+                                filter_params: schemas.FindTreatmentItemsWithReviews
+                                ) -> list[dtos.TreatmentItemWithReviews | None]:
+        items: Sequence[entities.TreatmentItem | None] = (
+            self.items_repo.fetch_all(filter_params, True)
+        )
+        return [dtos.TreatmentItemWithReviews.from_orm(item) for item in items]
+
+    def _get_only_items(self,
+                        filter_params: schemas.FindTreatmentItemsWithReviews
+                        ) -> list[dtos.TreatmentItem | None]:
+        items: Sequence[entities.TreatmentItem | None] = (
+            self.items_repo.fetch_all(filter_params, False)
+        )
+        return [dtos.TreatmentItem.from_orm(item) for item in items]
+
+    def _get_only_items_with_selected_fields(
+        self,
+        filter_params: schemas.FindTreatmentItemsWithReviews
+    ) -> list[dtos.TreatmentItem | None]:
+
+        return self.items_repo.fetch_all_with_selected_columns(filter_params)
+
+    def _add_reviews_to_items(self,
+                              items: list[dtos.TreatmentItem],
+                              filter_params: schemas.FindTreatmentItemsWithReviews
+                              ) -> list[dtos.TreatmentItemWithReviews | None]:
+
+        items_with_reviews: list[dtos.TreatmentItemWithReviews] = []
+        for item in items:
+            review_filter_params: schemas.FindItemReviews = (
+                schemas.FindItemReviews(
+                    item_ids=[item.id],
+                    sort_field=filter_params.reviews_sort_field,
+                    sort_direction=filter_params.reviews_sort_direction,
+                    limit=filter_params.reviews_limit,
+                    offset=filter_params.reviews_offset,
+                    exclude_review_fields=filter_params.exclude_review_fields
+                )
+            )
+            reviews: Sequence[entities.ItemReview | dtos.ItemReview | None] = (
+                self.reviews_repo.fetch_by_items(review_filter_params)
+            )
+            if reviews and isinstance(reviews[0], entities.ItemReview):
+                reviews = [dtos.ItemReview.from_orm(review) for review in reviews]
+
+            items_with_reviews.append(
+                dtos.TreatmentItemWithReviews(**item.dict(), reviews=reviews)
+            )
+        return items_with_reviews

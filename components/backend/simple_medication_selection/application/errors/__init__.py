@@ -19,7 +19,9 @@ from .item_types import (
 )
 from .item import (
     TreatmentItemNotFound,
-    TreatmentItemAlreadyExists
+    TreatmentItemAlreadyExists,
+    TreatmentItemExcludeAllFields,
+    TreatmentItemExcludeSortField
 )
 from .item_review import (
     ItemReviewNotFound,

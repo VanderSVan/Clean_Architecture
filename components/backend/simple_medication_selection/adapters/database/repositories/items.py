@@ -1,9 +1,9 @@
 from typing import Sequence, Callable
 
-from sqlalchemy import select, desc, func, between, asc, Select
-from sqlalchemy.orm import joinedload
+from sqlalchemy import select, desc, func, between, asc, Select, RowMapping
+from sqlalchemy.orm import joinedload, InstrumentedAttribute
 
-from simple_medication_selection.application import interfaces, entities, schemas
+from simple_medication_selection.application import interfaces, entities, schemas, dtos
 from .base import BaseRepository
 
 
@@ -29,7 +29,7 @@ class TreatmentItemsRepo(BaseRepository, interfaces.TreatmentItemsRepo):
         return self.session.execute(query).scalars().one_or_none()
 
     def fetch_all(self,
-                  filter_params: schemas.FindTreatmentItemList,
+                  filter_params: schemas.FindTreatmentItems,
                   include_reviews: bool
                   ) -> Sequence[entities.TreatmentItem | None]:
 
@@ -40,6 +40,40 @@ class TreatmentItemsRepo(BaseRepository, interfaces.TreatmentItemsRepo):
             query = query.options(joinedload(entities.TreatmentItem.reviews))
 
         return self.session.execute(query).scalars().unique().all()
+
+    def fetch_all_with_selected_columns(
+        self,
+        filter_params: schemas.FindTreatmentItems,
+    ) -> list[dtos.TreatmentItem | None]:
+
+        query: Select = select(entities.TreatmentItem)
+        query: Select = self.items_filter.apply_filters(query, filter_params)
+
+        included_column_names: list[str] = entities.TreatmentItem.get_field_names(
+            exclude_fields=filter_params.exclude_item_fields, exclude_nested_fields=True
+        )
+        included_columns: list[InstrumentedAttribute] = [
+            getattr(entities.TreatmentItem, column) for column in included_column_names
+        ]
+        query: Select = query.with_only_columns(*included_columns,
+                                                maintain_column_froms=True)
+
+        result: Sequence[RowMapping | None] = self.session.execute(query).mappings().all()
+        return [dtos.TreatmentItem(**row) for row in result]
+
+    def update_avg_rating(self, item: entities.TreatmentItem) -> entities.TreatmentItem:
+        self.session.refresh(item)
+
+        avg_rating_query: Select = (
+            select(func.avg(entities.ItemReview.item_rating).label('avg_rating'))
+            .where(entities.ItemReview.item_id == item.id)
+            .group_by(entities.ItemReview.item_id)
+        )
+
+        new_avg_rating: float = self.session.execute(avg_rating_query).scalar()
+        item.avg_rating = new_avg_rating
+
+        return item
 
     def add(self, item: entities.TreatmentItem) -> entities.TreatmentItem:
         self.session.add(item)
@@ -69,19 +103,19 @@ class _TreatmentItemsFilter:
             self.with_limit
         ]
 
-    def apply_filters(self, query: Select, filter_params: schemas.FindTreatmentItemList):
+    def apply_filters(self, query: Select, filter_params: schemas.FindTreatmentItems):
         for filter_method in self.filters:
             query = filter_method(query, filter_params)
         return query
 
     @staticmethod
     def only_unique(query: Select,
-                    filter_params: schemas.FindTreatmentItemList) -> Select:
+                    filter_params: schemas.FindTreatmentItems) -> Select:
         return query.distinct()
 
     @staticmethod
     def by_keywords(query: Select,
-                    filter_params: schemas.FindTreatmentItemList) -> Select:
+                    filter_params: schemas.FindTreatmentItems) -> Select:
         if filter_params.keywords:
             query = query.where(
                 entities.TreatmentItem.title.ilike(f'%{filter_params.keywords}%') |
@@ -91,7 +125,7 @@ class _TreatmentItemsFilter:
 
     @staticmethod
     def by_category(query: Select,
-                    filter_params: schemas.FindTreatmentItemList) -> Select:
+                    filter_params: schemas.FindTreatmentItems) -> Select:
         if filter_params.category_id is not None:
             query = query.where(
                 entities.TreatmentItem.category_id == filter_params.category_id
@@ -100,14 +134,14 @@ class _TreatmentItemsFilter:
         return query
 
     @staticmethod
-    def by_type(query: Select, filter_params: schemas.FindTreatmentItemList) -> Select:
+    def by_type(query: Select, filter_params: schemas.FindTreatmentItems) -> Select:
         if filter_params.type_id is not None:
             query = query.where(entities.TreatmentItem.type_id == filter_params.type_id)
 
         return query
 
     @staticmethod
-    def by_rating(query: Select, filter_params: schemas.FindTreatmentItemList) -> Select:
+    def by_rating(query: Select, filter_params: schemas.FindTreatmentItems) -> Select:
         if filter_params.max_rating is not None and filter_params.min_rating is not None:
             return query.where(
                 between(entities.TreatmentItem.avg_rating,
@@ -127,7 +161,7 @@ class _TreatmentItemsFilter:
         return query
 
     @staticmethod
-    def by_price(query: Select, filter_params: schemas.FindTreatmentItemList) -> Select:
+    def by_price(query: Select, filter_params: schemas.FindTreatmentItems) -> Select:
         if filter_params.max_price is not None and filter_params.min_price is not None:
             return query.where(
                 between(entities.TreatmentItem.price,
@@ -144,7 +178,7 @@ class _TreatmentItemsFilter:
 
     @staticmethod
     def by_helped_status(query: Select,
-                         filter_params: schemas.FindTreatmentItemList) -> Select:
+                         filter_params: schemas.FindTreatmentItems) -> Select:
         if filter_params.is_helped is not None:
             query = (
                 query
@@ -155,7 +189,7 @@ class _TreatmentItemsFilter:
 
     @staticmethod
     def by_symptoms(query: Select,
-                    filter_params: schemas.FindTreatmentItemList) -> Select:
+                    filter_params: schemas.FindTreatmentItems) -> Select:
         if not filter_params.symptom_ids:
             return query
 
@@ -179,7 +213,7 @@ class _TreatmentItemsFilter:
 
     @staticmethod
     def by_diagnosis(query: Select,
-                     filter_params: schemas.FindTreatmentItemList) -> Select:
+                     filter_params: schemas.FindTreatmentItems) -> Select:
         if not filter_params.diagnosis_id:
             return query
 
@@ -194,7 +228,7 @@ class _TreatmentItemsFilter:
 
     @staticmethod
     def sort_by_field(query: Select,
-                      filter_params: schemas.FindTreatmentItemList) -> Select:
+                      filter_params: schemas.FindTreatmentItems) -> Select:
         sort_field = getattr(entities.TreatmentItem, filter_params.sort_field)
 
         if filter_params.sort_direction == 'desc':
@@ -203,14 +237,14 @@ class _TreatmentItemsFilter:
         return query.order_by(asc(sort_field).nullslast())
 
     @staticmethod
-    def with_limit(query: Select, filter_params: schemas.FindTreatmentItemList) -> Select:
+    def with_limit(query: Select, filter_params: schemas.FindTreatmentItems) -> Select:
         if filter_params.limit:
             return query.limit(filter_params.limit)
         return query
 
     @staticmethod
     def with_offset(query: Select,
-                    filter_params: schemas.FindTreatmentItemList) -> Select:
+                    filter_params: schemas.FindTreatmentItems) -> Select:
         if filter_params.offset:
             return query.offset(filter_params.offset)
         return query
