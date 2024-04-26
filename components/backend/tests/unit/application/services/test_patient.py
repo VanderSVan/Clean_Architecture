@@ -1,8 +1,9 @@
 from unittest.mock import Mock, call
 
 import pytest
-from simple_medication_selection.application import (dtos, entities, errors, interfaces,
-                                                     services)
+from simple_medication_selection.application import (
+    dtos, entities, errors, interfaces, services, schemas
+)
 
 
 # ---------------------------------------------------------------------------------------
@@ -47,6 +48,92 @@ class TestGet:
             service.get(patient_id=1)
 
         assert repo.method_calls == [call.fetch_by_id(1)]
+
+
+class TestFind:
+    @pytest.mark.parametrize(
+        "nickname, gender, age_from, age_to, skin_type, repo_method",
+        [
+            ('some_nickname', 'female', 18, 40, 'сухая',
+             'fetch_by_nickname_gender_age_and_skin_type'),
+            ('some_nickname', 'female', None, 40, 'сухая',
+             'fetch_by_nickname_gender_age_and_skin_type'),
+            ('some_nickname', 'female', 18, None, 'сухая',
+             'fetch_by_nickname_gender_age_and_skin_type'),
+
+            (None, 'female', 18, 40, 'сухая', 'fetch_by_gender_age_and_skin_type'),
+            (None, 'female', None, 40, 'сухая', 'fetch_by_gender_age_and_skin_type'),
+            (None, 'female', 18, None, 'сухая', 'fetch_by_gender_age_and_skin_type'),
+
+            ('some_nickname', None, 18, 40, 'сухая',
+             'fetch_by_nickname_age_and_skin_type'),
+            ('some_nickname', None, None, 40, 'сухая',
+             'fetch_by_nickname_age_and_skin_type'),
+            ('some_nickname', None, 18, None, 'сухая',
+             'fetch_by_nickname_age_and_skin_type'),
+
+            ('some_nickname', 'female', None, None, 'сухая',
+             'fetch_by_nickname_gender_and_skin_type'),
+
+            ('some_nickname', 'female', 18, 40, None,
+             'fetch_by_nickname_gender_and_age'),
+            ('some_nickname', 'female', None, 40, None,
+             'fetch_by_nickname_gender_and_age'),
+            ('some_nickname', 'female', 18, None, None,
+             'fetch_by_nickname_gender_and_age'),
+
+            (None, None, 18, 40, 'сухая', 'fetch_by_age_and_skin_type'),
+            (None, None, None, 40, 'сухая', 'fetch_by_age_and_skin_type'),
+            (None, None, 18, None, 'сухая', 'fetch_by_age_and_skin_type'),
+
+            (None, 'female', None, None, 'сухая', 'fetch_by_gender_and_skin_type'),
+
+            (None, 'female', 18, 40, None, 'fetch_by_gender_and_age'),
+            (None, 'female', None, 40, None, 'fetch_by_gender_and_age'),
+            (None, 'female', 18, None, None, 'fetch_by_gender_and_age'),
+
+            ('some_nickname', None, None, None, 'сухая',
+             'fetch_by_nickname_and_skin_type'),
+
+            ('some_nickname', None, 18, 40, None, 'fetch_by_nickname_and_age'),
+            ('some_nickname', None, None, 40, None, 'fetch_by_nickname_and_age'),
+            ('some_nickname', None, 18, None, None, 'fetch_by_nickname_and_age'),
+
+            ('some_nickname', 'female', None, None, None, 'fetch_by_nickname_and_gender'),
+
+            (None, None, None, None, 'сухая', 'fetch_by_skin_type'),
+
+            (None, None, 18, 40, None, 'fetch_by_age'),
+            (None, None, None, 40, None, 'fetch_by_age'),
+            (None, None, 18, None, None, 'fetch_by_age'),
+
+            (None, 'female', None, None, None, 'fetch_by_gender'),
+
+            ('some_nickname', None, None, None, None, 'fetch_by_nickname'),
+
+            (None, None, None, None, None, 'fetch_all'),
+        ]
+    )
+    def test__find_patients(self, nickname, gender, age_from, age_to, skin_type,
+                            repo_method, service, repo):
+        # Setup
+        filter_params = schemas.FindPatients(
+            nickname=nickname, gender=gender, age_from=age_from, age_to=age_to,
+            skin_type=skin_type
+        )
+        repo_output = [
+            entities.Patient(id=1, nickname="some_nickname", gender="female", age=25,
+                             skin_type="сухая", about="About me", phone='1234567890')
+        ]
+        getattr(repo, repo_method).return_value = repo_output
+
+        # Call
+        result = service.find(filter_params=filter_params)
+        print(repo_method)
+
+        # Assert
+        getattr(repo, repo_method).assert_called_once_with(filter_params)
+        assert result == repo_output
 
 
 class TestCreate:

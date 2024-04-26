@@ -18,29 +18,29 @@ class SkinTypeEnum(str, Enum):
 
 
 class PatientCreateSchema(DTO):
-    nickname: str = Field(..., min_length=1, max_length=255)
-    gender: GenderEnum = Field(...)
-    age: int = Field(..., ge=10, le=120)
-    skin_type: SkinTypeEnum = Field(...)
-    about: str = Field(None, min_length=1, max_length=3000)
-    phone: str = Field(None, min_length=9, max_length=15, pattern=r'^([\d]+)$')
+    nickname: str = Field(min_length=1, max_length=255)
+    gender: GenderEnum
+    age: int = Field(ge=10, le=120)
+    skin_type: SkinTypeEnum
+    about: str | None = Field(min_length=1, max_length=3000)
+    phone: str | None = Field(min_length=9, max_length=15, pattern=r'^([\d]+)$')
 
 
 class Patient(DTO):
-    id: int = Field(..., ge=1)
-    nickname: str = Field(..., min_length=1, max_length=255)
-    gender: GenderEnum = Field(...)
-    age: int = Field(..., ge=10, le=120)
-    skin_type: SkinTypeEnum = Field(...)
-    about: str = Field(None, min_length=1, max_length=3000)
-    phone: str = Field(None, min_length=9, max_length=15, pattern=r'^([\d]+)$')
+    id: int = Field(ge=1)
+    nickname: str = Field(min_length=1, max_length=255)
+    gender: GenderEnum
+    age: int = Field(ge=10, le=120)
+    skin_type: SkinTypeEnum
+    about: str | None = Field(min_length=1, max_length=3000)
+    phone: str | None = Field(min_length=9, max_length=15, pattern=r'^([\d]+)$')
 
 
 class PatientUpdateSchema(DTO):
-    id: int = Field(..., ge=1)
-    nickname: str = Field(None, min_length=1, max_length=255)
-    gender: GenderEnum = Field(None)
-    age: int = Field(..., ge=10, le=120)
-    skin_type: SkinTypeEnum = Field(None)
-    about: str = Field(None, min_length=1, max_length=3000)
-    phone: str = Field(None, min_length=9, max_length=15, pattern=r'^([\d]+)$')
+    id: int = Field(ge=1)
+    nickname: str | None = Field(min_length=1, max_length=255)
+    gender: GenderEnum | None
+    age: int | None = Field(ge=10, le=120)
+    skin_type: SkinTypeEnum | None
+    about: str | None = Field(min_length=1, max_length=3000)
+    phone: str | None = Field(min_length=9, max_length=15, pattern=r'^([\d]+)$')
