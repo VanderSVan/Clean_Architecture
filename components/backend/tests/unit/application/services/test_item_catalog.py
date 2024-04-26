@@ -184,7 +184,8 @@ class TestGetItemWithReviews:
             sort_field=items_filter_params.reviews_sort_field,
             sort_direction=items_filter_params.reviews_sort_direction,
             limit=items_filter_params.reviews_limit,
-            offset=items_filter_params.reviews_offset
+            offset=items_filter_params.reviews_offset,
+            exclude_review_fields=[]
         )
         items_repo.fetch_by_id.return_value = items_repo_output
         reviews_repo.fetch_by_items.return_value = reviews_repo_output
@@ -328,7 +329,8 @@ class TestFindItemsWithReviews:
     ):
         # Setup
         filter_params = schemas.FindTreatmentItemsWithReviews(reviews_limit=None,
-                                                              reviews_offset=None)
+                                                              reviews_offset=None,
+                                                              exclude_review_fields=[])
         items_repo.fetch_all.return_value = items_repo_output
         reviews_repo.fetch_by_items.side_effect = reviews_repo_output
 
@@ -351,7 +353,7 @@ class TestFindItemsWithReviews:
         # Setup
         filter_params = schemas.FindTreatmentItemsWithReviews(
             reviews_limit=reviews_limit, reviews_offset=reviews_offset,
-            reviews_sort_field=reviews_sort_field
+            reviews_sort_field=reviews_sort_field, exclude_review_fields=[]
         )
         items_repo_output = [
             entities.TreatmentItem(
@@ -374,14 +376,16 @@ class TestFindItemsWithReviews:
             sort_field=filter_params.reviews_sort_field,
             sort_direction=filter_params.reviews_sort_direction,
             limit=filter_params.reviews_limit,
-            offset=filter_params.reviews_offset
+            offset=filter_params.reviews_offset,
+            exclude_review_fields=[]
         )
         second_review_filter_params = schemas.FindItemReviews(
             item_ids=[items_repo_output[1].id],
             sort_field=filter_params.reviews_sort_field,
             sort_direction=filter_params.reviews_sort_direction,
             limit=filter_params.reviews_limit,
-            offset=filter_params.reviews_offset
+            offset=filter_params.reviews_offset,
+            exclude_review_fields=[]
         )
         reviews_repo_output = [
             [entities.ItemReview(id=1, item_id=1, is_helped=True, item_rating=8.0,

@@ -1,5 +1,5 @@
 from collections import namedtuple
-from typing import Callable
+from typing import Callable, Sequence
 
 from pydantic import validate_arguments
 
@@ -24,12 +24,12 @@ class ItemReview:
     @register_method
     @validate_arguments
     def get_review(self, review_id: int) -> dtos.ItemReview:
-        review: dtos.ItemReview = self.reviews_repo.fetch_by_id(review_id)
+        review: entities.ItemReview | None = self.reviews_repo.fetch_by_id(review_id)
 
         if not review:
             raise errors.ItemReviewNotFound(id=review_id)
 
-        return review
+        return dtos.ItemReview.from_orm(review)
 
     @register_method
     @validate_arguments
@@ -39,7 +39,13 @@ class ItemReview:
 
         repo_method: Callable = self.search_strategy_selector.get_method(filter_params)
 
-        return repo_method(filter_params)
+        reviews: Sequence[entities.ItemReview | dtos.ItemReview | None] = (
+            repo_method(filter_params)
+        )
+        if reviews and isinstance(reviews[0], entities.ItemReview):
+            return [dtos.ItemReview.from_orm(review) for review in reviews]
+
+        return reviews
 
     @register_method
     @validate_arguments

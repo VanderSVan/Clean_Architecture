@@ -13,6 +13,11 @@ def symptom_service() -> Mock:
 
 
 @pytest.fixture(scope='function')
+def item_review_service() -> Mock:
+    return Mock(services.ItemReview)
+
+
+@pytest.fixture(scope='function')
 def catalog_service() -> Mock:
     return Mock(services.TreatmentItemCatalog)
 
@@ -23,8 +28,9 @@ def medical_book_service() -> Mock:
 
 
 @pytest.fixture(scope='function')
-def client(symptom_service, catalog_service, medical_book_service):
+def client(symptom_service, item_review_service, catalog_service, medical_book_service):
     app = create_app(symptom=symptom_service,
+                     item_review=item_review_service,
                      catalog=catalog_service,
                      medical_book=medical_book_service)
     return testing.TestClient(app)

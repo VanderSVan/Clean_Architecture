@@ -31,7 +31,7 @@ def service(reviews_repo, items_repo) -> services.ItemReview:
 # ---------------------------------------------------------------------------------------
 class TestGetReview:
     @pytest.mark.parametrize("returned_entity", [
-        entities.ItemReview(
+        dtos.ItemReview(
             id=1, item_id=1, is_helped=True, item_rating=8, item_count=2,
             usage_period=7776000
         )
@@ -132,7 +132,7 @@ class TestFindReviews:
             min_rating=min_rating, max_rating=max_rating
         )
         repo_output = [
-            entities.ItemReview(
+            dtos.ItemReview(
                 id=1, item_id=1, is_helped=True, item_rating=8, item_count=2,
                 usage_period=7776000
             )

@@ -105,8 +105,8 @@ class FindTreatmentItemsWithReviews(FindTreatmentItems):
 
         elif isinstance(value, list):
             unique_values = set(value)
-            if len(unique_values) == len(dtos.TreatmentItem.__fields__):
-                raise errors.TreatmentItemExcludeAllFields(
+            if len(unique_values) == len(dtos.ItemReview.__fields__):
+                raise errors.ItemReviewExcludeAllFields(
                     excluded_columns=list(unique_values)
                 )
             return set(value)

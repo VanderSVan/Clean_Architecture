@@ -1,6 +1,8 @@
 from typing import Literal
 
-from pydantic import BaseModel as BaseSchema, Field
+from pydantic import BaseModel as BaseSchema, Field, validator
+
+from simple_medication_selection.application import dtos, errors
 
 
 class FindItemReviews(BaseSchema):
@@ -16,6 +18,33 @@ class FindItemReviews(BaseSchema):
     limit: int | None = Field(10, ge=1)
     offset: int | None = Field(0, ge=0)
     exclude_review_fields: list[Literal[
-        'id', 'item_id', 'is_helped', 'item_rating', 'item_count', 'usage_period'
+        'item_id', 'is_helped', 'item_rating', 'item_count', 'usage_period'
     ]] | None = None
 
+    @validator('item_ids', pre=True)
+    def fix_item_ids(cls, value):
+        if value is not None and not isinstance(value, list):
+            return list(value)
+
+        if isinstance(value, list):
+            return set(value)
+
+        return value
+
+    @validator('exclude_review_fields', pre=True)
+    def fix_exclude_review_fields(cls, value):
+        if value is None:
+            return set()
+
+        elif isinstance(value, str):
+            return [item.strip() for item in value.split(',')]
+
+        elif isinstance(value, list):
+            unique_values = set(value)
+            if len(unique_values) == len(dtos.ItemReview.__fields__):
+                raise errors.ItemReviewExcludeAllFields(
+                    excluded_columns=list(unique_values)
+                )
+            return set(value)
+
+        return value

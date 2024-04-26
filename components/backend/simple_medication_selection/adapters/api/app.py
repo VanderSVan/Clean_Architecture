@@ -13,6 +13,7 @@ from . import controllers
 
 def create_app(symptom: services.Symptom,
                catalog: services.TreatmentItemCatalog,
+               item_review: services.ItemReview,
                medical_book: services.MedicalBook
                ) -> falcon.App:
     app = falcon.App()
@@ -28,7 +29,15 @@ def create_app(symptom: services.Symptom,
     app.add_route('/symptoms/{symptom_id}', controllers.Symptoms(symptom=symptom),
                   suffix='by_id')
 
-    # Catalog
+    # Item Reviews
+    app.add_route('/item_reviews', controllers.ItemReviews(item_review=item_review))
+    app.add_route('/item_reviews/{review_id}',
+                  controllers.ItemReviews(item_review=item_review),
+                  suffix='by_id')
+    app.add_route('/item_reviews/new', controllers.ItemReviews(item_review=item_review),
+                  suffix='new')
+
+    # Item Catalog
     app.add_route('/items', controllers.Catalog(catalog=catalog))
     app.add_route('/items/new', controllers.Catalog(catalog=catalog),
                   suffix='new')

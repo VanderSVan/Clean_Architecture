@@ -15,15 +15,6 @@ class ItemReview(DTO):
         orm_mode = True
 
 
-class ItemReviewOptionalFields(ItemReview):
-    id: int | None = Field(ge=1)
-    item_id: int | None = Field(ge=1)
-    is_helped: bool | None
-    item_rating: float | None = Field(ge=1, le=10, multiple_of=0.5)
-    item_count: int | None = Field(ge=1)
-    usage_period: int | None = Field(ge=1)
-
-
 class NewItemReviewInfo(DTO):
     item_id: int = Field(ge=1)
     is_helped: bool

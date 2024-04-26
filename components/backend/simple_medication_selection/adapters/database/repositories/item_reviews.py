@@ -335,12 +335,19 @@ class _ItemReviewQueryCollection:
 
     @staticmethod
     def fetch_by_rating(filter_params: schemas.FindItemReviews) -> Select:
-        return (
-            select(entities.ItemReview)
-            .distinct()
-            .where(between(entities.ItemReview.item_rating,
-                           filter_params.min_rating, filter_params.max_rating))
-        )
+        query: Select = select(entities.ItemReview).distinct()
+
+        if filter_params.max_rating is not None and filter_params.min_rating is not None:
+            return query.where(
+                between(entities.ItemReview.item_rating,
+                        filter_params.min_rating, filter_params.max_rating)
+            )
+        if filter_params.min_rating is not None:
+            return query.where(
+                entities.ItemReview.item_rating >= filter_params.min_rating
+            )
+
+        return query.where(entities.ItemReview.item_rating <= filter_params.max_rating)
 
     @staticmethod
     def fetch_by_helped_status(filter_params: schemas.FindItemReviews) -> Select:
@@ -372,13 +379,22 @@ class _ItemReviewQueryCollection:
 
     @staticmethod
     def fetch_by_items_and_rating(filter_params: schemas.FindItemReviews) -> Select:
-        return (
+        query: Select = (
             select(entities.ItemReview)
             .distinct()
-            .where(entities.ItemReview.item_id.in_(filter_params.item_ids),
-                   between(entities.ItemReview.item_rating,
-                           filter_params.min_rating, filter_params.max_rating))
+            .where(entities.ItemReview.item_id.in_(filter_params.item_ids))
         )
+        if filter_params.max_rating is not None and filter_params.min_rating is not None:
+            return query.where(
+                between(entities.ItemReview.item_rating,
+                        filter_params.min_rating, filter_params.max_rating)
+            )
+        if filter_params.min_rating is not None:
+            return query.where(
+                entities.ItemReview.item_rating >= filter_params.min_rating
+            )
+
+        return query.where(entities.ItemReview.item_rating <= filter_params.max_rating)
 
     @staticmethod
     def fetch_by_patient_and_helped_status(filter_params: schemas.FindItemReviews
@@ -393,25 +409,43 @@ class _ItemReviewQueryCollection:
 
     @staticmethod
     def fetch_by_patient_and_rating(filter_params: schemas.FindItemReviews) -> Select:
-        return (
+        query: Select = (
             select(entities.ItemReview)
             .distinct()
             .join(entities.MedicalBook.item_reviews)
-            .where(entities.MedicalBook.patient_id == filter_params.patient_id,
-                   between(entities.ItemReview.item_rating,
-                           filter_params.min_rating, filter_params.max_rating))
+            .where(entities.MedicalBook.patient_id == filter_params.patient_id)
         )
+        if filter_params.max_rating is not None and filter_params.min_rating is not None:
+            return query.where(
+                between(entities.ItemReview.item_rating,
+                        filter_params.min_rating, filter_params.max_rating)
+            )
+        if filter_params.min_rating is not None:
+            return query.where(
+                entities.ItemReview.item_rating >= filter_params.min_rating
+            )
+
+        return query.where(entities.ItemReview.item_rating <= filter_params.max_rating)
 
     @staticmethod
     def fetch_by_helped_status_and_rating(filter_params: schemas.FindItemReviews
                                           ) -> Select:
-        return (
+        query: Select = (
             select(entities.ItemReview)
             .distinct()
-            .where(entities.ItemReview.is_helped == filter_params.is_helped,
-                   between(entities.ItemReview.item_rating,
-                           filter_params.min_rating, filter_params.max_rating))
+            .where(entities.ItemReview.is_helped == filter_params.is_helped)
         )
+        if filter_params.max_rating is not None and filter_params.min_rating is not None:
+            return query.where(
+                between(entities.ItemReview.item_rating,
+                        filter_params.min_rating, filter_params.max_rating)
+            )
+        if filter_params.min_rating is not None:
+            return query.where(
+                entities.ItemReview.item_rating >= filter_params.min_rating
+            )
+
+        return query.where(entities.ItemReview.item_rating <= filter_params.max_rating)
 
     @staticmethod
     def fetch_by_items_patient_and_helped_status(filter_params: schemas.FindItemReviews,
@@ -428,56 +462,92 @@ class _ItemReviewQueryCollection:
     @staticmethod
     def fetch_by_items_patient_and_rating(filter_params: schemas.FindItemReviews
                                           ) -> Select:
-        return (
+        query: Select = (
             select(entities.ItemReview)
             .distinct()
             .join(entities.MedicalBook.item_reviews)
             .where(entities.MedicalBook.patient_id == filter_params.patient_id,
-                   entities.ItemReview.item_id.in_(filter_params.item_ids),
-                   between(entities.ItemReview.item_rating,
-                           filter_params.min_rating, filter_params.max_rating))
+                   entities.ItemReview.item_id.in_(filter_params.item_ids))
         )
+        if filter_params.max_rating is not None and filter_params.min_rating is not None:
+            return query.where(
+                between(entities.ItemReview.item_rating,
+                        filter_params.min_rating, filter_params.max_rating)
+            )
+        if filter_params.min_rating is not None:
+            return query.where(
+                entities.ItemReview.item_rating >= filter_params.min_rating
+            )
+
+        return query.where(entities.ItemReview.item_rating <= filter_params.max_rating)
 
     @staticmethod
     def fetch_by_items_helped_status_and_rating(
         filter_params: schemas.FindItemReviews
     ) -> Select:
-        return (
+        query: Select = (
             select(entities.ItemReview)
             .distinct()
             .where(entities.ItemReview.item_id.in_(filter_params.item_ids),
-                   entities.ItemReview.is_helped == filter_params.is_helped,
-                   between(entities.ItemReview.item_rating,
-                           filter_params.min_rating, filter_params.max_rating))
+                   entities.ItemReview.is_helped == filter_params.is_helped)
         )
+        if filter_params.max_rating is not None and filter_params.min_rating is not None:
+            return query.where(
+                between(entities.ItemReview.item_rating,
+                        filter_params.min_rating, filter_params.max_rating)
+            )
+        if filter_params.min_rating is not None:
+            return query.where(
+                entities.ItemReview.item_rating >= filter_params.min_rating
+            )
+
+        return query.where(entities.ItemReview.item_rating <= filter_params.max_rating)
 
     @staticmethod
     def fetch_by_patient_helped_status_and_rating(filter_params: schemas.FindItemReviews
                                                   ) -> Select:
-        return (
+        query: Select = (
             select(entities.ItemReview)
             .distinct()
             .join(entities.MedicalBook.item_reviews)
             .where(entities.MedicalBook.patient_id == filter_params.patient_id,
-                   entities.ItemReview.is_helped == filter_params.is_helped,
-                   between(entities.ItemReview.item_rating,
-                           filter_params.min_rating, filter_params.max_rating))
+                   entities.ItemReview.is_helped == filter_params.is_helped)
         )
+        if filter_params.max_rating is not None and filter_params.min_rating is not None:
+            return query.where(
+                between(entities.ItemReview.item_rating,
+                        filter_params.min_rating, filter_params.max_rating)
+            )
+        if filter_params.min_rating is not None:
+            return query.where(
+                entities.ItemReview.item_rating >= filter_params.min_rating
+            )
+
+        return query.where(entities.ItemReview.item_rating <= filter_params.max_rating)
 
     @staticmethod
     def fetch_by_items_patient_helped_status_and_rating(
         filter_params: schemas.FindItemReviews,
     ) -> Select:
-        return (
+        query: Select = (
             select(entities.ItemReview)
             .distinct()
             .join(entities.MedicalBook.item_reviews)
             .where(entities.MedicalBook.patient_id == filter_params.patient_id,
                    entities.ItemReview.item_id.in_(filter_params.item_ids),
-                   entities.ItemReview.is_helped == filter_params.is_helped,
-                   between(entities.ItemReview.item_rating,
-                           filter_params.min_rating, filter_params.max_rating))
+                   entities.ItemReview.is_helped == filter_params.is_helped)
         )
+        if filter_params.max_rating is not None and filter_params.min_rating is not None:
+            return query.where(
+                between(entities.ItemReview.item_rating,
+                        filter_params.min_rating, filter_params.max_rating)
+            )
+        if filter_params.min_rating is not None:
+            return query.where(
+                entities.ItemReview.item_rating >= filter_params.min_rating
+            )
+
+        return query.where(entities.ItemReview.item_rating <= filter_params.max_rating)
 
 
 class _ItemReviewQueriesPagination:
