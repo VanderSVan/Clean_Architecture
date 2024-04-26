@@ -159,15 +159,14 @@ class _ItemReviewStrategySelector:
         }
 
     def _build_key(self, filter_params: schemas.FindItemReviews) -> namedtuple:
-        rating: bool = any((filter_params.min_rating is not None,
-                            filter_params.max_rating is not None))
         return self.StrategyKey(
             item_ids=True if filter_params.item_ids is not None else False,
             patient_id=True if filter_params.patient_id is not None else False,
             is_helped=True if filter_params.is_helped is not None else False,
-            rating=True if rating else False
+            rating=any((filter_params.min_rating is not None,
+                        filter_params.max_rating is not None))
         )
 
     def get_method(self, filter_params: schemas.FindItemReviews) -> Callable:
         key: namedtuple = self._build_key(filter_params)
-        return self.strategies.get(key)
+        return self.strategies[key]
