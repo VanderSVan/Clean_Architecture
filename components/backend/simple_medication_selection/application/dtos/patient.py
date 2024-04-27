@@ -17,15 +17,6 @@ class SkinTypeEnum(str, Enum):
     COMBINATION = 'комбинированная'
 
 
-class PatientCreateSchema(DTO):
-    nickname: str = Field(min_length=1, max_length=255)
-    gender: GenderEnum
-    age: int = Field(ge=10, le=120)
-    skin_type: SkinTypeEnum
-    about: str | None = Field(min_length=1, max_length=3000)
-    phone: str | None = Field(min_length=9, max_length=15, pattern=r'^([\d]+)$')
-
-
 class Patient(DTO):
     id: int = Field(ge=1)
     nickname: str = Field(min_length=1, max_length=255)
@@ -35,8 +26,20 @@ class Patient(DTO):
     about: str | None = Field(min_length=1, max_length=3000)
     phone: str | None = Field(min_length=9, max_length=15, pattern=r'^([\d]+)$')
 
+    class Config:
+        orm_mode = True
 
-class PatientUpdateSchema(DTO):
+
+class NewPatientInfo(DTO):
+    nickname: str = Field(min_length=1, max_length=255)
+    gender: GenderEnum
+    age: int = Field(ge=10, le=120)
+    skin_type: SkinTypeEnum
+    about: str | None = Field(min_length=1, max_length=3000)
+    phone: str | None = Field(min_length=9, max_length=15, pattern=r'^([\d]+)$')
+
+
+class UpdatedPatientInfo(DTO):
     id: int = Field(ge=1)
     nickname: str | None = Field(min_length=1, max_length=255)
     gender: GenderEnum | None

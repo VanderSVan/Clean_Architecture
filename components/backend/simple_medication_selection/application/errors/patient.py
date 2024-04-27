@@ -6,4 +6,4 @@ class PatientNotFound(Error):
 
 
 class PatientAlreadyExists(Error):
-    message_template = 'Patient with nickname {nickname} already exists'
+    message_template = 'Patient with nickname `{nickname}` already exists'

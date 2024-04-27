@@ -19,22 +19,24 @@ class Patient:
 
     @register_method
     @validate_arguments
-    def get(self, patient_id: int) -> entities.Patient:
+    def get(self, patient_id: int) -> dtos.Patient:
         patient = self.patients_repo.fetch_by_id(patient_id)
 
         if not patient:
             raise errors.PatientNotFound(id=patient_id)
 
-        return patient
+        return dtos.Patient.from_orm(patient)
 
-    def find(self, filter_params: schemas.FindPatients) -> Sequence[entities.Patient]:
+    def find(self, filter_params: schemas.FindPatients) -> list[dtos.Patient | None]:
         repo_method: Callable = self.search_strategy_selector.get_method(filter_params)
 
-        return repo_method(filter_params)
+        patients: Sequence[entities.Patient | None] = repo_method(filter_params)
+
+        return [dtos.Patient.from_orm(patient) for patient in patients]
 
     @register_method
     @validate_arguments
-    def create(self, new_patient_info: dtos.PatientCreateSchema) -> entities.Patient:
+    def add(self, new_patient_info: dtos.NewPatientInfo) -> dtos.Patient:
         patient: entities.Patient = (
             self.patients_repo.fetch_by_nickname(new_patient_info.nickname)
         )
@@ -42,32 +44,41 @@ class Patient:
             raise errors.PatientAlreadyExists(nickname=new_patient_info.nickname)
 
         new_patient: entities.Patient = new_patient_info.create_obj(entities.Patient)
-
-        return self.patients_repo.add(new_patient)
+        added_patient: entities.Patient = self.patients_repo.add(new_patient)
+        return dtos.Patient.from_orm(added_patient)
 
     @register_method
     @validate_arguments
-    def change(self, new_patient_info: dtos.PatientUpdateSchema) -> entities.Patient:
+    def change(self, new_patient_info: dtos.UpdatedPatientInfo) -> dtos.Patient:
         patient: entities.Patient = (
-            self.patients_repo.fetch_by_nickname(new_patient_info.nickname)
+            self.patients_repo.fetch_by_id(new_patient_info.id)
         )
         if not patient:
             raise errors.PatientNotFound(id=new_patient_info.id)
 
-        if patient.nickname == new_patient_info.nickname:
-            raise errors.PatientAlreadyExists(nickname=new_patient_info.nickname)
+        if new_patient_info.nickname:
+            patient_with_same_nickname: entities.Patient = (
+                self.patients_repo.fetch_by_nickname(new_patient_info.nickname)
+            )
+            if (
+                patient_with_same_nickname and
+                patient_with_same_nickname.id != new_patient_info.id
+            ):
+                raise errors.PatientAlreadyExists(nickname=new_patient_info.nickname)
 
-        return new_patient_info.populate_obj(patient)
+        updated_patient: entities.Patient = new_patient_info.populate_obj(patient)
+        return dtos.Patient.from_orm(updated_patient)
 
     @register_method
     @validate_arguments
-    def delete(self, patient_id: int) -> entities.Patient:
+    def delete(self, patient_id: int) -> dtos.Patient:
         patient = self.patients_repo.fetch_by_id(patient_id)
 
         if not patient:
             raise errors.PatientNotFound(id=patient_id)
 
-        return self.patients_repo.remove(patient)
+        removed_patient: entities.Patient = self.patients_repo.remove(patient)
+        return dtos.Patient.from_orm(removed_patient)
 
 
 class _PatientStrategySelector:
@@ -105,7 +116,6 @@ class _PatientStrategySelector:
         }
 
     def _build_key(self, filter_params: schemas.FindPatients) -> namedtuple:
-
         return self.StrategyKey(
             gender=True if filter_params.gender is not None else False,
             age=any((filter_params.age_from is not None,

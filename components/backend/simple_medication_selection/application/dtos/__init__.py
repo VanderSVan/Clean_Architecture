@@ -33,9 +33,9 @@ from .medical_book import (
     UpdatedMedicalBookInfo,
 )
 from .patient import (
-    PatientCreateSchema,
+    NewPatientInfo,
     Patient,
-    PatientUpdateSchema,
+    UpdatedPatientInfo,
     GenderEnum,
     SkinTypeEnum
 )

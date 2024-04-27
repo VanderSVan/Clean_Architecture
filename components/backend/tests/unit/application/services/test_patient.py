@@ -1,6 +1,7 @@
 from unittest.mock import Mock, call
 
 import pytest
+
 from simple_medication_selection.application import (
     dtos, entities, errors, interfaces, services, schemas
 )
@@ -24,22 +25,27 @@ def service(repo) -> services.Patient:
 # ---------------------------------------------------------------------------------------
 
 class TestGet:
-    @pytest.mark.parametrize("returned_entity", [
-        entities.Patient(id=1, nickname="SomeGirl", gender="female", age=18,
+    @pytest.mark.parametrize("repo_output, service_output", [
+        (
+            entities.Patient(id=1, nickname="SomeGirl", gender="female", age=18,
+                             skin_type="сухая", about="About Girl", phone='1234567890'),
+            dtos.Patient(id=1, nickname="SomeGirl", gender="female", age=18,
                          skin_type="сухая", about="About Girl", phone='1234567890')
+
+        )
     ])
-    def test__get_patient(self, returned_entity, service, repo):
+    def test__get(self, repo_output, service_output, service, repo):
         # Setup
-        repo.fetch_by_id.return_value = returned_entity
+        repo.fetch_by_id.return_value = repo_output
 
         # Call
-        result = service.get(patient_id=returned_entity.id)
+        result = service.get(patient_id=repo_output.id)
 
         # Assert
-        assert repo.method_calls == [call.fetch_by_id(returned_entity.id)]
-        assert result == returned_entity
+        assert repo.method_calls == [call.fetch_by_id(repo_output.id)]
+        assert result == service_output
 
-    def test__get_non_existing_patient(self, service, repo):
+    def test__patient_not_found(self, service, repo):
         # Setup
         repo.fetch_by_id.return_value = None
 
@@ -79,8 +85,8 @@ class TestFind:
             (None, None, None, None, 'fetch_all'),
         ]
     )
-    def test__find_patients(self, gender, age_from, age_to, skin_type,
-                            repo_method, service, repo):
+    def test__find(self, gender, age_from, age_to, skin_type,
+                   repo_method, service, repo):
         # Setup
         filter_params = schemas.FindPatients(
             gender=gender, age_from=age_from, age_to=age_to, skin_type=skin_type
@@ -89,6 +95,10 @@ class TestFind:
             entities.Patient(id=1, nickname="some_nickname", gender="female", age=25,
                              skin_type="сухая", about="About me", phone='1234567890')
         ]
+        service_output = [
+            dtos.Patient(id=1, nickname="some_nickname", gender="female", age=25,
+                         skin_type="сухая", about="About me", phone='1234567890')
+        ]
         getattr(repo, repo_method).return_value = repo_output
 
         # Call
@@ -96,138 +106,156 @@ class TestFind:
 
         # Assert
         getattr(repo, repo_method).assert_called_once_with(filter_params)
-        assert result == repo_output
+        assert result == service_output
 
 
-class TestCreate:
-    @pytest.mark.parametrize("new_entity, dto, created_entity", [
+class TestAdd:
+    @pytest.mark.parametrize("input_dto, repo_output, service_output", [
         (
-            entities.Patient(nickname="SomeGirl", gender="female", age=18,
+            dtos.NewPatientInfo(nickname="SomeGirl", gender="female", age=18,
+                                skin_type="жирная", about="About Girl",
+                                phone='1234567890'),
+            entities.Patient(id=1, nickname="SomeGirl", gender="female", age=18,
                              skin_type="жирная", about="About Girl", phone='1234567890'),
-            dtos.PatientCreateSchema(nickname="SomeGirl", gender="female", age=18,
-                                     skin_type="жирная", about="About Girl",
-                                     phone='1234567890'),
+            dtos.Patient(id=1, nickname="SomeGirl", gender="female", age=18,
+                         skin_type="жирная", about="About Girl", phone='1234567890')
+        )
+    ])
+    def test__add(self, input_dto, repo_output, service_output, service, repo):
+        # Setup
+        repo.fetch_by_nickname.return_value = None
+        repo.add.return_value = repo_output
+
+        # Call
+        result = service.add(new_patient_info=input_dto)
+
+        # Assert
+        assert repo.method_calls == [call.fetch_by_nickname(input_dto.nickname),
+                                     call.add(entities.Patient(**input_dto.dict()))]
+        assert result == service_output
+
+    @pytest.mark.parametrize("input_dto, repo_output", [
+        (
+            dtos.NewPatientInfo(nickname="SomeGirl", gender="female", age=18,
+                                skin_type="жирная", about="About Girl",
+                                phone='1234567890'),
             entities.Patient(id=1, nickname="SomeGirl", gender="female", age=18,
                              skin_type="жирная", about="About Girl", phone='1234567890')
         )
     ])
-    def test__create_new_patient(self, new_entity, dto, created_entity, service, repo):
+    def test__patient_already_exists(self, input_dto, repo_output, service, repo):
         # Setup
-        repo.fetch_by_nickname.return_value = None
-        repo.add.return_value = created_entity
-
-        # Call
-        result = service.create(new_patient_info=dto)
-
-        # Assert
-        assert repo.method_calls == [call.fetch_by_nickname(dto.nickname),
-                                     call.add(new_entity)]
-        assert result == created_entity
-
-    @pytest.mark.parametrize("existing_entity, dto", [
-        (
-            entities.Patient(id=1, nickname="SomeGirl", gender="male", age=18,
-                             skin_type="жирная", about="About Girl", phone='1234567890'),
-            dtos.PatientCreateSchema(nickname="SomeGirl", gender="male", age=28,
-                                     skin_type="комбинированная", about="About Girl",
-                                     phone='9874561230'),
-        )
-    ])
-    def test__patient_already_exists(self, existing_entity, dto, service, repo):
-        # Setup
-        repo.fetch_by_nickname.return_value = existing_entity
+        repo.fetch_by_nickname.return_value = repo_output
 
         # Call and Assert
         with pytest.raises(errors.PatientAlreadyExists):
-            service.create(new_patient_info=dto)
+            service.add(new_patient_info=input_dto)
 
-        assert repo.method_calls == [call.fetch_by_nickname(dto.nickname)]
+        assert repo.method_calls == [call.fetch_by_nickname(input_dto.nickname)]
 
 
 class TestChange:
-    @pytest.mark.parametrize("existing_entity, dto, updated_entity", [
+
+    @pytest.mark.parametrize("input_dto, repo_output, service_output", [
         (
+            dtos.UpdatedPatientInfo(id=1, nickname="SomeMan", gender="male", age=18,
+                                    skin_type="жирная", about="About Man",
+                                    phone='1234567890'),
             entities.Patient(id=1, nickname="SomeGirl", gender="female", age=18,
                              skin_type="жирная", about="About Girl", phone='1234567890'),
-            dtos.PatientUpdateSchema(id=1, nickname="SomeMan", gender="male", age=18,
-                                     skin_type="жирная", about="About Man",
-                                     phone='1234567890'),
-            entities.Patient(id=1, nickname="SomeMan", gender="male", age=18,
-                             skin_type="жирная", about="About Man", phone='1234567890')
+            dtos.Patient(id=1, nickname="SomeMan", gender="male", age=18,
+                         skin_type="жирная", about="About Man", phone='1234567890')
         )
     ])
-    def test__change_existing_patient(self, existing_entity, dto, updated_entity,
-                                      service, repo):
+    def test__change(self, input_dto, repo_output, service_output, service, repo):
         # Setup
-        repo.fetch_by_nickname.return_value = existing_entity
+        repo.fetch_by_id.return_value = repo_output
+        repo.fetch_by_nickname.return_value = None
 
         # Call
-        result = service.change(new_patient_info=dto)
+        result = service.change(new_patient_info=input_dto)
 
         # Assert
-        assert repo.method_calls == [call.fetch_by_nickname(dto.nickname)]
-        assert result == updated_entity
+        assert repo.method_calls == [
+            call.fetch_by_id(input_dto.id),
+            call.fetch_by_nickname(input_dto.nickname)
+        ]
+        assert result == service_output
 
-    @pytest.mark.parametrize("dto", [
-        dtos.PatientUpdateSchema(id=1, nickname="SomeMan", gender="male", age=18,
-                                 skin_type="жирная", about="About Man",
-                                 phone='1234567890')
+    @pytest.mark.parametrize("input_dto", [
+        dtos.UpdatedPatientInfo(id=1, nickname="SomeMan", gender="male", age=18,
+                                skin_type="жирная", about="About Man",
+                                phone='1234567890')
     ])
-    def test__patient_does_not_exist(self, dto, service, repo):
+    def test__patient_not_found(self, input_dto, service, repo):
         # Setup
-        repo.fetch_by_nickname.return_value = None
+        repo.fetch_by_id.return_value = None
 
         # Call and Assert
         with pytest.raises(errors.PatientNotFound):
-            service.change(new_patient_info=dto)
+            service.change(new_patient_info=input_dto)
 
-        assert repo.method_calls == [call.fetch_by_nickname(dto.nickname)]
+        assert repo.method_calls == [call.fetch_by_id(input_dto.id)]
 
-    @pytest.mark.parametrize("existing_entity, dto", [
+    @pytest.mark.parametrize("input_dto, fetch_by_id_output, fetch_by_nickname_output", [
         (
-            entities.Patient(id=1, nickname="SomeMan", gender="male", age=38,
-                             skin_type="жирная", about="About Man", phone='85245691730'),
-            dtos.PatientUpdateSchema(id=1, nickname="SomeMan", gender="male", age=18,
-                                     skin_type="жирная", about="About Man2",
-                                     phone='1234567890')
+            dtos.UpdatedPatientInfo(id=1, nickname="SomeMan", gender="male", age=18,
+                                    skin_type="жирная", about="About Man",
+                                    phone='1234567890'),
+            entities.Patient(id=1, nickname="SomeGirl", gender="female", age=18,
+                             skin_type="жирная", about="About Girl", phone='1234567890'),
+            entities.Patient(id=2, nickname="SomeMan", gender="male", age=28,
+                             skin_type="сухая", about="About Man 2", phone='9874561230')
         )
     ])
-    def test__nickname_already_exists(self, existing_entity, dto, service, repo):
+    def test__nickname_already_exists(self, input_dto, fetch_by_id_output,
+                                      fetch_by_nickname_output, service, repo):
         # Setup
-        repo.fetch_by_nickname.return_value = existing_entity
+        repo.fetch_by_id.return_value = fetch_by_id_output
+        repo.fetch_by_nickname.return_value = fetch_by_nickname_output
 
         # Call and Assert
         with pytest.raises(errors.PatientAlreadyExists):
-            service.change(new_patient_info=dto)
+            service.change(new_patient_info=input_dto)
 
-        assert repo.method_calls == [call.fetch_by_nickname("SomeMan")]
+        assert repo.method_calls == [
+            call.fetch_by_id(input_dto.id),
+            call.fetch_by_nickname(input_dto.nickname)
+        ]
 
 
 class TestDelete:
-    @pytest.mark.parametrize("existing_entity, removed_entity", [
-        (
-            entities.Patient(id=1, nickname="SomeGirl", gender="female", age=18,
-                             skin_type="сухая", about="About Girl", phone='1234567890'),
-            entities.Patient(id=1, nickname="SomeGirl", gender="female", age=18,
-                             skin_type="сухая", about="About Girl", phone='1234567890')
-        )
-    ])
-    def test__delete_existing_patient(self, existing_entity, removed_entity, service,
-                                      repo):
+    @pytest.mark.parametrize(
+        "patient_id, fetch_by_id_output, remove_output, service_output",
+        [
+            (
+                1,
+                entities.Patient(id=1, nickname="SomeGirl", gender="female", age=18,
+                                 skin_type="жирная", about="About Girl",
+                                 phone='1234567890'),
+                entities.Patient(id=1, nickname="SomeGirl", gender="female", age=18,
+                                 skin_type="жирная", about="About Girl",
+                                 phone='1234567890'),
+                dtos.Patient(id=1, nickname="SomeGirl", gender="female", age=18,
+                             skin_type="жирная", about="About Girl", phone='1234567890'),
+            )
+        ]
+    )
+    def test__delete_existing_patient(self, patient_id, fetch_by_id_output, remove_output,
+                                      service_output, service, repo):
         # Setup
-        patient_id = 1
-        repo.fetch_by_id.return_value = existing_entity
-        repo.remove.return_value = removed_entity
+        repo.fetch_by_id.return_value = fetch_by_id_output
+        repo.remove.return_value = remove_output
 
         # Call
         result = service.delete(patient_id=patient_id)
 
         # Assert
-        assert repo.method_calls == [call.fetch_by_id(existing_entity.id),
-                                     call.remove(removed_entity)]
-        assert result == removed_entity
+        assert repo.method_calls == [call.fetch_by_id(patient_id),
+                                     call.remove(fetch_by_id_output)]
+        assert result == service_output
 
-    def test__delete_non_existing_patient(self, service, repo):
+    def test__patient_not_found(self, service, repo):
         # Setup
         patient_id = 1
         repo.fetch_by_id.return_value = None
