@@ -11,7 +11,7 @@ class ItemReviewsRepo(BaseRepository, interfaces.ItemReviewsRepo):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.query_collection = _ItemReviewQueryCollection()
-        self.query_pagination = _ItemReviewQueriesPagination()
+        self.query_pagination = _ItemReviewQueryPagination()
         self.query_executor = _ItemReviewQueryExecutor(self.session)
 
     def fetch_by_id(self, review_id: int) -> entities.ItemReview | None:
@@ -550,7 +550,7 @@ class _ItemReviewQueryCollection:
         return query.where(entities.ItemReview.item_rating <= filter_params.max_rating)
 
 
-class _ItemReviewQueriesPagination:
+class _ItemReviewQueryPagination:
     def apply(self, query: Select, filter_params: schemas.FindItemReviews) -> Select:
         query = self.set_order(query, filter_params)
         query = self.set_limit(query, filter_params)

@@ -132,49 +132,6 @@ def pytest_generate_tests(metafunc):
             metafunc.parametrize('kwargs_factory', combined_kwargs, indirect=True)
 
 
-PARAMS_TO_MIX: dict[str, list[dict]] = dict(
-    fetch_all=[dict()],
-    fetch_by_helped_status=[dict(is_helped=True), dict(is_helped=False)],
-    fetch_by_symptoms=[
-        dict(symptom_ids=[1, 2, 3, 4], match_all_symptoms=True),
-        dict(symptom_ids=[1, 2, 3, 4], match_all_symptoms=False)
-    ],
-    fetch_by_diagnosis=[dict(diagnosis_id=1)],
-    fetch_by_symptoms_and_helped_status=[
-        dict(is_helped=True, match_all_symptoms=True, symptom_ids=[1, 2, 3, 4]),
-        dict(is_helped=False, match_all_symptoms=False, symptom_ids=[1, 2, 3, 4])
-    ],
-    fetch_by_diagnosis_and_helped_status=[
-        dict(is_helped=True, diagnosis_id=1, symptom_ids=[1, 2, 3, 4]),
-        dict(is_helped=False, diagnosis_id=1, symptom_ids=[1, 2, 3, 4])
-    ],
-    fetch_by_diagnosis_and_symptoms=[
-        dict(diagnosis_id=1, symptom_ids=[1, 2, 3, 4], match_all_symptoms=False),
-        dict(diagnosis_id=1, symptom_ids=[1, 2, 3, 4], match_all_symptoms=True)
-    ],
-    fetch_by_helped_status_diagnosis_symptoms=[
-        dict(diagnosis_id=1, symptom_ids=[1, 2, 3, 4], is_helped=True,
-             match_all_symptoms=True),
-        dict(diagnosis_id=1, symptom_ids=[1, 2, 3, 4], is_helped=False,
-             match_all_symptoms=False)
-    ],
-    test__order_is_asc=[
-        dict(sort_field='title', sort_direction='asc'),
-        dict(sort_field='price', sort_direction='asc'),
-        dict(sort_field='avg_rating', sort_direction='asc')
-    ],
-    test__order_is_desc=[
-        dict(sort_field='title', sort_direction='desc'),
-        dict(sort_field='price', sort_direction='desc'),
-        dict(sort_field='avg_rating', sort_direction='desc')
-    ],
-    test__null_last=[dict()],
-    test__with_limit=[dict(limit=1)],
-    test__with_offset=[dict(offset=1)],
-    test__unique_check=[dict()],
-)
-
-
 # ---------------------------------------------------------------------------------------
 # TESTS
 # ---------------------------------------------------------------------------------------
