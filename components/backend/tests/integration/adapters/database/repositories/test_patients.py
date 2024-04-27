@@ -3,7 +3,7 @@ import pytest
 from sqlalchemy import select, func
 
 from simple_medication_selection.adapters.database import repositories
-from simple_medication_selection.application import entities
+from simple_medication_selection.application import entities, schemas
 from .. import test_data
 
 
@@ -50,6 +50,174 @@ class TestFetchByNickname:
         assert result.nickname == patient.nickname
 
 
+class TestFetchAll:
+    def test__fetch_all(self, repo, session, fill_db):
+        # Setup
+        filter_params = schemas.FindPatients()
+
+        # Call
+        result = repo.fetch_all(filter_params)
+
+        # Assert
+        assert len(result) > 0
+        assert len(result) == len(test_data.PATIENTS_DATA)
+        assert all(isinstance(patient, entities.Patient) for patient in result)
+
+
+class TestFetchByGender:
+    def test__fetch_by_gender(self, repo, session, fill_db):
+        # Setup
+        patient_id: int = fill_db['patient_ids'][0]
+        expected_patient: entities.Patient = session.execute(
+            select(entities.Patient).where(entities.Patient.id == patient_id)
+        ).scalar()
+        filter_params = schemas.FindPatients(gender=expected_patient.gender)
+
+        # Call
+        result = repo.fetch_by_gender(filter_params)
+
+        # Assert
+        assert len(result) > 0
+        for patient in result:
+            assert isinstance(patient, entities.Patient)
+            assert patient.gender == expected_patient.gender
+
+
+class TestFetchByAge:
+    @pytest.mark.parametrize('age_from, age_to', [(1, 100), (None, 100), (1, None)])
+    def test__fetch_by_age(self, age_from, age_to, repo, session, fill_db):
+        # Setup
+        filter_params = schemas.FindPatients(age_from=age_from, age_to=age_to)
+
+        # Call
+        result = repo.fetch_by_age(filter_params)
+
+        # Assert
+        assert len(result) > 0
+        for patient in result:
+            assert isinstance(patient, entities.Patient)
+            assert (patient.age >= age_from if age_from is not None else True)
+            assert (patient.age <= age_to if age_to is not None else True)
+
+
+class TestFetchBySkinType:
+    def test__fetch_by_skin_type(self, repo, session, fill_db):
+        # Setup
+        patient_id: int = fill_db['patient_ids'][0]
+        expected_patient: entities.Patient = session.execute(
+            select(entities.Patient).where(entities.Patient.id == patient_id)
+        ).scalar()
+        filter_params = schemas.FindPatients(skin_type=expected_patient.skin_type)
+
+        # Call
+        result = repo.fetch_by_skin_type(filter_params)
+
+        # Assert
+        assert len(result) > 0
+        for patient in result:
+            assert isinstance(patient, entities.Patient)
+            assert patient.skin_type == expected_patient.skin_type
+
+
+class TestFetchByGenderAndAge:
+
+    @pytest.mark.parametrize('age_from, age_to', [(1, 100), (None, 100), (1, None)])
+    def test__fetch_by_gender_and_age(self, age_from, age_to, repo, session, fill_db):
+        # Setup
+        patient_id: int = fill_db['patient_ids'][0]
+        expected_patient: entities.Patient = session.execute(
+            select(entities.Patient).where(entities.Patient.id == patient_id)
+        ).scalar()
+        filter_params = schemas.FindPatients(gender=expected_patient.gender,
+                                             age_from=age_from,
+                                             age_to=age_to)
+
+        # Call
+        result = repo.fetch_by_gender_and_age(filter_params)
+
+        # Assert
+        assert len(result) > 0
+        for patient in result:
+            assert isinstance(patient, entities.Patient)
+            assert patient.gender == expected_patient.gender
+            assert (patient.age >= age_from if age_from is not None else True)
+            assert (patient.age <= age_to if age_to is not None else True)
+
+
+class TestFetchByGenderAndSkinType:
+    def test__fetch_by_gender_and_skin_type(self, repo, session, fill_db):
+        # Setup
+        patient_id: int = fill_db['patient_ids'][0]
+        expected_patient: entities.Patient = session.execute(
+            select(entities.Patient).where(entities.Patient.id == patient_id)
+        ).scalar()
+        filter_params = schemas.FindPatients(gender=expected_patient.gender,
+                                             skin_type=expected_patient.skin_type)
+
+        # Call
+        result = repo.fetch_by_gender_and_skin_type(filter_params)
+
+        # Assert
+        assert len(result) > 0
+        for patient in result:
+            assert isinstance(patient, entities.Patient)
+            assert patient.gender == expected_patient.gender
+            assert patient.skin_type == expected_patient.skin_type
+
+
+class TestFetchByAgeAndSkinType:
+
+    @pytest.mark.parametrize('age_from, age_to', [(1, 100), (None, 100), (1, None)])
+    def test__fetch_by_age_and_skin_type(self, age_from, age_to, repo, session, fill_db):
+        # Setup
+        patient_id: int = fill_db['patient_ids'][0]
+        expected_patient: entities.Patient = session.execute(
+            select(entities.Patient).where(entities.Patient.id == patient_id)
+        ).scalar()
+        filter_params = schemas.FindPatients(age_from=age_from,
+                                             age_to=age_to,
+                                             skin_type=expected_patient.skin_type)
+
+        # Call
+        result = repo.fetch_by_age_and_skin_type(filter_params)
+
+        # Assert
+        assert len(result) > 0
+        for patient in result:
+            assert isinstance(patient, entities.Patient)
+            assert patient.skin_type == expected_patient.skin_type
+            assert (patient.age >= age_from if age_from is not None else True)
+            assert (patient.age <= age_to if age_to is not None else True)
+
+
+class TestFetchByGenderAgeAndSkinType:
+
+    @pytest.mark.parametrize('age_from, age_to', [(1, 100), (None, 100), (1, None)])
+    def test__fetch_by_gender_age_and_skin_type(self, age_from, age_to, repo, session,
+                                                fill_db):
+        # Setup
+        patient_id: int = fill_db['patient_ids'][0]
+        expected_patient: entities.Patient = session.execute(
+            select(entities.Patient).where(entities.Patient.id == patient_id)
+        ).scalar()
+        filter_params = schemas.FindPatients(gender=expected_patient.gender,
+                                             age_from=age_from,
+                                             age_to=age_to,
+                                             skin_type=expected_patient.skin_type)
+
+        # Call
+        result = repo.fetch_by_gender_age_and_skin_type(filter_params)
+
+        # Assert
+        assert len(result) > 0
+        for patient in result:
+            assert isinstance(patient, entities.Patient)
+            assert patient.gender == expected_patient.gender
+            assert patient.skin_type == expected_patient.skin_type
+            assert (patient.age >= age_from if age_from is not None else True)
+            assert (patient.age <= age_to if age_to is not None else True)
+
+
 class TestAdd:
     def test__add(self, repo, session):
         # Setup
@@ -92,3 +260,70 @@ class TestRemove:
         # Assert
         assert before_count - 1 == after_count
         assert isinstance(result, entities.Patient)
+
+
+class TestPatientQueryPagination:
+
+    @pytest.mark.parametrize('sort_field', [
+        'id', 'nickname', 'gender', 'age', 'skin_type'
+    ])
+    def test__order_is_asc(self, sort_field, repo, session, fill_db):
+        # Setup
+        filter_params = schemas.FindPatients(sort_field=sort_field,
+                                             sort_direction='asc')
+
+        # Call
+        result = repo.fetch_all(filter_params)
+
+        # Assert
+        assert len(result) > 0
+        assert result == sorted(
+            result,
+            key=lambda patient: (
+                float('inf') if getattr(patient, sort_field) is None
+                else getattr(patient, sort_field)
+            ),
+            reverse=False
+        )
+
+    @pytest.mark.parametrize('sort_field', [
+        'id', 'nickname', 'gender', 'age', 'skin_type'
+    ])
+    def test__order_is_desc(self, sort_field, repo, session, fill_db):
+        # Setup
+        filter_params = schemas.FindPatients(sort_field=sort_field,
+                                             sort_direction='desc')
+
+        # Call
+        result = repo.fetch_all(filter_params)
+
+        # Assert
+        assert len(result) > 0
+        assert result == sorted(
+            result,
+            key=lambda patient: (
+                float('-inf') if getattr(patient, sort_field) is None
+                else getattr(patient, sort_field)
+            ),
+            reverse=True
+        )
+
+    def test__with_limit(self, repo, session, fill_db):
+        # Setup
+        filter_params = schemas.FindPatients(limit=1)
+
+        # Call
+        result = repo.fetch_all(filter_params)
+
+        # Assert
+        assert len(result) == 1
+
+    def test__with_offset(self, repo, session, fill_db):
+        # Setup
+        filter_params = schemas.FindPatients(offset=1)
+
+        # Call
+        result = repo.fetch_all(filter_params)
+
+        # Assert
+        assert len(result) == len(test_data.PATIENTS_DATA) - filter_params.offset

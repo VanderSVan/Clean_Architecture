@@ -52,74 +52,38 @@ class TestGet:
 
 class TestFind:
     @pytest.mark.parametrize(
-        "nickname, gender, age_from, age_to, skin_type, repo_method",
+        "gender, age_from, age_to, skin_type, repo_method",
         [
-            ('some_nickname', 'female', 18, 40, 'сухая',
-             'fetch_by_nickname_gender_age_and_skin_type'),
-            ('some_nickname', 'female', None, 40, 'сухая',
-             'fetch_by_nickname_gender_age_and_skin_type'),
-            ('some_nickname', 'female', 18, None, 'сухая',
-             'fetch_by_nickname_gender_age_and_skin_type'),
+            ('female', 18, 40, 'сухая', 'fetch_by_gender_age_and_skin_type'),
+            ('female', None, 40, 'сухая', 'fetch_by_gender_age_and_skin_type'),
+            ('female', 18, None, 'сухая', 'fetch_by_gender_age_and_skin_type'),
 
-            (None, 'female', 18, 40, 'сухая', 'fetch_by_gender_age_and_skin_type'),
-            (None, 'female', None, 40, 'сухая', 'fetch_by_gender_age_and_skin_type'),
-            (None, 'female', 18, None, 'сухая', 'fetch_by_gender_age_and_skin_type'),
+            (None, 18, 40, 'сухая', 'fetch_by_age_and_skin_type'),
+            (None, None, 40, 'сухая', 'fetch_by_age_and_skin_type'),
+            (None, 18, None, 'сухая', 'fetch_by_age_and_skin_type'),
 
-            ('some_nickname', None, 18, 40, 'сухая',
-             'fetch_by_nickname_age_and_skin_type'),
-            ('some_nickname', None, None, 40, 'сухая',
-             'fetch_by_nickname_age_and_skin_type'),
-            ('some_nickname', None, 18, None, 'сухая',
-             'fetch_by_nickname_age_and_skin_type'),
+            ('female', None, None, 'сухая', 'fetch_by_gender_and_skin_type'),
 
-            ('some_nickname', 'female', None, None, 'сухая',
-             'fetch_by_nickname_gender_and_skin_type'),
+            ('female', 18, 40, None, 'fetch_by_gender_and_age'),
+            ('female', None, 40, None, 'fetch_by_gender_and_age'),
+            ('female', 18, None, None, 'fetch_by_gender_and_age'),
 
-            ('some_nickname', 'female', 18, 40, None,
-             'fetch_by_nickname_gender_and_age'),
-            ('some_nickname', 'female', None, 40, None,
-             'fetch_by_nickname_gender_and_age'),
-            ('some_nickname', 'female', 18, None, None,
-             'fetch_by_nickname_gender_and_age'),
+            (None, None, None, 'сухая', 'fetch_by_skin_type'),
 
-            (None, None, 18, 40, 'сухая', 'fetch_by_age_and_skin_type'),
-            (None, None, None, 40, 'сухая', 'fetch_by_age_and_skin_type'),
-            (None, None, 18, None, 'сухая', 'fetch_by_age_and_skin_type'),
+            (None, 18, 40, None, 'fetch_by_age'),
+            (None, None, 40, None, 'fetch_by_age'),
+            (None, 18, None, None, 'fetch_by_age'),
 
-            (None, 'female', None, None, 'сухая', 'fetch_by_gender_and_skin_type'),
+            ('female', None, None, None, 'fetch_by_gender'),
 
-            (None, 'female', 18, 40, None, 'fetch_by_gender_and_age'),
-            (None, 'female', None, 40, None, 'fetch_by_gender_and_age'),
-            (None, 'female', 18, None, None, 'fetch_by_gender_and_age'),
-
-            ('some_nickname', None, None, None, 'сухая',
-             'fetch_by_nickname_and_skin_type'),
-
-            ('some_nickname', None, 18, 40, None, 'fetch_by_nickname_and_age'),
-            ('some_nickname', None, None, 40, None, 'fetch_by_nickname_and_age'),
-            ('some_nickname', None, 18, None, None, 'fetch_by_nickname_and_age'),
-
-            ('some_nickname', 'female', None, None, None, 'fetch_by_nickname_and_gender'),
-
-            (None, None, None, None, 'сухая', 'fetch_by_skin_type'),
-
-            (None, None, 18, 40, None, 'fetch_by_age'),
-            (None, None, None, 40, None, 'fetch_by_age'),
-            (None, None, 18, None, None, 'fetch_by_age'),
-
-            (None, 'female', None, None, None, 'fetch_by_gender'),
-
-            ('some_nickname', None, None, None, None, 'fetch_by_nickname'),
-
-            (None, None, None, None, None, 'fetch_all'),
+            (None, None, None, None, 'fetch_all'),
         ]
     )
-    def test__find_patients(self, nickname, gender, age_from, age_to, skin_type,
+    def test__find_patients(self, gender, age_from, age_to, skin_type,
                             repo_method, service, repo):
         # Setup
         filter_params = schemas.FindPatients(
-            nickname=nickname, gender=gender, age_from=age_from, age_to=age_to,
-            skin_type=skin_type
+            gender=gender, age_from=age_from, age_to=age_to, skin_type=skin_type
         )
         repo_output = [
             entities.Patient(id=1, nickname="some_nickname", gender="female", age=25,
@@ -129,7 +93,6 @@ class TestFind:
 
         # Call
         result = service.find(filter_params=filter_params)
-        print(repo_method)
 
         # Assert
         getattr(repo, repo_method).assert_called_once_with(filter_params)

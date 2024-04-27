@@ -75,63 +75,38 @@ class _PatientStrategySelector:
         self.patients_repo = patients_repo
         self.StrategyKey = namedtuple(
             'StrategyKey',
-            ['nickname', 'gender', 'age', 'skin_type']
+            ['gender', 'age', 'skin_type']
         )
         self.strategies: dict[namedtuple, Callable] = {
-            self.StrategyKey(False, False, False, False): (
+            self.StrategyKey(False, False, False): (
                 self.patients_repo.fetch_all
             ),
-            self.StrategyKey(True, False, False, False): (
-                self.patients_repo.fetch_by_nickname
-            ),
-            self.StrategyKey(False, True, False, False): (
+            self.StrategyKey(True, False, False): (
                 self.patients_repo.fetch_by_gender
             ),
-            self.StrategyKey(False, False, True, False): (
+            self.StrategyKey(False, True, False): (
                 self.patients_repo.fetch_by_age
             ),
-            self.StrategyKey(False, False, False, True): (
+            self.StrategyKey(False, False, True): (
                 self.patients_repo.fetch_by_skin_type
             ),
-            self.StrategyKey(True, True, False, False): (
-                self.patients_repo.fetch_by_nickname_and_gender
-            ),
-            self.StrategyKey(True, False, True, False): (
-                self.patients_repo.fetch_by_nickname_and_age
-            ),
-            self.StrategyKey(True, False, False, True): (
-                self.patients_repo.fetch_by_nickname_and_skin_type
-            ),
-            self.StrategyKey(False, True, True, False): (
+            self.StrategyKey(True, True, False): (
                 self.patients_repo.fetch_by_gender_and_age
             ),
-            self.StrategyKey(False, True, False, True): (
+            self.StrategyKey(True, False, True): (
                 self.patients_repo.fetch_by_gender_and_skin_type
             ),
-            self.StrategyKey(False, False, True, True): (
+            self.StrategyKey(False, True, True): (
                 self.patients_repo.fetch_by_age_and_skin_type
             ),
-            self.StrategyKey(True, True, True, False): (
-                self.patients_repo.fetch_by_nickname_gender_and_age
-            ),
-            self.StrategyKey(True, True, False, True): (
-                self.patients_repo.fetch_by_nickname_gender_and_skin_type
-            ),
-            self.StrategyKey(True, False, True, True): (
-                self.patients_repo.fetch_by_nickname_age_and_skin_type
-            ),
-            self.StrategyKey(False, True, True, True): (
+            self.StrategyKey(True, True, True): (
                 self.patients_repo.fetch_by_gender_age_and_skin_type
-            ),
-            self.StrategyKey(True, True, True, True): (
-                self.patients_repo.fetch_by_nickname_gender_age_and_skin_type
             )
         }
 
     def _build_key(self, filter_params: schemas.FindPatients) -> namedtuple:
 
         return self.StrategyKey(
-            nickname=True if filter_params.nickname is not None else False,
             gender=True if filter_params.gender is not None else False,
             age=any((filter_params.age_from is not None,
                      filter_params.age_to is not None)),

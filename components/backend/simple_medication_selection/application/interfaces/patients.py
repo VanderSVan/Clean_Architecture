@@ -10,13 +10,13 @@ class PatientsRepo(ABC):
         ...
 
     @abstractmethod
-    def fetch_all(self,
-                  filter_params: schemas.FindPatients
-                  ) -> Sequence[entities.Patient]:
+    def fetch_by_nickname(self, nickname: str) -> entities.Patient | None:
         ...
 
     @abstractmethod
-    def fetch_by_nickname(self, nickname: str) -> entities.Patient | None:
+    def fetch_all(self,
+                  filter_params: schemas.FindPatients
+                  ) -> Sequence[entities.Patient]:
         ...
 
     @abstractmethod
@@ -38,24 +38,6 @@ class PatientsRepo(ABC):
         ...
 
     @abstractmethod
-    def fetch_by_nickname_and_gender(self,
-                                     filter_params: schemas.FindPatients
-                                     ) -> Sequence[entities.Patient]:
-        ...
-
-    @abstractmethod
-    def fetch_by_nickname_and_age(self,
-                                  filter_params: schemas.FindPatients
-                                  ) -> Sequence[entities.Patient]:
-        ...
-
-    @abstractmethod
-    def fetch_by_nickname_and_skin_type(self,
-                                        filter_params: schemas.FindPatients
-                                        ) -> Sequence[entities.Patient]:
-        ...
-
-    @abstractmethod
     def fetch_by_gender_and_age(self,
                                 filter_params: schemas.FindPatients
                                 ) -> Sequence[entities.Patient]:
@@ -74,33 +56,9 @@ class PatientsRepo(ABC):
         ...
 
     @abstractmethod
-    def fetch_by_nickname_gender_and_age(self,
-                                         filter_params: schemas.FindPatients
-                                         ) -> Sequence[entities.Patient]:
-        ...
-
-    @abstractmethod
-    def fetch_by_nickname_gender_and_skin_type(self,
-                                               filter_params: schemas.FindPatients
-                                               ) -> Sequence[entities.Patient]:
-        ...
-
-    @abstractmethod
-    def fetch_by_nickname_age_and_skin_type(self,
-                                            filter_params: schemas.FindPatients
-                                            ) -> Sequence[entities.Patient]:
-        ...
-
-    @abstractmethod
     def fetch_by_gender_age_and_skin_type(self,
                                           filter_params: schemas.FindPatients
                                           ) -> Sequence[entities.Patient]:
-        ...
-
-    @abstractmethod
-    def fetch_by_nickname_gender_age_and_skin_type(self,
-                                                   filter_params: schemas.FindPatients
-                                                   ) -> Sequence[entities.Patient]:
         ...
 
     @abstractmethod
