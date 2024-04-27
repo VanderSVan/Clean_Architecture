@@ -4,7 +4,7 @@ from falcon import status_codes
 from spectree import Response
 
 from simple_medication_selection.application import services, entities, dtos, schemas
-from ..spec import spectree
+from simple_medication_selection.adapters.api.spec import spectree
 
 
 class ItemReviews:
@@ -60,7 +60,7 @@ class ItemReviews:
     )
     def on_post_new(self, req, resp):
         """
-        Создание отзыва.
+        Добавление нового отзыва.
         """
         new_review_info = dtos.NewItemReviewInfo(**req.media)
         new_review: entities.ItemReview = self.review.add(new_review_info)
