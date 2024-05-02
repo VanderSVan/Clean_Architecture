@@ -165,7 +165,7 @@ class MedicalBooks:
         for med_book in found_books:
             if med_book is not None:
                 med_book_with_symptoms_and_reviews: dict = med_book.dict(
-                    exclude_unset=True,  exclude_none=True,
+                    exclude_unset=True, exclude_none=True,
                     exclude={*filter_params.exclude_med_book_fields}
                 )
                 symptoms: list[dict] = [
@@ -249,14 +249,20 @@ class MedicalBooks:
         resp.status = status_codes.HTTP_200
 
     @spectree.validate(
-        json=dtos.NewMedicalBookInfo,
+        json=api_schemas.PostMedicalBookInfo,
         resp=Response(HTTP_201=dtos.MedicalBookWithSymptomsAndItemReviews),
         tags=["Medical books"]
     )
     def on_post_new(self, req, resp):
         """
-        Создание медицинской карты.
+        Создание новой медицинской карты.
         """
+        req.media.update(
+            {
+                'symptom_ids_to_add': req.media['symptom_ids'],
+                'item_review_ids_to_add': req.media['item_review_ids']
+            }
+        )
         new_med_book_info = dtos.NewMedicalBookInfo(**req.media)
         new_med_book: dtos.MedicalBookWithSymptomsAndItemReviews = (
             self.med_book.add(new_med_book_info)
@@ -273,7 +279,7 @@ class MedicalBooks:
     )
     def on_put_by_id(self, req, resp, med_book_id: int):
         """
-        Изменение медицинской карты.
+        Замена информации на новую в медицинской карте.
         """
         req.media.update({'id': med_book_id})
         updated_med_book_info = dtos.UpdatedMedicalBookInfo(**req.media)
@@ -282,6 +288,25 @@ class MedicalBooks:
         )
 
         resp.media = updated_med_book.dict(exclude_unset=True, exclude_none=True)
+        resp.status = status_codes.HTTP_200
+
+    @spectree.validate(
+        path_parameter_descriptions={"med_book_id": "Integer"},
+        json=dtos.NewMedicalBookInfo,
+        resp=Response(HTTP_200=dtos.MedicalBookWithSymptomsAndItemReviews),
+        tags=["Medical books"]
+    )
+    def on_patch_by_id(self, req, resp, med_book_id):
+        """
+        Изменение или добавление новой информации в медицинскую карту.
+        """
+        req.media.update({'id': med_book_id})
+        new_med_book_info = dtos.NewMedicalBookInfo(**req.media)
+        med_book: dtos.MedicalBookWithSymptomsAndItemReviews = (
+            self.med_book.add(new_med_book_info)
+        )
+
+        resp.media = med_book.dict(exclude_unset=True, exclude_none=True)
         resp.status = status_codes.HTTP_200
 
     @spectree.validate(

@@ -27,6 +27,8 @@ from .medical_book import (
     MedicalBookAlreadyExists,
     MedicalBookExcludeAllFields,
     MedicalBookExcludeSortField,
+    MedicalBookSymptomsIntersection,
+    MedicalBookReviewsIntersection
 )
 from .patient import (
     PatientNotFound,

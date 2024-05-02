@@ -1,3 +1,4 @@
+from .base import DTO
 from .diagnosis import (
     DiagnosisCreateSchema,
     DiagnosisGetSchema,

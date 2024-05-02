@@ -557,15 +557,18 @@ class TestOnPostNew:
         medical_book_service.add.return_value = (
             dtos.MedicalBookWithSymptomsAndItemReviews(**asdict(MEDICAL_BOOK_1))
         )
+        data_to_post = api_schemas.PostMedicalBookInfo(**asdict(MEDICAL_BOOK_1))
+        # data_to_post.id = None
 
         # Call
-        response = client.simulate_post('/medical_books/new', json=asdict(MEDICAL_BOOK_1))
+        response = client.simulate_post('/medical_books/new',
+                                        json=data_to_post.dict())
 
         # Assert
         assert response.status_code == 201
         assert response.json == asdict(MEDICAL_BOOK_1)
         assert medical_book_service.method_calls == [
-            call.add(dtos.NewMedicalBookInfo(**asdict(MEDICAL_BOOK_1)))
+            call.add(dtos.NewMedicalBookInfo(**data_to_post.dict()))
         ]
 
 

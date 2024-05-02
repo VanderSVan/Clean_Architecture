@@ -274,14 +274,12 @@ class TestRemove:
                       entities.Patient.id == entities.MedicalBook.patient_id)
             ).scalar()
         )
-        print(patient_to_remove)
         orphaned_medical_book_ids: list[entities.MedicalBook] = (
             session.execute(
                 select(entities.MedicalBook.id)
                 .where(entities.MedicalBook.patient_id == patient_to_remove.id)
             ).scalars().all()
         )
-        print(orphaned_medical_book_ids)
         # Assert
         assert len(orphaned_medical_book_ids) > 0
 
@@ -292,7 +290,6 @@ class TestRemove:
         medical_books_after_remove: list[entities.MedicalBook] = (
             session.execute(select(entities.MedicalBook.id)).scalars().all()
         )
-        print(medical_books_after_remove)
 
         # Assert
         assert len(medical_books_after_remove) > 0

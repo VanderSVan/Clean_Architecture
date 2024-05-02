@@ -8,7 +8,8 @@ from .medical_book import (
     MedicalBookOutput,
     MedicalBookWithSymptomsOutput,
     MedicalBookWithItemReviewsOutput,
-    MedicalBookWithSymptomsAndItemReviewsOutput
+    MedicalBookWithSymptomsAndItemReviewsOutput,
+    PostMedicalBookInfo,
 )
 from .patient import InputUpdatedPatientInfo
 from .symptom import SymptomOutput

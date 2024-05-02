@@ -1,5 +1,6 @@
-from pydantic import Field
+from pydantic import Field, validator, root_validator
 
+from simple_medication_selection.application import errors
 from .base import DTO
 from .item_review import ItemReview
 from .symptom import Symptom
@@ -46,10 +47,74 @@ class NewMedicalBookInfo(DTO):
     history: str | None = Field(min_length=1, max_length=15000)
     patient_id: int = Field(ge=1)
     diagnosis_id: int = Field(ge=1)
-    symptom_ids_to_add: list[int] | None
-    item_review_ids_to_add: list[int] | None
-    symptom_ids_to_remove: list[int] | None
-    item_review_ids_to_remove: list[int] | None
+    symptom_ids_to_add: list[int] | None = Field(ge=1)
+    item_review_ids_to_add: list[int] | None = Field(ge=1)
+    symptom_ids_to_remove: list[int] | None = Field(ge=1)
+    item_review_ids_to_remove: list[int] | None = Field(ge=1)
+
+    @validator('symptom_ids_to_add', pre=True)
+    def make_symptoms_to_add_unique(cls, value) -> list[int] | None:
+        if isinstance(value, list):
+            return list(set(value))
+        return value
+
+    @validator('item_review_ids_to_add', pre=True)
+    def make_item_reviews_to_add_unique(cls, value) -> list[int] | None:
+        if isinstance(value, list):
+            return list(set(value))
+        return value
+
+    @validator('symptom_ids_to_remove', pre=True)
+    def make_symptoms_to_remove_unique(cls, value) -> list[int] | None:
+        if isinstance(value, list):
+            return list(set(value))
+        return value
+
+    @validator('item_review_ids_to_remove', pre=True)
+    def make_item_reviews_to_remove_unique(cls, value) -> list[int] | None:
+        if isinstance(value, list):
+            return list(set(value))
+        return value
+
+    @root_validator
+    def fix_symptoms(cls, values):
+        symptom_ids_to_add: list[int] | None = values.get('symptom_ids_to_add')
+        symptom_ids_to_remove: list[int] | None = values.get('symptom_ids_to_remove')
+
+        if not all((symptom_ids_to_add, symptom_ids_to_remove)):
+            return values
+
+        intersection: set[int | None] = (
+            set(symptom_ids_to_add) & set(symptom_ids_to_remove)
+        )
+        if intersection:
+            raise errors.MedicalBookSymptomsIntersection(
+                symptom_ids_to_add=values['symptom_ids_to_add'],
+                symptom_ids_to_remove=values['symptom_ids_to_remove']
+            )
+
+        return values
+
+    @root_validator
+    def fix_item_reviews(cls, values):
+        item_review_ids_to_add: list[int] | None = values.get('item_review_ids_to_add')
+        item_review_ids_to_remove: list[int] | None = (
+            values.get('item_review_ids_to_remove')
+        )
+
+        if not all((item_review_ids_to_add, item_review_ids_to_remove)):
+            return values
+
+        intersection: set[int | None] = (
+            set(item_review_ids_to_add) & set(item_review_ids_to_remove)
+        )
+        if intersection:
+            raise errors.MedicalBookReviewsIntersection(
+                item_review_ids_to_add=values['item_review_ids_to_add'],
+                item_review_ids_to_remove=values['item_review_ids_to_remove']
+            )
+
+        return values
 
 
 class UpdatedMedicalBookInfo(DTO):
@@ -58,5 +123,17 @@ class UpdatedMedicalBookInfo(DTO):
     history: str | None = Field(min_length=1, max_length=15000)
     patient_id: int | None = Field(ge=1)
     diagnosis_id: int | None = Field(ge=1)
-    symptom_ids: list[int] | None
-    item_review_ids: list[int] | None
+    symptom_ids: list[int] | None = Field(ge=1)
+    item_review_ids: list[int] | None = Field(ge=1)
+
+    @validator('symptom_ids', pre=True)
+    def make_symptoms_unique(cls, value) -> list[int] | None:
+        if isinstance(value, list):
+            return list(set(value))
+        return value
+
+    @validator('item_review_ids', pre=True)
+    def make_item_reviews_unique(cls, value) -> list[int] | None:
+        if isinstance(value, list):
+            return list(set(value))
+        return value
