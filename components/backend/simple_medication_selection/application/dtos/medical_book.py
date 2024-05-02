@@ -1,8 +1,8 @@
 from pydantic import Field
 
 from .base import DTO
-from .symptom import Symptom
 from .item_review import ItemReview
+from .symptom import Symptom
 
 
 class MedicalBook(DTO):
@@ -41,12 +41,15 @@ class MedicalBookWithSymptomsAndItemReviews(MedicalBookWithSymptoms,
 
 
 class NewMedicalBookInfo(DTO):
+    id: int | None = Field(ge=1)
     title_history: str = Field(min_length=1, max_length=255)
     history: str | None = Field(min_length=1, max_length=15000)
     patient_id: int = Field(ge=1)
     diagnosis_id: int = Field(ge=1)
-    symptom_ids: list[int] | None
-    item_review_ids: list[int] | None
+    symptom_ids_to_add: list[int] | None
+    item_review_ids_to_add: list[int] | None
+    symptom_ids_to_remove: list[int] | None
+    item_review_ids_to_remove: list[int] | None
 
 
 class UpdatedMedicalBookInfo(DTO):

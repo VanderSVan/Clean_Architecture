@@ -153,14 +153,12 @@ class MedicalBook:
     def add_item_reviews(self, item_reviews: Iterable[ItemReview]) -> None:
         for item_review in item_reviews:
             (self.item_reviews.append(item_review)
-             if item_review not in self.item_reviews
-             else None)
+             if item_review not in self.item_reviews else None)
 
     def remove_item_reviews(self, item_reviews: Iterable[ItemReview]) -> None:
         for item_review in item_reviews:
             (self.item_reviews.remove(item_review)
-             if item_review in self.item_reviews
-             else None)
+             if item_review in self.item_reviews else None)
 
 
 # Хранит все сущности из текущего модуля, формируя кортеж
