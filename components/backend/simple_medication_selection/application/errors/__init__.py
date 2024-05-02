@@ -1,21 +1,7 @@
 from .base import Error, ErrorsList
-
-from .symptom import (
-    SymptomNotFound,
-    SymptomAlreadyExists,
-    SymptomExcludeAllFields
-)
 from .diagnosis import (
     DiagnosisNotFound,
     DiagnosisAlreadyExists,
-)
-from .item_category import (
-    ItemCategoryNotFound,
-    ItemCategoryAlreadyExists,
-)
-from .item_types import (
-    ItemTypeNotFound,
-    ItemTypeAlreadyExists,
 )
 from .item import (
     TreatmentItemNotFound,
@@ -23,18 +9,33 @@ from .item import (
     TreatmentItemExcludeAllFields,
     TreatmentItemExcludeSortField
 )
+from .item_category import (
+    ItemCategoryNotFound,
+    ItemCategoryAlreadyExists,
+)
 from .item_review import (
     ItemReviewNotFound,
     ItemReviewAlreadyExists,
     ItemReviewExcludeAllFields,
 )
-from .patient import (
-    PatientNotFound,
-    PatientAlreadyExists
+from .item_types import (
+    ItemTypeNotFound,
+    ItemTypeAlreadyExists,
 )
 from .medical_book import (
     MedicalBookNotFound,
     MedicalBookAlreadyExists,
     MedicalBookExcludeAllFields,
     MedicalBookExcludeSortField,
+)
+from .patient import (
+    PatientNotFound,
+    PatientAlreadyExists,
+    PatientCannotBeDeleted
+
+)
+from .symptom import (
+    SymptomNotFound,
+    SymptomAlreadyExists,
+    SymptomExcludeAllFields
 )

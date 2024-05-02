@@ -1,11 +1,9 @@
-from dataclasses import asdict
-
 from falcon import status_codes
 from spectree import Response
 
 from simple_medication_selection.adapters.api import schemas as api_schemas
 from simple_medication_selection.adapters.api.spec import spectree
-from simple_medication_selection.application import services, entities, dtos
+from simple_medication_selection.application import services, dtos
 
 
 class MedicalBooks:
@@ -39,7 +37,7 @@ class MedicalBooks:
             self.med_book.find_med_books(filter_params)
         )
 
-        resp.media = [med_book.dict(exclude_unset=True,
+        resp.media = [med_book.dict(exclude_unset=True, exclude_none=True,
                                     exclude={*filter_params.exclude_med_book_fields})
                       for med_book in found_books if med_book is not None]
         resp.status = status_codes.HTTP_200
@@ -75,10 +73,11 @@ class MedicalBooks:
         for med_book in found_books:
             if med_book is not None:
                 med_book_with_symptoms: dict = med_book.dict(
-                    exclude_unset=True, exclude={*filter_params.exclude_med_book_fields}
+                    exclude_unset=True, exclude_none=True,
+                    exclude={*filter_params.exclude_med_book_fields}
                 )
                 symptoms: list[dict] = [
-                    symptom.dict(exclude_unset=True,
+                    symptom.dict(exclude_unset=True, exclude_none=True,
                                  exclude={*filter_params.exclude_symptom_fields})
                     for symptom in med_book.symptoms
                 ]
@@ -118,10 +117,12 @@ class MedicalBooks:
         for med_book in found_books:
             if med_book is not None:
                 med_book_with_reviews: dict = med_book.dict(
-                    exclude_unset=True, exclude={*filter_params.exclude_med_book_fields}
+                    exclude_unset=True, exclude_none=True,
+                    exclude={*filter_params.exclude_med_book_fields}
                 )
                 item_reviews: list[dict] = [
                     item_review.dict(exclude_unset=True,
+                                     exclude_none=True,
                                      exclude={*filter_params.exclude_item_review_fields})
                     for item_review in med_book.item_reviews
                 ]
@@ -164,15 +165,16 @@ class MedicalBooks:
         for med_book in found_books:
             if med_book is not None:
                 med_book_with_symptoms_and_reviews: dict = med_book.dict(
-                    exclude_unset=True, exclude={*filter_params.exclude_med_book_fields}
+                    exclude_unset=True,  exclude_none=True,
+                    exclude={*filter_params.exclude_med_book_fields}
                 )
                 symptoms: list[dict] = [
-                    symptom.dict(exclude_unset=True,
+                    symptom.dict(exclude_unset=True, exclude_none=True,
                                  exclude={*filter_params.exclude_symptom_fields})
                     for symptom in med_book.symptoms
                 ]
                 item_reviews: list[dict] = [
-                    item_review.dict(exclude_unset=True,
+                    item_review.dict(exclude_unset=True, exclude_none=True,
                                      exclude={*filter_params.exclude_item_review_fields})
                     for item_review in med_book.item_reviews
                 ]
@@ -195,7 +197,7 @@ class MedicalBooks:
         """
         med_book: dtos.MedicalBook = self.med_book.get_med_book(med_book_id)
 
-        resp.media = med_book.dict(exclude_unset=True)
+        resp.media = med_book.dict(exclude_unset=True, exclude_none=True)
         resp.status = status_codes.HTTP_200
 
     @spectree.validate(
@@ -211,7 +213,7 @@ class MedicalBooks:
             self.med_book.get_med_book_with_symptoms(med_book_id)
         )
 
-        resp.media = med_book.dict()
+        resp.media = med_book.dict(exclude_unset=True, exclude_none=True)
         resp.status = status_codes.HTTP_200
 
     @spectree.validate(
@@ -227,7 +229,7 @@ class MedicalBooks:
             self.med_book.get_med_book_with_reviews(med_book_id)
         )
 
-        resp.media = med_book.dict()
+        resp.media = med_book.dict(exclude_unset=True, exclude_none=True)
         resp.status = status_codes.HTTP_200
 
     @spectree.validate(
@@ -239,11 +241,11 @@ class MedicalBooks:
         """
         Получение медицинской карты с симптомами и отзывами по идентификатору.
         """
-        med_book: entities.MedicalBook = (
+        med_book: dtos.MedicalBookWithSymptomsAndItemReviews = (
             self.med_book.get_med_book_with_symptoms_and_reviews(med_book_id)
         )
 
-        resp.media = asdict(med_book)
+        resp.media = med_book.dict(exclude_none=True, exclude_unset=True)
         resp.status = status_codes.HTTP_200
 
     @spectree.validate(
@@ -256,9 +258,11 @@ class MedicalBooks:
         Создание медицинской карты.
         """
         new_med_book_info = dtos.NewMedicalBookInfo(**req.media)
-        new_med_book: entities.MedicalBook = self.med_book.add(new_med_book_info)
+        new_med_book: dtos.MedicalBookWithSymptomsAndItemReviews = (
+            self.med_book.add(new_med_book_info)
+        )
 
-        resp.media = asdict(new_med_book)
+        resp.media = new_med_book.dict(exclude_unset=True, exclude_none=True)
         resp.status = status_codes.HTTP_201
 
     @spectree.validate(
@@ -273,23 +277,23 @@ class MedicalBooks:
         """
         req.media.update({'id': med_book_id})
         updated_med_book_info = dtos.UpdatedMedicalBookInfo(**req.media)
-        updated_med_book: entities.MedicalBook = (
+        updated_med_book: dtos.MedicalBookWithSymptomsAndItemReviews = (
             self.med_book.change(updated_med_book_info)
         )
 
-        resp.media = asdict(updated_med_book)
+        resp.media = updated_med_book.dict(exclude_unset=True, exclude_none=True)
         resp.status = status_codes.HTTP_200
 
     @spectree.validate(
         path_parameter_descriptions={"med_book_id": "Integer"},
-        resp=Response(HTTP_200=dtos.MedicalBookWithSymptomsAndItemReviews),
+        resp=Response(HTTP_200=dtos.MedicalBook),
         tags=["Medical books"]
     )
     def on_delete_by_id(self, req, resp, med_book_id):
         """
         Удаление медицинской карты.
         """
-        removed_med_book: entities.MedicalBook = self.med_book.delete(med_book_id)
+        removed_med_book: dtos.MedicalBook = self.med_book.delete(med_book_id)
 
-        resp.media = asdict(removed_med_book)
+        resp.media = removed_med_book.dict(exclude_unset=True, exclude_none=True)
         resp.status = status_codes.HTTP_200

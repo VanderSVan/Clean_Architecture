@@ -1,5 +1,4 @@
 import pytest
-
 from sqlalchemy import select, func
 from sqlalchemy.orm import joinedload
 
@@ -948,7 +947,7 @@ class TestRemove:
         assert before_count - 1 == after_count
         assert isinstance(result, entities.ItemReview)
 
-    def test__cascade_delete_item(self, repo, session, fill_db):
+    def test__cascade_delete_review_from_item(self, repo, session, fill_db):
         # Setup
         review_to_remove: entities.ItemReview = session.query(entities.ItemReview).first()
         review_id_to_remove: int = review_to_remove.id
@@ -973,7 +972,7 @@ class TestRemove:
         # Assert
         assert all(review_id_to_remove != review.id for review in item.reviews)
 
-    def test__cascade_delete_med_book(self, repo, session, fill_db):
+    def test__cascade_delete_review_from_med_book(self, repo, session, fill_db):
         # Setup
         review_to_remove: entities.ItemReview = session.query(entities.ItemReview).first()
         med_books: list[entities.MedicalBook] = session.execute(

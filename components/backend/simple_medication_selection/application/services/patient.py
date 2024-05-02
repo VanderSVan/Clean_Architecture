@@ -1,3 +1,4 @@
+import uuid
 from collections import namedtuple
 from typing import Callable, Sequence
 
@@ -13,14 +14,17 @@ register_method = decorated_function_registry.register_function
 
 
 class Patient:
-    def __init__(self, patients_repo: interfaces.PatientsRepo):
+    def __init__(self,
+                 patients_repo: interfaces.PatientsRepo,
+                 medical_books_repo: interfaces.MedicalBooksRepo):
         self.patients_repo = patients_repo
+        self.medical_books_repo = medical_books_repo
         self.search_strategy_selector = _PatientStrategySelector(patients_repo)
 
     @register_method
     @validate_arguments
     def get(self, patient_id: int) -> dtos.Patient:
-        patient = self.patients_repo.fetch_by_id(patient_id)
+        patient: entities.Patient = self.patients_repo.fetch_by_id(patient_id)
 
         if not patient:
             raise errors.PatientNotFound(id=patient_id)
@@ -72,12 +76,41 @@ class Patient:
     @register_method
     @validate_arguments
     def delete(self, patient_id: int) -> dtos.Patient:
-        patient = self.patients_repo.fetch_by_id(patient_id)
+        # Получаем удаляемого пациента
+        patient_to_delete: entities.Patient = self.patients_repo.fetch_by_id(patient_id)
 
-        if not patient:
+        if not patient_to_delete:
             raise errors.PatientNotFound(id=patient_id)
 
-        removed_patient: entities.Patient = self.patients_repo.remove(patient)
+        # Находим все MedicalBook, связанные с удаляемым пациентом
+        medical_books_filter_params = schemas.FindMedicalBooks(patient_id=patient_id)
+        medical_books_to_move: Sequence[entities.MedicalBook] = (
+            self.medical_books_repo.fetch_by_patient(medical_books_filter_params,
+                                                     include_symptoms=False,
+                                                     include_reviews=False)
+        )
+
+        # Создаем нового пациента с ником Anonymous-{} и
+        # передаем ему нечувствительные данные
+        new_patient_nickname: str = f"Anonymous-{uuid.uuid4()}"
+        patient_to_create: entities.Patient = (
+            self.patients_repo.fetch_by_nickname(new_patient_nickname)
+        )
+        if patient_to_create:
+            raise errors.PatientCannotBeDeleted(nickname=patient_to_delete.nickname)
+
+        new_patient_info = dtos.NewPatientInfo(
+            nickname=new_patient_nickname, gender=patient_to_delete.gender,
+            age=patient_to_delete.age, skin_type=patient_to_delete.skin_type
+        )
+        new_patient: entities.Patient = new_patient_info.create_obj(entities.Patient)
+        added_patient: entities.Patient = self.patients_repo.add(new_patient)
+
+        # Обновляем ссылку на пациента во всех найденных MedicalBook
+        for medical_book in medical_books_to_move:
+            medical_book.patient_id = added_patient.id
+
+        removed_patient: entities.Patient = self.patients_repo.remove(patient_to_delete)
         return dtos.Patient.from_orm(removed_patient)
 
 

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Sequence
 
-from .. import entities, dtos, schemas
+from .. import entities, schemas
 
 
 class MedicalBooksRepo(ABC):
@@ -12,23 +12,16 @@ class MedicalBooksRepo(ABC):
                     *,
                     include_symptoms: bool,
                     include_reviews: bool
-                    ) -> (dtos.MedicalBook |
-                          dtos.MedicalBookWithSymptoms |
-                          dtos.MedicalBookWithItemReviews |
-                          entities.MedicalBook |
-                          None):
+                    ) -> entities.MedicalBook | None:
         ...
 
+    @abstractmethod
     def fetch_all(self,
                   filter_params: schemas.FindMedicalBooks,
                   *,
                   include_symptoms: bool,
                   include_reviews: bool
-                  ) -> (Sequence[dtos.MedicalBook] |
-                        list[dtos.MedicalBook] |
-                        list[dtos.MedicalBookWithSymptoms] |
-                        list[dtos.MedicalBookWithItemReviews] |
-                        list[None]):
+                  ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -37,11 +30,7 @@ class MedicalBooksRepo(ABC):
                           *,
                           include_symptoms: bool,
                           include_reviews: bool
-                          ) -> (Sequence[dtos.MedicalBook] |
-                                list[dtos.MedicalBook] |
-                                list[dtos.MedicalBookWithSymptoms] |
-                                list[dtos.MedicalBookWithItemReviews] |
-                                list[None]):
+                          ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -50,11 +39,7 @@ class MedicalBooksRepo(ABC):
                                        *,
                                        include_symptoms: bool,
                                        include_reviews: bool
-                                       ) -> (Sequence[dtos.MedicalBook] |
-                                             list[dtos.MedicalBook] |
-                                             list[dtos.MedicalBookWithSymptoms] |
-                                             list[dtos.MedicalBookWithItemReviews] |
-                                             list[None]):
+                                       ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -63,11 +48,7 @@ class MedicalBooksRepo(ABC):
                            *,
                            include_symptoms: bool,
                            include_reviews: bool
-                           ) -> (Sequence[dtos.MedicalBook] |
-                                 list[dtos.MedicalBook] |
-                                 list[dtos.MedicalBookWithSymptoms] |
-                                 list[dtos.MedicalBookWithItemReviews] |
-                                 list[None]):
+                           ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -76,11 +57,7 @@ class MedicalBooksRepo(ABC):
                                         *,
                                         include_symptoms: bool,
                                         include_reviews: bool
-                                        ) -> (Sequence[dtos.MedicalBook] |
-                                              list[dtos.MedicalBook] |
-                                              list[dtos.MedicalBookWithSymptoms] |
-                                              list[dtos.MedicalBookWithItemReviews] |
-                                              list[None]):
+                                        ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -90,11 +67,7 @@ class MedicalBooksRepo(ABC):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -103,11 +76,7 @@ class MedicalBooksRepo(ABC):
                                *,
                                include_symptoms: bool,
                                include_reviews: bool
-                               ) -> (Sequence[dtos.MedicalBook] |
-                                     list[dtos.MedicalBook] |
-                                     list[dtos.MedicalBookWithSymptoms] |
-                                     list[dtos.MedicalBookWithItemReviews] |
-                                     list[None]):
+                               ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -116,11 +85,7 @@ class MedicalBooksRepo(ABC):
                                             *,
                                             include_symptoms: bool,
                                             include_reviews: bool
-                                            ) -> (Sequence[dtos.MedicalBook] |
-                                                  list[dtos.MedicalBook] |
-                                                  list[dtos.MedicalBookWithSymptoms] |
-                                                  list[dtos.MedicalBookWithItemReviews] |
-                                                  list[None]):
+                                            ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -130,11 +95,7 @@ class MedicalBooksRepo(ABC):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -143,11 +104,7 @@ class MedicalBooksRepo(ABC):
                                              *,
                                              include_symptoms: bool,
                                              include_reviews: bool
-                                             ) -> (Sequence[dtos.MedicalBook] |
-                                                   list[dtos.MedicalBook] |
-                                                   list[dtos.MedicalBookWithSymptoms] |
-                                                   list[dtos.MedicalBookWithItemReviews] |
-                                                   list[None]):
+                                             ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -157,11 +114,7 @@ class MedicalBooksRepo(ABC):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -171,11 +124,7 @@ class MedicalBooksRepo(ABC):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -184,11 +133,7 @@ class MedicalBooksRepo(ABC):
                          *,
                          include_symptoms: bool,
                          include_reviews: bool
-                         ) -> (Sequence[dtos.MedicalBook] |
-                               list[dtos.MedicalBook] |
-                               list[dtos.MedicalBookWithSymptoms] |
-                               list[dtos.MedicalBookWithItemReviews] |
-                               list[None]):
+                         ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -197,11 +142,7 @@ class MedicalBooksRepo(ABC):
                                       *,
                                       include_symptoms: bool,
                                       include_reviews: bool
-                                      ) -> (Sequence[dtos.MedicalBook] |
-                                            list[dtos.MedicalBook] |
-                                            list[dtos.MedicalBookWithSymptoms] |
-                                            list[dtos.MedicalBookWithItemReviews] |
-                                            list[None]):
+                                      ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -211,11 +152,7 @@ class MedicalBooksRepo(ABC):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -225,11 +162,7 @@ class MedicalBooksRepo(ABC):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -239,11 +172,7 @@ class MedicalBooksRepo(ABC):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -253,11 +182,7 @@ class MedicalBooksRepo(ABC):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -267,11 +192,7 @@ class MedicalBooksRepo(ABC):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -281,11 +202,7 @@ class MedicalBooksRepo(ABC):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -295,11 +212,7 @@ class MedicalBooksRepo(ABC):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -309,11 +222,7 @@ class MedicalBooksRepo(ABC):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -323,11 +232,7 @@ class MedicalBooksRepo(ABC):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -337,11 +242,7 @@ class MedicalBooksRepo(ABC):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -350,11 +251,7 @@ class MedicalBooksRepo(ABC):
                        *,
                        include_symptoms: bool,
                        include_reviews: bool
-                       ) -> (Sequence[dtos.MedicalBook] |
-                             list[dtos.MedicalBook] |
-                             list[dtos.MedicalBookWithSymptoms] |
-                             list[dtos.MedicalBookWithItemReviews] |
-                             list[None]):
+                       ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -363,11 +260,7 @@ class MedicalBooksRepo(ABC):
                                    *,
                                    include_symptoms: bool,
                                    include_reviews: bool
-                                   ) -> (Sequence[dtos.MedicalBook] |
-                                         list[dtos.MedicalBook] |
-                                         list[dtos.MedicalBookWithSymptoms] |
-                                         list[dtos.MedicalBookWithItemReviews] |
-                                         list[None]):
+                                   ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -376,11 +269,7 @@ class MedicalBooksRepo(ABC):
                                          *,
                                          include_symptoms: bool,
                                          include_reviews: bool
-                                         ) -> (Sequence[dtos.MedicalBook] |
-                                               list[dtos.MedicalBook] |
-                                               list[dtos.MedicalBookWithSymptoms] |
-                                               list[dtos.MedicalBookWithItemReviews] |
-                                               list[None]):
+                                         ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -389,11 +278,7 @@ class MedicalBooksRepo(ABC):
                                      *,
                                      include_symptoms: bool,
                                      include_reviews: bool
-                                     ) -> (Sequence[dtos.MedicalBook] |
-                                           list[dtos.MedicalBook] |
-                                           list[dtos.MedicalBookWithSymptoms] |
-                                           list[dtos.MedicalBookWithItemReviews] |
-                                           list[None]):
+                                     ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -402,11 +287,7 @@ class MedicalBooksRepo(ABC):
                                     *,
                                     include_symptoms: bool,
                                     include_reviews: bool
-                                    ) -> (Sequence[dtos.MedicalBook] |
-                                          list[dtos.MedicalBook] |
-                                          list[dtos.MedicalBookWithSymptoms] |
-                                          list[dtos.MedicalBookWithItemReviews] |
-                                          list[None]):
+                                    ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -416,11 +297,7 @@ class MedicalBooksRepo(ABC):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -430,11 +307,7 @@ class MedicalBooksRepo(ABC):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -444,11 +317,7 @@ class MedicalBooksRepo(ABC):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -458,11 +327,7 @@ class MedicalBooksRepo(ABC):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -472,11 +337,7 @@ class MedicalBooksRepo(ABC):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -486,11 +347,7 @@ class MedicalBooksRepo(ABC):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -500,11 +357,7 @@ class MedicalBooksRepo(ABC):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -514,11 +367,7 @@ class MedicalBooksRepo(ABC):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -528,11 +377,7 @@ class MedicalBooksRepo(ABC):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -542,11 +387,7 @@ class MedicalBooksRepo(ABC):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod
@@ -556,11 +397,7 @@ class MedicalBooksRepo(ABC):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (Sequence[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         ...
 
     @abstractmethod

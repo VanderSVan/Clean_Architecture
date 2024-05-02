@@ -1,5 +1,4 @@
 import pytest
-
 from sqlalchemy import select, func
 
 from simple_medication_selection.adapters.database import repositories
@@ -13,7 +12,12 @@ from .. import test_data
 @pytest.fixture(scope='function', autouse=True)
 def fill_db(session) -> dict[str, list[int]]:
     patient_ids: list[int] = test_data.insert_patients(session)
-    return {'patient_ids': patient_ids}
+    diagnosis_ids: list[int] = test_data.insert_diagnoses(session)
+    med_book_ids: list[int] = test_data.insert_medical_books(patient_ids, diagnosis_ids,
+                                                             session)
+    return {'patient_ids': patient_ids,
+            'diagnosis_ids': diagnosis_ids,
+            'med_book_ids': med_book_ids}
 
 
 @pytest.fixture(scope='function')
@@ -260,6 +264,40 @@ class TestRemove:
         # Assert
         assert before_count - 1 == after_count
         assert isinstance(result, entities.Patient)
+
+    def test__cascade_remove_orphaned_medical_books(self, repo, session, fill_db):
+        # Setup
+        patient_to_remove: entities.Patient = (
+            session.execute(
+                select(entities.Patient)
+                .join(entities.MedicalBook,
+                      entities.Patient.id == entities.MedicalBook.patient_id)
+            ).scalar()
+        )
+        print(patient_to_remove)
+        orphaned_medical_book_ids: list[entities.MedicalBook] = (
+            session.execute(
+                select(entities.MedicalBook.id)
+                .where(entities.MedicalBook.patient_id == patient_to_remove.id)
+            ).scalars().all()
+        )
+        print(orphaned_medical_book_ids)
+        # Assert
+        assert len(orphaned_medical_book_ids) > 0
+
+        # Call
+        result = repo.remove(patient_to_remove)
+
+        # Setup
+        medical_books_after_remove: list[entities.MedicalBook] = (
+            session.execute(select(entities.MedicalBook.id)).scalars().all()
+        )
+        print(medical_books_after_remove)
+
+        # Assert
+        assert len(medical_books_after_remove) > 0
+        for medical_book_id in orphaned_medical_book_ids:
+            assert medical_book_id not in medical_books_after_remove
 
 
 class TestPatientQueryPagination:

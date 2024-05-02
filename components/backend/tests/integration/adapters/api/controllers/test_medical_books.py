@@ -2,7 +2,7 @@ from dataclasses import asdict
 from unittest.mock import call
 
 from simple_medication_selection.adapters.api import schemas as api_schemas
-from simple_medication_selection.application import entities, dtos, schemas
+from simple_medication_selection.application import entities, dtos
 
 # ---------------------------------------------------------------------------------------
 # SETUP
@@ -509,10 +509,13 @@ class TestOnGetByIdWithSymptomsAndReviews:
     def test__on_get_by_id_with_symptoms_and_reviews(self, medical_book_service, client):
         # Setup
         med_book_id = MEDICAL_BOOK_1.id
+        returned_med_book = dtos.MedicalBookWithSymptomsAndItemReviews(
+            **MEDICAL_BOOK_1.__dict__
+        )
         # Тестовый вывод `get_med_book_with_symptoms_and_reviews` может отличаться от
         # реального вывода
         medical_book_service.get_med_book_with_symptoms_and_reviews.return_value = (
-            MEDICAL_BOOK_1
+            returned_med_book
         )
 
         # Call
@@ -528,10 +531,13 @@ class TestOnGetByIdWithSymptomsAndReviews:
     def test__on_get_by_id_with_reviews_and_symptoms(self, medical_book_service, client):
         # Setup
         med_book_id = MEDICAL_BOOK_1.id
+        returned_med_book = dtos.MedicalBookWithSymptomsAndItemReviews(
+            **MEDICAL_BOOK_1.__dict__
+        )
         # Тестовый вывод `get_med_book_with_symptoms_and_reviews` может отличаться от
         # реального вывода
         medical_book_service.get_med_book_with_symptoms_and_reviews.return_value = (
-            MEDICAL_BOOK_1
+            returned_med_book
         )
 
         # Call
@@ -548,7 +554,9 @@ class TestOnGetByIdWithSymptomsAndReviews:
 class TestOnPostNew:
     def test__on_post_new(self, medical_book_service, client):
         # Setup
-        medical_book_service.add.return_value = MEDICAL_BOOK_1
+        medical_book_service.add.return_value = (
+            dtos.MedicalBookWithSymptomsAndItemReviews(**asdict(MEDICAL_BOOK_1))
+        )
 
         # Call
         response = client.simulate_post('/medical_books/new', json=asdict(MEDICAL_BOOK_1))
@@ -557,14 +565,17 @@ class TestOnPostNew:
         assert response.status_code == 201
         assert response.json == asdict(MEDICAL_BOOK_1)
         assert medical_book_service.method_calls == [
-            call.add(dtos.NewMedicalBookInfo(**MEDICAL_BOOK_1.__dict__))
+            call.add(dtos.NewMedicalBookInfo(**asdict(MEDICAL_BOOK_1)))
         ]
 
 
 class TestOnPutById:
     def test__on_put_by_id(self, medical_book_service, client):
         # Setup
-        medical_book_service.change.return_value = MEDICAL_BOOK_1
+        medical_book_service.change.return_value = (
+            dtos.MedicalBookWithSymptomsAndItemReviews(**asdict(MEDICAL_BOOK_1))
+        )
+
         med_book_id = MEDICAL_BOOK_1.id
 
         # Call
@@ -575,14 +586,18 @@ class TestOnPutById:
         assert response.status_code == 200
         assert response.json == asdict(MEDICAL_BOOK_1)
         assert medical_book_service.method_calls == [
-            call.change(dtos.UpdatedMedicalBookInfo(**MEDICAL_BOOK_1.__dict__))
+            call.change(dtos.UpdatedMedicalBookInfo(**asdict(MEDICAL_BOOK_1)))
         ]
 
 
 class TestOnDeleteById:
     def test__on_delete_by_id(self, medical_book_service, client):
         # Setup
-        medical_book_service.delete.return_value = MEDICAL_BOOK_1
+        medical_book_info: dict = asdict(MEDICAL_BOOK_1)
+        del medical_book_info["symptoms"]
+        del medical_book_info["item_reviews"]
+        medical_book_service.delete.return_value = dtos.MedicalBook(**medical_book_info)
+
         med_book_id = MEDICAL_BOOK_1.id
 
         # Call
@@ -590,5 +605,5 @@ class TestOnDeleteById:
 
         # Assert
         assert response.status_code == 200
-        assert response.json == asdict(MEDICAL_BOOK_1)
+        assert response.json == medical_book_info
         assert medical_book_service.method_calls == [call.delete(str(med_book_id))]

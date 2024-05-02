@@ -257,14 +257,13 @@ class _TestUniquenessMixin(_BaseMixin):
 
 class TestFetchById:
 
-    @pytest.mark.parametrize('include_symptoms, include_reviews, output_obj', [
-        (False, False, dtos.MedicalBook),
-        (True, False, dtos.MedicalBookWithSymptoms),
-        (False, True, dtos.MedicalBookWithItemReviews),
-        (True, True, entities.MedicalBook),
+    @pytest.mark.parametrize('include_symptoms, include_reviews', [
+        (False, False),
+        (True, False),
+        (False, True),
+        (True, True),
     ])
-    def test__fetch_by_id(self, include_symptoms, include_reviews, output_obj, repo,
-                          session):
+    def test__fetch_by_id(self, include_symptoms, include_reviews, repo, session):
         # Setup
         med_book = session.query(entities.MedicalBook).first()
 
@@ -274,7 +273,7 @@ class TestFetchById:
                                   include_reviews=include_reviews)
 
         # Assert
-        assert isinstance(result, output_obj)
+        assert isinstance(result, entities.MedicalBook)
 
     def test__not_found(self, repo):
         # Call
@@ -296,18 +295,15 @@ class TestFetchAll(_TestOrderMixin, _TestPaginationMixin, _TestUniquenessMixin):
                         filter_params=schemas.FindMedicalBooks()),
                    dict(include_symptoms=True, include_reviews=True,
                         filter_params=schemas.FindMedicalBooks())]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
-    def test__fetch_all(self, kwargs, output_obj, repo, session):
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
+    def test__fetch_all(self, kwargs, repo, session):
         # Call
         result = repo.fetch_all(**kwargs)
 
         # Assert
         assert len(result) > 0
-        assert all(isinstance(med_book, output_obj) for med_book in result)
+        assert all(isinstance(med_book, entities.MedicalBook) for med_book in result)
 
 
 class TestFetchBySymptoms(_TestOrderMixin, _TestPaginationMixin, _TestUniquenessMixin):
@@ -320,12 +316,9 @@ class TestFetchBySymptoms(_TestOrderMixin, _TestPaginationMixin, _TestUniqueness
                         filter_params=schemas.FindMedicalBooks(symptom_ids=[3, 4])),
                    dict(include_symptoms=True, include_reviews=True,
                         filter_params=schemas.FindMedicalBooks(symptom_ids=[3, 4]))]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
-    def test__fetch_by_symptoms(self, kwargs, output_obj, repo, session, fill_db):
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
+    def test__fetch_by_symptoms(self, kwargs, repo, session, fill_db):
         # Setup
         symptom_ids: list[int] = fill_db['symptom_ids'][2:]
         kwargs['filter_params'].symptom_ids = symptom_ids
@@ -345,14 +338,11 @@ class TestFetchBySymptoms(_TestOrderMixin, _TestPaginationMixin, _TestUniqueness
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for fetched_med_book in result:
-            assert isinstance(fetched_med_book, output_obj)
+            assert isinstance(fetched_med_book, entities.MedicalBook)
             assert fetched_med_book.id in expected_med_book_ids
 
             # check symptoms
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithSymptoms
-            ):
+            if kwargs['include_symptoms']:
                 fetched_med_book_symptom_ids: list[int] = [
                     symptom.id for symptom in fetched_med_book.symptoms
                 ]
@@ -380,13 +370,9 @@ class TestFetchByMatchingAllSymptoms(_TestOrderMixin,
                         filter_params=schemas.FindMedicalBooks(
                             symptom_ids=[1, 2], match_all_symptoms=True
                         ))]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
-    def test__fetch_by_matching_all_symptoms(self, kwargs, output_obj, repo, session,
-                                             fill_db):
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
+    def test__fetch_by_matching_all_symptoms(self, kwargs, repo, session, fill_db):
         # Setup
         symptom_ids: list[int] = fill_db['symptom_ids'][:2]
         kwargs['filter_params'].symptom_ids = symptom_ids
@@ -412,14 +398,11 @@ class TestFetchByMatchingAllSymptoms(_TestOrderMixin,
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for fetched_med_book in result:
-            assert isinstance(fetched_med_book, output_obj)
+            assert isinstance(fetched_med_book, entities.MedicalBook)
             assert fetched_med_book.id in expected_med_book_ids
 
             # check symptoms
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithSymptoms
-            ):
+            if kwargs['include_symptoms']:
                 assert len(fetched_med_book.symptoms) >= len(symptom_ids)
                 fetched_med_book_symptom_ids: list[int] = [
                     symptom.id for symptom in fetched_med_book.symptoms
@@ -440,12 +423,9 @@ class TestFetchByDiagnosis(_TestOrderMixin,
                         filter_params=schemas.FindMedicalBooks(diagnosis_id=1)),
                    dict(include_symptoms=True, include_reviews=True,
                         filter_params=schemas.FindMedicalBooks(diagnosis_id=1))]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
-    def test__fetch_by_diagnosis(self, kwargs, output_obj, repo, session, fill_db):
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
+    def test__fetch_by_diagnosis(self, kwargs, repo, session, fill_db):
         # Setup
         diagnosis_id = fill_db['diagnosis_ids'][0]
         kwargs['filter_params'].diagnosis_id = diagnosis_id
@@ -464,7 +444,7 @@ class TestFetchByDiagnosis(_TestOrderMixin,
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.id in expected_med_book_ids
             assert med_book.diagnosis_id == diagnosis_id
 
@@ -489,13 +469,9 @@ class TestFetchByDiagnosisAndSymptoms(_TestOrderMixin,
                         filter_params=schemas.FindMedicalBooks(
                             diagnosis_id=1, symptom_ids=[1, 2])
                         )]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
-    def test__fetch_by_diagnosis_and_symptoms(self, kwargs, output_obj, repo, session,
-                                              fill_db):
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
+    def test__fetch_by_diagnosis_and_symptoms(self, kwargs, repo, session, fill_db):
         # Setup
         diagnosis_id = fill_db['diagnosis_ids'][0]
         symptom_ids = fill_db['symptom_ids'][:2]
@@ -518,15 +494,12 @@ class TestFetchByDiagnosisAndSymptoms(_TestOrderMixin,
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.id in expected_med_book_ids
             assert med_book.diagnosis_id == diagnosis_id
 
             # check symptoms
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithSymptoms
-            ):
+            if kwargs['include_symptoms']:
                 med_book_symptom_ids: list[int] = [symptom.id
                                                    for symptom in med_book.symptoms]
                 assert any(symptom_id in med_book_symptom_ids
@@ -553,13 +526,10 @@ class TestFetchByDiagnosisWithMatchingAllSymptoms(_TestOrderMixin,
                         filter_params=schemas.FindMedicalBooks(
                             diagnosis_id=1, symptom_ids=[1, 2], match_all_symptoms=True)
                         )]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
-    def test__fetch_by_diagnosis_with_matching_all_symptoms(self, kwargs, output_obj,
-                                                            repo, session, fill_db):
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
+    def test__fetch_by_diagnosis_with_matching_all_symptoms(self, kwargs, repo, session,
+                                                            fill_db):
         # Setup
         diagnosis_id = fill_db['diagnosis_ids'][0]
         symptom_ids = fill_db['symptom_ids'][:2]
@@ -587,15 +557,12 @@ class TestFetchByDiagnosisWithMatchingAllSymptoms(_TestOrderMixin,
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.id in expected_med_book_ids
             assert med_book.diagnosis_id == diagnosis_id
 
             # check symptoms
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithSymptoms
-            ):
+            if kwargs['include_symptoms']:
                 assert len(med_book.symptoms) >= len(symptom_ids)
                 med_book_symptom_ids: list[int] = [symptom.id
                                                    for symptom in med_book.symptoms]
@@ -625,15 +592,9 @@ class TestFetchByHelpedStatus(_TestOrderMixin,
         dict(include_symptoms=True, include_reviews=True,
              filter_params=schemas.FindMedicalBooks(is_helped=False))
     ]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
-                  dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
-    def test__fetch_by_helped_status(self, kwargs, output_obj, repo,
-                                     session, fill_db):
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
+    def test__fetch_by_helped_status(self, kwargs, repo, session, fill_db):
         # Setup
         filter_params: schemas.FindMedicalBooks = kwargs['filter_params']
         query = (
@@ -651,14 +612,11 @@ class TestFetchByHelpedStatus(_TestOrderMixin,
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.id in expected_med_book_ids
 
             # check helped status
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithItemReviews
-            ):
+            if kwargs['include_reviews']:
                 assert filter_params.is_helped in [review.is_helped
                                                    for review in med_book.item_reviews]
 
@@ -701,14 +659,9 @@ class TestFetchByHelpedStatusAndSymptoms(_TestOrderMixin,
                  is_helped=False, symptom_ids=[1, 2, 3, 4])
              )
     ]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
-                  dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
-    def test__fetch_by_helped_status_and_symptoms(self, kwargs, output_obj, repo, session,
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
+    def test__fetch_by_helped_status_and_symptoms(self, kwargs, repo, session,
                                                   fill_db):
         # Setup
         symptom_ids = fill_db['symptom_ids']
@@ -734,22 +687,16 @@ class TestFetchByHelpedStatusAndSymptoms(_TestOrderMixin,
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.id in expected_med_book_ids
 
             # check helped status
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithItemReviews
-            ):
+            if kwargs['include_reviews']:
                 assert filter_params.is_helped in [review.is_helped
                                                    for review in med_book.item_reviews]
 
             # check symptoms
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithSymptoms
-            ):
+            if kwargs['include_symptoms']:
                 med_book_symptom_ids: list[int] = [
                     symptom.id for symptom in med_book.symptoms
                 ]
@@ -795,14 +742,9 @@ class TestFetchByHelpedStatusWithMatchingAllSymptoms(_TestOrderMixin,
                  is_helped=False, symptom_ids=[1, 2], match_all_symptoms=True)
              )
     ]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
-                  dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
-    def test__fetch_by_helped_status_with_matching_all_symptoms(self, kwargs, output_obj,
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
+    def test__fetch_by_helped_status_with_matching_all_symptoms(self, kwargs,
                                                                 repo, session, fill_db):
         # Setup
         symptom_ids = fill_db['symptom_ids'][:2]
@@ -834,22 +776,16 @@ class TestFetchByHelpedStatusWithMatchingAllSymptoms(_TestOrderMixin,
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.id in expected_med_book_ids
 
             # check helped status
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithItemReviews
-            ):
+            if kwargs['include_reviews']:
                 assert filter_params.is_helped in [review.is_helped
                                                    for review in med_book.item_reviews]
 
             # check symptoms
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithSymptoms
-            ):
+            if kwargs['include_symptoms']:
                 med_book_symptom_ids: list[int] = [
                     symptom.id for symptom in med_book.symptoms
                 ]
@@ -895,15 +831,9 @@ class TestFetchByHelpedStatusAndDiagnosis(_TestOrderMixin,
                  is_helped=False, diagnosis_id=1)
              )
     ]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
-                  dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
-    def test__fetch_by_helped_status_and_diagnosis(self, kwargs, output_obj, repo,
-                                                   session, fill_db):
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
+    def test__fetch_by_helped_status_and_diagnosis(self, kwargs, repo, session, fill_db):
         # Setup
         diagnosis_id = fill_db['diagnosis_ids'][0]
         kwargs['filter_params'].diagnosis_id = diagnosis_id
@@ -925,15 +855,12 @@ class TestFetchByHelpedStatusAndDiagnosis(_TestOrderMixin,
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.id in expected_med_book_ids
             assert med_book.diagnosis_id == filter_params.diagnosis_id
 
             # check helped status
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithItemReviews
-            ):
+            if kwargs['include_reviews']:
                 assert filter_params.is_helped in [review.is_helped
                                                    for review in med_book.item_reviews]
 
@@ -976,16 +903,10 @@ class TestFetchByHelpedStatusDiagnosisAndSymptoms(_TestOrderMixin,
                  is_helped=False, diagnosis_id=1, symptom_ids=[1, 2])
              )
     ]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
-                  dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
-    def test__fetch_by_helped_status_diagnosis_and_symptoms(
-        self, kwargs, output_obj, repo, session, fill_db
-    ):
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
+    def test__fetch_by_helped_status_diagnosis_and_symptoms(self, kwargs, repo, session,
+                                                            fill_db):
         # Setup
         diagnosis_id = fill_db['diagnosis_ids'][0]
         symptom_ids = fill_db['symptom_ids'][:2]
@@ -1013,23 +934,17 @@ class TestFetchByHelpedStatusDiagnosisAndSymptoms(_TestOrderMixin,
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.id in expected_med_book_ids
             assert med_book.diagnosis_id == filter_params.diagnosis_id
 
             # check helped status
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithItemReviews
-            ):
+            if kwargs['include_reviews']:
                 assert filter_params.is_helped in [review.is_helped
                                                    for review in med_book.item_reviews]
 
             # check symptoms
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithSymptoms
-            ):
+            if kwargs['include_symptoms']:
                 med_book_symptom_ids: list[int] = [
                     symptom.id for symptom in med_book.symptoms
                 ]
@@ -1083,15 +998,10 @@ class TestFetchByHelpedStatusDiagnosisWithMatchingAllSymptoms(_TestOrderMixin,
                  match_all_symptoms=True)
              )
     ]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
-                  dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
     def test__fetch_by_helped_status_diagnosis_with_matching_all_symptoms(
-        self, kwargs, output_obj, repo, session, fill_db
+        self, kwargs, repo, session, fill_db
     ):
         # Setup
         diagnosis_id = fill_db['diagnosis_ids'][0]
@@ -1125,23 +1035,17 @@ class TestFetchByHelpedStatusDiagnosisWithMatchingAllSymptoms(_TestOrderMixin,
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.id in expected_med_book_ids
             assert med_book.diagnosis_id == filter_params.diagnosis_id
 
             # check helped status
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithItemReviews
-            ):
+            if kwargs['include_reviews']:
                 assert filter_params.is_helped in [review.is_helped
                                                    for review in med_book.item_reviews]
 
             # check symptoms
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithSymptoms
-            ):
+            if kwargs['include_symptoms']:
                 med_book_symptom_ids: list[int] = [
                     symptom.id for symptom in med_book.symptoms
                 ]
@@ -1160,12 +1064,9 @@ class TestFetchByPatient(_TestOrderMixin, _TestPaginationMixin, _TestUniquenessM
                         filter_params=schemas.FindMedicalBooks(patient_id=1)),
                    dict(include_symptoms=True, include_reviews=True,
                         filter_params=schemas.FindMedicalBooks(patient_id=1))]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
-    def test__fetch_by_patient(self, kwargs, output_obj, repo, session, fill_db):
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
+    def test__fetch_by_patient(self, kwargs, repo, session, fill_db):
         # Setup
         patient_id = fill_db['patient_ids'][0]
         kwargs['filter_params'].patient_id = patient_id
@@ -1176,7 +1077,7 @@ class TestFetchByPatient(_TestOrderMixin, _TestPaginationMixin, _TestUniquenessM
         # Assert
         assert result is not None
         for fetched_med_book in result:
-            assert isinstance(fetched_med_book, output_obj)
+            assert isinstance(fetched_med_book, entities.MedicalBook)
             assert fetched_med_book.patient_id == patient_id
 
 
@@ -1200,13 +1101,9 @@ class TestFetchByPatientAndSymptoms(_TestOrderMixin,
                         filter_params=schemas.FindMedicalBooks(
                             patient_id=1, symptom_ids=[1, 2])
                         )]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
-    def test__fetch_by_patient_and_symptoms(self, kwargs, output_obj, repo, session,
-                                            fill_db):
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
+    def test__fetch_by_patient_and_symptoms(self, kwargs, repo, session, fill_db):
         # Setup
         patient_id = fill_db['patient_ids'][0]
         symptom_ids = fill_db['symptom_ids'][:2]
@@ -1229,14 +1126,11 @@ class TestFetchByPatientAndSymptoms(_TestOrderMixin,
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.patient_id == patient_id
 
             # check symptoms
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithSymptoms
-            ):
+            if kwargs['include_symptoms']:
                 med_book_symptom_ids: list[int] = [
                     symptom.id for symptom in med_book.symptoms
                 ]
@@ -1264,14 +1158,10 @@ class TestFetchByPatientWithMatchingAllSymptoms(_TestOrderMixin,
                         filter_params=schemas.FindMedicalBooks(
                             patient_id=1, symptom_ids=[1, 2], match_all_symptoms=True)
                         )]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
-    def test__fetch_by_patient_matching_all_symptoms(
-        self, kwargs, output_obj, repo, session, fill_db
-    ):
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
+    def test__fetch_by_patient_matching_all_symptoms(self, kwargs, repo, session,
+                                                     fill_db):
         # Setup
         patient_id = fill_db['patient_ids'][0]
         symptom_ids = fill_db['symptom_ids'][:2]
@@ -1300,14 +1190,11 @@ class TestFetchByPatientWithMatchingAllSymptoms(_TestOrderMixin,
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.patient_id == patient_id
 
             # check symptoms
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithSymptoms
-            ):
+            if kwargs['include_symptoms']:
                 med_book_symptom_ids: list[int] = [
                     symptom.id for symptom in med_book.symptoms
                 ]
@@ -1354,15 +1241,9 @@ class TestFetchByPatientAndHelpedStatus(_TestOrderMixin,
                  is_helped=False, patient_id=1)
              )
     ]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
-                  dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
-    def test__fetch_by_patient_and_helped_status(self, kwargs, output_obj, repo, session,
-                                                 fill_db):
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
+    def test__fetch_by_patient_and_helped_status(self, kwargs, repo, session, fill_db):
         # Setup
         patient_id = fill_db['patient_ids'][0]
         kwargs['filter_params'].patient_id = patient_id
@@ -1383,15 +1264,12 @@ class TestFetchByPatientAndHelpedStatus(_TestOrderMixin,
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.id in expected_med_book_ids
             assert med_book.patient_id == patient_id
 
             # check helped status
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithItemReviews
-            ):
+            if kwargs['include_reviews']:
                 assert filter_params.is_helped in [review.is_helped
                                                    for review in med_book.item_reviews]
 
@@ -1434,15 +1312,10 @@ class TestFetchByPatientHelpedStatusAndSymptoms(_TestOrderMixin,
                  is_helped=False, patient_id=1, symptom_ids=[1, 2])
              )
     ]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
-                  dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
-    def test__fetch_by_patient_helped_status_and_symptoms(self, kwargs, output_obj, repo,
-                                                          session, fill_db):
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
+    def test__fetch_by_patient_helped_status_and_symptoms(self, kwargs, repo, session,
+                                                          fill_db):
         # Setup
         patient_id = fill_db['patient_ids'][0]
         symptom_ids = fill_db['symptom_ids'][:2]
@@ -1467,23 +1340,17 @@ class TestFetchByPatientHelpedStatusAndSymptoms(_TestOrderMixin,
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.id in expected_med_book_ids
             assert med_book.patient_id == patient_id
 
             # check helped status
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithItemReviews
-            ):
+            if kwargs['include_reviews']:
                 assert filter_params.is_helped in [review.is_helped
                                                    for review in med_book.item_reviews]
 
             # check symptoms
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithSymptoms
-            ):
+            if kwargs['include_symptoms']:
                 med_book_symptom_ids: list[int] = [
                     symptom.id for symptom in med_book.symptoms
                 ]
@@ -1537,15 +1404,10 @@ class TestFetchByPatientHelpedStatusWithMatchingAllSymptoms(_TestOrderMixin,
                  match_all_symptoms=True)
              )
     ]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
-                  dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
     def test__fetch_by_patient_helped_status_with_matching_all_symptoms(
-        self, kwargs, output_obj, repo, session, fill_db
+        self, kwargs, repo, session, fill_db
     ):
         # Setup
         patient_id = fill_db['patient_ids'][0]
@@ -1577,23 +1439,17 @@ class TestFetchByPatientHelpedStatusWithMatchingAllSymptoms(_TestOrderMixin,
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.id in expected_med_book_ids
             assert med_book.patient_id == patient_id
 
             # check helped status
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithItemReviews
-            ):
+            if kwargs['include_reviews']:
                 assert filter_params.is_helped in [review.is_helped
                                                    for review in med_book.item_reviews]
 
             # check symptoms
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithSymptoms
-            ):
+            if kwargs['include_symptoms']:
                 med_book_symptom_ids: list[int] = [
                     symptom.id for symptom in med_book.symptoms
                 ]
@@ -1640,16 +1496,10 @@ class TestFetchByPatientHelpedStatusAndDiagnosis(_TestOrderMixin,
                  is_helped=False, patient_id=1, diagnosis_id=1)
              )
     ]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
-                  dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
-    def test__fetch_by_patient_helped_status_and_diagnosis(
-        self, kwargs, output_obj, repo, session, fill_db
-    ):
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
+    def test__fetch_by_patient_helped_status_and_diagnosis(self, kwargs, repo, session,
+                                                           fill_db):
         # Setup
         patient_id = fill_db['patient_ids'][0]
         diagnosis_id = fill_db['diagnosis_ids'][0]
@@ -1673,16 +1523,13 @@ class TestFetchByPatientHelpedStatusAndDiagnosis(_TestOrderMixin,
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.id in expected_med_book_ids
             assert med_book.patient_id == patient_id
             assert med_book.diagnosis_id == diagnosis_id
 
             # check helped status
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithItemReviews
-            ):
+            if kwargs['include_reviews']:
                 assert filter_params.is_helped in [review.is_helped
                                                    for review in med_book.item_reviews]
 
@@ -1725,15 +1572,10 @@ class TestFetchByPatientHelpedStatusDiagnosisAndSymptoms(_TestOrderMixin,
                  is_helped=False, patient_id=1, symptom_ids=[1, 2], diagnosis_id=1)
              )
     ]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
-                  dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
     def test__fetch_by_patient_helped_status_diagnosis_and_symptoms(
-        self, kwargs, output_obj, repo, session, fill_db
+        self, kwargs, repo, session, fill_db
     ):
         # Setup
         patient_id = fill_db['patient_ids'][0]
@@ -1762,24 +1604,18 @@ class TestFetchByPatientHelpedStatusDiagnosisAndSymptoms(_TestOrderMixin,
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.id in expected_med_book_ids
             assert med_book.patient_id == patient_id
             assert med_book.diagnosis_id == diagnosis_id
 
             # check helped status
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithItemReviews
-            ):
+            if kwargs['include_reviews']:
                 assert filter_params.is_helped in [review.is_helped
                                                    for review in med_book.item_reviews]
 
             # check symptoms
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithSymptoms
-            ):
+            if kwargs['include_symptoms']:
                 med_book_symptom_ids: list[int] = [
                     symptom.id for symptom in med_book.symptoms
                 ]
@@ -1833,15 +1669,10 @@ class TestFetchByPatientHelpedStatusDiagnosisWithMatchingAllSymptoms(
                  match_all_symptoms=True)
              )
     ]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
-                  dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
     def test__fetch_by_patient_helped_status_diagnosis_with_matching_all_symptoms(
-        self, kwargs, output_obj, repo, session, fill_db
+        self, kwargs, repo, session, fill_db
     ):
         # Setup
         patient_id = fill_db['patient_ids'][0]
@@ -1879,24 +1710,18 @@ class TestFetchByPatientHelpedStatusDiagnosisWithMatchingAllSymptoms(
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.id in expected_med_book_ids
             assert med_book.patient_id == patient_id
             assert med_book.diagnosis_id == diagnosis_id
 
             # check helped status
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithItemReviews
-            ):
+            if kwargs['include_reviews']:
                 assert filter_params.is_helped in [review.is_helped
                                                    for review in med_book.item_reviews]
 
             # check symptoms
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithSymptoms
-            ):
+            if kwargs['include_symptoms']:
                 med_book_symptom_ids: list[int] = [
                     symptom.id for symptom in med_book.symptoms
                 ]
@@ -1929,13 +1754,10 @@ class TestFetchByPatientDiagnosisWithMatchingAllSymptoms(_TestOrderMixin,
                             patient_id=1, symptom_ids=[1, 2], match_all_symptoms=True,
                             diagnosis_id=1)
                         )]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
     def test__fetch_by_patient_diagnosis_with_matching_all_symptoms(
-        self, kwargs, output_obj, repo, session, fill_db
+        self, kwargs, repo, session, fill_db
     ):
         # Setup
         patient_id = fill_db['patient_ids'][0]
@@ -1968,16 +1790,13 @@ class TestFetchByPatientDiagnosisWithMatchingAllSymptoms(_TestOrderMixin,
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.id in expected_med_book_ids
             assert med_book.patient_id == patient_id
             assert med_book.diagnosis_id == diagnosis_id
 
             # check symptoms
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithSymptoms
-            ):
+            if kwargs['include_symptoms']:
                 med_book_symptom_ids: list[int] = [
                     symptom.id for symptom in med_book.symptoms
                 ]
@@ -2006,12 +1825,9 @@ class TestFetchByPatientDiagnosisAndSymptoms(_TestOrderMixin,
                         filter_params=schemas.FindMedicalBooks(
                             patient_id=1, symptom_ids=[1, 2], diagnosis_id=1)
                         )]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
-    def test__fetch_by_patient_diagnosis_and_symptoms(self, kwargs, output_obj, repo,
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
+    def test__fetch_by_patient_diagnosis_and_symptoms(self, kwargs, repo,
                                                       session, fill_db):
         # Setup
         patient_id = fill_db['patient_ids'][0]
@@ -2038,16 +1854,13 @@ class TestFetchByPatientDiagnosisAndSymptoms(_TestOrderMixin,
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.id in expected_med_book_ids
             assert med_book.patient_id == patient_id
             assert med_book.diagnosis_id == diagnosis_id
 
             # check symptoms
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithSymptoms
-            ):
+            if kwargs['include_symptoms']:
                 med_book_symptom_ids: list[int] = [
                     symptom.id for symptom in med_book.symptoms
                 ]
@@ -2079,9 +1892,8 @@ class TestFetchByPatientAndDiagnosis(_TestOrderMixin,
                   dtos.MedicalBookWithItemReviews,
                   dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
-    def test__fetch_by_patient_and_diagnosis(self, kwargs, output_obj, repo, session,
-                                             fill_db):
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
+    def test__fetch_by_patient_and_diagnosis(self, kwargs, repo, session, fill_db):
         # Setup
         patient_id = fill_db['patient_ids'][0]
         diagnosis_id = fill_db['diagnosis_ids'][0]
@@ -2103,7 +1915,7 @@ class TestFetchByPatientAndDiagnosis(_TestOrderMixin,
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.id in expected_med_book_ids
             assert med_book.patient_id == patient_id
             assert med_book.diagnosis_id == diagnosis_id
@@ -2119,12 +1931,9 @@ class TestFetchByItems(_TestOrderMixin, _TestPaginationMixin, _TestUniquenessMix
                         filter_params=schemas.FindMedicalBooks(item_ids=[1, 2])),
                    dict(include_symptoms=True, include_reviews=True,
                         filter_params=schemas.FindMedicalBooks(item_ids=[1, 2]))]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
-    def test__fetch_by_items(self, kwargs, output_obj, repo, session, fill_db):
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
+    def test__fetch_by_items(self, kwargs, repo, session, fill_db):
         # Setup
         item_ids = fill_db['item_ids'][:2]
         kwargs['filter_params'].item_ids = item_ids
@@ -2144,14 +1953,11 @@ class TestFetchByItems(_TestOrderMixin, _TestPaginationMixin, _TestUniquenessMix
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.id in expected_med_book_ids
 
             # check items
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithItemReviews
-            ):
+            if kwargs['include_reviews']:
                 assert any(review.item_id in item_ids for review in med_book.item_reviews)
 
 
@@ -2175,13 +1981,9 @@ class TestFetchByPatientAndItems(_TestOrderMixin,
                         filter_params=schemas.FindMedicalBooks(
                             patient_id=1, item_ids=[1, 2])
                         )]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
-    def test__fetch_by_patient_and_items(self, kwargs, output_obj, repo, session,
-                                         fill_db):
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
+    def test__fetch_by_patient_and_items(self, kwargs, repo, session, fill_db):
         # Setup
         patient_id = fill_db['patient_ids'][0]
         item_ids = fill_db['item_ids'][:2]
@@ -2204,15 +2006,12 @@ class TestFetchByPatientAndItems(_TestOrderMixin,
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.id in expected_med_book_ids
             assert med_book.patient_id == patient_id
 
             # check items
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithItemReviews
-            ):
+            if kwargs['include_reviews']:
                 assert any(review.item_id in item_ids for review in med_book.item_reviews)
 
 
@@ -2238,15 +2037,9 @@ class TestFetchByItemsAndHelpedStatus(_TestOrderMixin,
         dict(include_symptoms=True, include_reviews=True,
              filter_params=schemas.FindMedicalBooks(is_helped=False, item_ids=[1, 2]))
     ]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
-                  dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
-    def test__fetch_by_items_and_helped_status(self, kwargs, output_obj, repo, session,
-                                               fill_db):
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
+    def test__fetch_by_items_and_helped_status(self, kwargs, repo, session, fill_db):
         # Setup
         item_ids = fill_db['item_ids'][:2]
         kwargs['filter_params'].item_ids = item_ids
@@ -2267,14 +2060,11 @@ class TestFetchByItemsAndHelpedStatus(_TestOrderMixin,
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.id in expected_med_book_ids
 
             # check helped status and items
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithItemReviews
-            ):
+            if kwargs['include_reviews']:
                 assert filter_params.is_helped in [review.is_helped
                                                    for review in med_book.item_reviews]
                 assert any(review.item_id in item_ids for review in med_book.item_reviews)
@@ -2300,13 +2090,9 @@ class TestFetchByItemsAndDiagnosis(_TestOrderMixin,
                         filter_params=schemas.FindMedicalBooks(
                             diagnosis_id=1, item_ids=[1, 2])
                         )]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
-    def test__fetch_by_items_and_diagnosis(self, kwargs, output_obj, repo, session,
-                                           fill_db):
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
+    def test__fetch_by_items_and_diagnosis(self, kwargs, repo, session, fill_db):
         # Setup
         item_ids = fill_db['item_ids'][:2]
         diagnosis_id = fill_db['diagnosis_ids'][0]
@@ -2329,15 +2115,12 @@ class TestFetchByItemsAndDiagnosis(_TestOrderMixin,
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.id in expected_med_book_ids
             assert med_book.diagnosis_id == diagnosis_id
 
             # check items
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithItemReviews
-            ):
+            if kwargs['include_reviews']:
                 assert any(review.item_id in item_ids for review in med_book.item_reviews)
 
 
@@ -2361,12 +2144,9 @@ class TestFetchByItemsAndSymptoms(_TestOrderMixin,
                         filter_params=schemas.FindMedicalBooks(
                             symptom_ids=[1, 2], item_ids=[1, 2])
                         )]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
-    def test__fetch_by_items_and_symptoms(self, kwargs, output_obj, repo, session,
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
+    def test__fetch_by_items_and_symptoms(self, kwargs, repo, session,
                                           fill_db):
         # Setup
         symptom_ids = fill_db['symptom_ids'][:2]
@@ -2391,14 +2171,11 @@ class TestFetchByItemsAndSymptoms(_TestOrderMixin,
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.id in expected_med_book_ids
 
             # check symptoms
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithSymptoms
-            ):
+            if kwargs['include_symptoms']:
                 med_book_symptom_ids: list[int] = [
                     symptom.id for symptom in med_book.symptoms
                 ]
@@ -2406,10 +2183,7 @@ class TestFetchByItemsAndSymptoms(_TestOrderMixin,
                            for symptom_id in symptom_ids)
 
             # check items
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithItemReviews
-            ):
+            if kwargs['include_reviews']:
                 assert any(review.item_id in item_ids for review in med_book.item_reviews)
 
 
@@ -2433,13 +2207,10 @@ class TestFetchByItemsWithMatchingAllSymptoms(_TestOrderMixin,
                         filter_params=schemas.FindMedicalBooks(
                             symptom_ids=[1, 2], item_ids=[1, 2], match_all_symptoms=True)
                         )]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
-    def test__fetch_by_items_with_matching_all_symptoms(self, kwargs, output_obj, repo,
-                                                        session, fill_db):
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
+    def test__fetch_by_items_with_matching_all_symptoms(self, kwargs, repo, session,
+                                                        fill_db):
         # Setup
         symptom_ids = fill_db['symptom_ids'][:2]
         item_ids = fill_db['item_ids'][:2]
@@ -2469,21 +2240,15 @@ class TestFetchByItemsWithMatchingAllSymptoms(_TestOrderMixin,
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.id in expected_med_book_ids
 
             # check items
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithItemReviews
-            ):
+            if kwargs['include_reviews']:
                 assert any(review.item_id in item_ids for review in med_book.item_reviews)
 
             # check symptoms
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithSymptoms
-            ):
+            if kwargs['include_symptoms']:
                 med_book_symptom_ids: list[int] = [
                     symptom.id for symptom in med_book.symptoms
                 ]
@@ -2516,13 +2281,10 @@ class TestFetchByDiagnosisItemsWithMatchingAllSymptoms(_TestOrderMixin,
                             symptom_ids=[1, 2], item_ids=[1, 2], match_all_symptoms=True,
                             diagnosis_id=1)
                         )]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
     def test__fetch_by_diagnosis_items_with_matching_all_symptoms(
-        self, kwargs, output_obj, repo, session, fill_db
+        self, kwargs, repo, session, fill_db
     ):
         # Setup
         diagnosis_id = fill_db['diagnosis_ids'][0]
@@ -2556,22 +2318,16 @@ class TestFetchByDiagnosisItemsWithMatchingAllSymptoms(_TestOrderMixin,
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.id in expected_med_book_ids
             assert med_book.diagnosis_id == diagnosis_id
 
             # check items
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithItemReviews
-            ):
+            if kwargs['include_reviews']:
                 assert any(review.item_id in item_ids for review in med_book.item_reviews)
 
             # check symptoms
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithSymptoms
-            ):
+            if kwargs['include_symptoms']:
                 med_book_symptom_ids: list[int] = [
                     symptom.id for symptom in med_book.symptoms
                 ]
@@ -2626,15 +2382,10 @@ class TestFetchByHelpedStatusItemsWithMatchingAllSymptoms(_TestOrderMixin,
                  match_all_symptoms=True)
              )
     ]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
-                  dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
     def test__fetch_by_helped_status_items_with_matching_all_symptoms(
-        self, kwargs, output_obj, repo, session, fill_db
+        self, kwargs, repo, session, fill_db
     ):
         # Setup
         item_ids = fill_db['item_ids']
@@ -2666,23 +2417,17 @@ class TestFetchByHelpedStatusItemsWithMatchingAllSymptoms(_TestOrderMixin,
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.id in expected_med_book_ids
 
             # check helped status and items
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithItemReviews
-            ):
+            if kwargs['include_reviews']:
                 assert filter_params.is_helped in [review.is_helped
                                                    for review in med_book.item_reviews]
                 assert any(review.item_id in item_ids for review in med_book.item_reviews)
 
             # check symptoms
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithSymptoms
-            ):
+            if kwargs['include_symptoms']:
                 med_book_symptom_ids: list[int] = [
                     symptom.id for symptom in med_book.symptoms
                 ]
@@ -2729,16 +2474,10 @@ class TestFetchByHelpedStatusDiagnosisAndItems(_TestOrderMixin,
                  is_helped=False, diagnosis_id=1, item_ids=[1, 2])
              )
     ]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
-                  dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
-    def test__fetch_by_helped_status_diagnosis_and_items(
-        self, kwargs, output_obj, repo, session, fill_db
-    ):
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
+    def test__fetch_by_helped_status_diagnosis_and_items(self, kwargs, repo, session,
+                                                         fill_db):
         # Setup
         diagnosis_id = fill_db['diagnosis_ids'][0]
         item_ids = fill_db['item_ids']
@@ -2762,15 +2501,12 @@ class TestFetchByHelpedStatusDiagnosisAndItems(_TestOrderMixin,
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.id in expected_med_book_ids
             assert med_book.diagnosis_id == diagnosis_id
 
             # check helped status and items
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithItemReviews
-            ):
+            if kwargs['include_reviews']:
                 assert filter_params.is_helped in [review.is_helped
                                                    for review in med_book.item_reviews]
                 assert any(review.item_id in item_ids for review in med_book.item_reviews)
@@ -2822,15 +2558,10 @@ class TestFetchByHelpedStatusDiagnosisItemsWithMatchingAllSymptoms(
                  match_all_symptoms=True)
              )
     ]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
-                  dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
     def test__fetch_by_helped_status_diagnosis_items_with_matching_all_symptoms(
-        self, kwargs, output_obj, repo, session, fill_db
+        self, kwargs, repo, session, fill_db
     ):
         # Setup
         diagnosis_id = fill_db['diagnosis_ids'][0]
@@ -2867,24 +2598,18 @@ class TestFetchByHelpedStatusDiagnosisItemsWithMatchingAllSymptoms(
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.id in expected_med_book_ids
             assert med_book.diagnosis_id == diagnosis_id
 
             # check helped status and items
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithItemReviews
-            ):
+            if kwargs['include_reviews']:
                 assert filter_params.is_helped in [review.is_helped
                                                    for review in med_book.item_reviews]
                 assert any(review.item_id in item_ids for review in med_book.item_reviews)
 
             # check symptoms
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithSymptoms
-            ):
+            if kwargs['include_symptoms']:
                 med_book_symptom_ids: list[int] = [
                     symptom.id for symptom in med_book.symptoms
                 ]
@@ -2913,12 +2638,9 @@ class TestFetchByPatientDiagnosisAndItems(_TestOrderMixin,
                         filter_params=schemas.FindMedicalBooks(
                             patient_id=1, diagnosis_id=1, item_ids=[1, 2])
                         )]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
-    def test__fetch_by_patient_diagnosis_and_items(self, kwargs, output_obj, repo,
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
+    def test__fetch_by_patient_diagnosis_and_items(self, kwargs, repo,
                                                    session, fill_db):
         # Setup
         patient_id = fill_db['patient_ids'][0]
@@ -2945,16 +2667,13 @@ class TestFetchByPatientDiagnosisAndItems(_TestOrderMixin,
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.id in expected_med_book_ids
             assert med_book.patient_id == patient_id
             assert med_book.diagnosis_id == diagnosis_id
 
             # check items
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithItemReviews
-            ):
+            if kwargs['include_reviews']:
                 assert any(review.item_id in item_ids for review in med_book.item_reviews)
 
 
@@ -2982,13 +2701,10 @@ class TestFetchByPatientDiagnosisItemsWithMatchingAllSymptoms(
                             patient_id=1, diagnosis_id=1, item_ids=[1, 2],
                             symptom_ids=[1, 2], match_all_symptoms=True)
                         )]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
     def test__fetch_by_patient_diagnosis_items_with_matching_all_symptoms(
-        self, kwargs, output_obj, repo, session, fill_db
+        self, kwargs, repo, session, fill_db
     ):
         # Setup
         patient_id = fill_db['patient_ids'][0]
@@ -3027,16 +2743,13 @@ class TestFetchByPatientDiagnosisItemsWithMatchingAllSymptoms(
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.id in expected_med_book_ids
             assert med_book.patient_id == patient_id
             assert med_book.diagnosis_id == diagnosis_id
 
             # check symptoms
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithSymptoms
-            ):
+            if kwargs['include_symptoms']:
                 med_book_symptom_ids: list[int] = [
                     symptom.id for symptom in med_book.symptoms
                 ]
@@ -3045,10 +2758,7 @@ class TestFetchByPatientDiagnosisItemsWithMatchingAllSymptoms(
                            for symptom_id in symptom_ids)
 
             # check items
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithItemReviews
-            ):
+            if kwargs['include_reviews']:
                 assert any(review.item_id in item_ids for review in med_book.item_reviews)
 
 
@@ -3090,15 +2800,10 @@ class TestFetchByPatientHelpedStatusAndItems(_TestOrderMixin,
                  is_helped=False, patient_id=1, item_ids=[1, 2])
              )
     ]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
-                  dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
-    def test__fetch_by_patient_helped_status_and_items(self, kwargs, output_obj, repo,
-                                                       session, fill_db):
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
+    def test__fetch_by_patient_helped_status_and_items(self, kwargs, repo, session,
+                                                       fill_db):
         # Setup
         patient_id = fill_db['patient_ids'][0]
         item_ids = fill_db['item_ids']
@@ -3122,15 +2827,12 @@ class TestFetchByPatientHelpedStatusAndItems(_TestOrderMixin,
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.id in expected_med_book_ids
             assert med_book.patient_id == patient_id
 
             # check helped status and items
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithItemReviews
-            ):
+            if kwargs['include_reviews']:
                 assert filter_params.is_helped in [review.is_helped
                                                    for review in med_book.item_reviews]
                 assert any(review.item_id in item_ids for review in med_book.item_reviews)
@@ -3174,15 +2876,10 @@ class TestFetchByPatientHelpedStatusDiagnosisAndItems(_TestOrderMixin,
                  is_helped=False, patient_id=1, item_ids=[1, 2], diagnosis_id=1)
              )
     ]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
-                  dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
     def test__fetch_by_patient_helped_status_diagnosis_and_items(
-        self, kwargs, output_obj, repo, session, fill_db
+        self, kwargs, repo, session, fill_db
     ):
         # Setup
         patient_id = fill_db['patient_ids'][0]
@@ -3210,16 +2907,13 @@ class TestFetchByPatientHelpedStatusDiagnosisAndItems(_TestOrderMixin,
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.id in expected_med_book_ids
             assert med_book.patient_id == patient_id
             assert med_book.diagnosis_id == diagnosis_id
 
             # check helped status and items
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithItemReviews
-            ):
+            if kwargs['include_reviews']:
                 assert filter_params.is_helped in [review.is_helped
                                                    for review in med_book.item_reviews]
                 assert any(review.item_id in item_ids for review in med_book.item_reviews)
@@ -3271,15 +2965,10 @@ class TestFetchByPatientHelpedStatusItemsWithMatchingAllSymptoms(
                  match_all_symptoms=True)
              )
     ]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
-                  dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
     def test__fetch_by_patient_helped_status_items_with_matching_all_symptoms(
-        self, kwargs, output_obj, repo, session, fill_db
+        self, kwargs, repo, session, fill_db
     ):
         # Setup
         patient_id = fill_db['patient_ids'][0]
@@ -3317,24 +3006,18 @@ class TestFetchByPatientHelpedStatusItemsWithMatchingAllSymptoms(
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.id in expected_med_book_ids
             assert med_book.patient_id == filter_params.patient_id
 
             # check helped status and items
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithItemReviews
-            ):
+            if kwargs['include_reviews']:
                 assert filter_params.is_helped in [review.is_helped
                                                    for review in med_book.item_reviews]
                 assert any(review.item_id in item_ids for review in med_book.item_reviews)
 
             # check symptoms
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithSymptoms
-            ):
+            if kwargs['include_symptoms']:
                 med_book_symptom_ids: list[int] = [
                     symptom.id for symptom in med_book.symptoms
                 ]
@@ -3391,15 +3074,10 @@ class TestFetchByPatientHelpedStatusDiagnosisItemsWithMatchingAllSymptoms(
                  match_all_symptoms=True, diagnosis_id=1)
              )
     ]
-    OUTPUT_OBJ = [dtos.MedicalBook, dtos.MedicalBook,
-                  dtos.MedicalBookWithSymptoms, dtos.MedicalBookWithSymptoms,
-                  dtos.MedicalBookWithItemReviews, dtos.MedicalBookWithItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews,
-                  dtos.MedicalBookWithSymptomsAndItemReviews]
 
-    @pytest.mark.parametrize('kwargs, output_obj', [*zip(TEST_KWARGS, OUTPUT_OBJ)])
+    @pytest.mark.parametrize('kwargs', TEST_KWARGS)
     def test__fetch_by_patient_helped_status_diagnosis_items_with_matching_all_symptoms(
-        self, kwargs, output_obj, repo, session, fill_db
+        self, kwargs, repo, session, fill_db
     ):
         # Setup
         patient_id = fill_db['patient_ids'][0]
@@ -3442,25 +3120,19 @@ class TestFetchByPatientHelpedStatusDiagnosisItemsWithMatchingAllSymptoms(
         assert len(result) > 0
         assert len(result) == len(expected_med_book_ids)
         for med_book in result:
-            assert isinstance(med_book, output_obj)
+            assert isinstance(med_book, entities.MedicalBook)
             assert med_book.id in expected_med_book_ids
             assert med_book.patient_id == patient_id
             assert med_book.diagnosis_id == diagnosis_id
 
             # check helped status and items
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithItemReviews
-            ):
+            if kwargs['include_reviews']:
                 assert filter_params.is_helped in [review.is_helped
                                                    for review in med_book.item_reviews]
                 assert any(review.item_id in item_ids for review in med_book.item_reviews)
 
             # check symptoms
-            if (
-                output_obj is dtos.MedicalBookWithSymptomsAndItemReviews or
-                output_obj is dtos.MedicalBookWithSymptoms
-            ):
+            if kwargs['include_symptoms']:
                 med_book_symptom_ids: list[int] = [
                     symptom.id for symptom in med_book.symptoms
                 ]

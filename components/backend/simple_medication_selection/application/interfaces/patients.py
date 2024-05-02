@@ -5,6 +5,7 @@ from simple_medication_selection.application import entities, schemas
 
 
 class PatientsRepo(ABC):
+
     @abstractmethod
     def fetch_by_id(self, patient_id: int) -> entities.Patient | None:
         ...

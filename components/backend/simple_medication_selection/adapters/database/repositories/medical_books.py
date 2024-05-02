@@ -1,8 +1,10 @@
+from typing import Sequence
+
 from sqlalchemy import select, desc, Select, asc, func
 from sqlalchemy.orm import joinedload, Session
 
 from simple_medication_selection.adapters.database.repositories.base import BaseRepository
-from simple_medication_selection.application import interfaces, entities, dtos, schemas
+from simple_medication_selection.application import interfaces, entities, schemas
 
 
 class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
@@ -17,11 +19,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
                     *,
                     include_symptoms: bool,
                     include_reviews: bool
-                    ) -> (dtos.MedicalBook |
-                          dtos.MedicalBookWithSymptoms |
-                          dtos.MedicalBookWithItemReviews |
-                          entities.MedicalBook |
-                          None):
+                    ) -> entities.MedicalBook | None:
         query: Select = self.query_collection.fetch_by_id(med_book_id)
         return self.query_executor.get_med_book(query, include_symptoms, include_reviews)
 
@@ -30,11 +28,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
                   *,
                   include_symptoms: bool,
                   include_reviews: bool
-                  ) -> (list[dtos.MedicalBook] |
-                        list[dtos.MedicalBook] |
-                        list[dtos.MedicalBookWithSymptoms] |
-                        list[dtos.MedicalBookWithItemReviews] |
-                        list[None]):
+                  ) -> Sequence[entities.MedicalBook | None]:
         query: Select = self.query_collection.fetch_all()
         query: Select = self.query_pagination.apply(query, filter_params)
         return self.query_executor.get_med_book_list(query,
@@ -46,11 +40,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
                           *,
                           include_symptoms: bool,
                           include_reviews: bool
-                          ) -> (list[dtos.MedicalBook] |
-                                list[dtos.MedicalBook] |
-                                list[dtos.MedicalBookWithSymptoms] |
-                                list[dtos.MedicalBookWithItemReviews] |
-                                list[None]):
+                          ) -> Sequence[entities.MedicalBook | None]:
         query: Select = self.query_collection.fetch_by_symptoms(filter_params)
         query: Select = self.query_pagination.apply(query, filter_params)
         return self.query_executor.get_med_book_list(query,
@@ -62,11 +52,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
                                        *,
                                        include_symptoms: bool,
                                        include_reviews: bool
-                                       ) -> (list[dtos.MedicalBook] |
-                                             list[dtos.MedicalBook] |
-                                             list[dtos.MedicalBookWithSymptoms] |
-                                             list[dtos.MedicalBookWithItemReviews] |
-                                             list[None]):
+                                       ) -> Sequence[entities.MedicalBook | None]:
         query: Select = (
             self.query_collection.fetch_by_matching_all_symptoms(filter_params)
         )
@@ -80,11 +66,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
                            *,
                            include_symptoms: bool,
                            include_reviews: bool
-                           ) -> (list[dtos.MedicalBook] |
-                                 list[dtos.MedicalBook] |
-                                 list[dtos.MedicalBookWithSymptoms] |
-                                 list[dtos.MedicalBookWithItemReviews] |
-                                 list[None]):
+                           ) -> Sequence[entities.MedicalBook | None]:
         query: Select = self.query_collection.fetch_by_diagnosis(filter_params)
         query: Select = self.query_pagination.apply(query, filter_params)
         return self.query_executor.get_med_book_list(query,
@@ -96,11 +78,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
                                         *,
                                         include_symptoms: bool,
                                         include_reviews: bool
-                                        ) -> (list[dtos.MedicalBook] |
-                                              list[dtos.MedicalBook] |
-                                              list[dtos.MedicalBookWithSymptoms] |
-                                              list[dtos.MedicalBookWithItemReviews] |
-                                              list[None]):
+                                        ) -> Sequence[entities.MedicalBook | None]:
         query: Select = (
             self.query_collection.fetch_by_diagnosis_and_symptoms(filter_params)
         )
@@ -115,11 +93,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (list[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         query: Select = (
             self.query_collection.fetch_by_diagnosis_with_matching_all_symptoms(
                 filter_params)
@@ -134,11 +108,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
                                *,
                                include_symptoms: bool,
                                include_reviews: bool
-                               ) -> (list[dtos.MedicalBook] |
-                                     list[dtos.MedicalBook] |
-                                     list[dtos.MedicalBookWithSymptoms] |
-                                     list[dtos.MedicalBookWithItemReviews] |
-                                     list[None]):
+                               ) -> Sequence[entities.MedicalBook | None]:
         query: Select = self.query_collection.fetch_by_helped_status(filter_params)
         query: Select = self.query_pagination.apply(query, filter_params)
         return self.query_executor.get_med_book_list(query,
@@ -150,11 +120,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
                                             *,
                                             include_symptoms: bool,
                                             include_reviews: bool
-                                            ) -> (list[dtos.MedicalBook] |
-                                                  list[dtos.MedicalBook] |
-                                                  list[dtos.MedicalBookWithSymptoms] |
-                                                  list[dtos.MedicalBookWithItemReviews] |
-                                                  list[None]):
+                                            ) -> Sequence[entities.MedicalBook | None]:
         query: Select = (
             self.query_collection.fetch_by_helped_status_and_symptoms(filter_params)
         )
@@ -169,11 +135,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (list[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         query: Select = (
             self.query_collection.fetch_by_helped_status_with_matching_all_symptoms(
                 filter_params
@@ -189,11 +151,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
                                              *,
                                              include_symptoms: bool,
                                              include_reviews: bool
-                                             ) -> (list[dtos.MedicalBook] |
-                                                   list[dtos.MedicalBook] |
-                                                   list[dtos.MedicalBookWithSymptoms] |
-                                                   list[dtos.MedicalBookWithItemReviews] |
-                                                   list[None]):
+                                             ) -> Sequence[entities.MedicalBook | None]:
         query: Select = (
             self.query_collection.fetch_by_helped_status_and_diagnosis(filter_params)
         )
@@ -208,11 +166,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (list[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         query: Select = (
             self.query_collection.fetch_by_helped_status_diagnosis_and_symptoms(
                 filter_params
@@ -229,11 +183,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (list[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         query: Select = (
             self
             .query_collection
@@ -249,11 +199,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
                          *,
                          include_symptoms: bool,
                          include_reviews: bool
-                         ) -> (list[dtos.MedicalBook] |
-                               list[dtos.MedicalBook] |
-                               list[dtos.MedicalBookWithSymptoms] |
-                               list[dtos.MedicalBookWithItemReviews] |
-                               list[None]):
+                         ) -> Sequence[entities.MedicalBook | None]:
         query: Select = self.query_collection.fetch_by_patient(filter_params)
         query: Select = self.query_pagination.apply(query, filter_params)
         return self.query_executor.get_med_book_list(query,
@@ -265,11 +211,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
                                       *,
                                       include_symptoms: bool,
                                       include_reviews: bool
-                                      ) -> (list[dtos.MedicalBook] |
-                                            list[dtos.MedicalBook] |
-                                            list[dtos.MedicalBookWithSymptoms] |
-                                            list[dtos.MedicalBookWithItemReviews] |
-                                            list[None]):
+                                      ) -> Sequence[entities.MedicalBook | None]:
         query: Select = self.query_collection.fetch_by_patient_and_symptoms(filter_params)
         query: Select = self.query_pagination.apply(query, filter_params)
         return self.query_executor.get_med_book_list(query,
@@ -282,11 +224,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (list[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         query: Select = (
             self.query_collection.fetch_by_patient_with_matching_all_symptoms(
                 filter_params
@@ -303,11 +241,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (list[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         query: Select = (
             self.query_collection.fetch_by_patient_and_helped_status(filter_params)
         )
@@ -322,11 +256,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (list[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         query: Select = (
             self.query_collection.fetch_by_patient_helped_status_and_symptoms(
                 filter_params
@@ -343,11 +273,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (list[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         query: Select = (
             self
             .query_collection
@@ -364,11 +290,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (list[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         query: Select = (
             self.query_collection.fetch_by_patient_helped_status_and_diagnosis(
                 filter_params
@@ -385,11 +307,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (list[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         query: Select = (
             self
             .query_collection
@@ -406,11 +324,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (list[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         query: Select = (
             self
             .query_collection
@@ -429,11 +343,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (list[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         query: Select = (
             self
             .query_collection
@@ -450,11 +360,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (list[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         query: Select = (
             self.query_collection.fetch_by_patient_diagnosis_and_symptoms(filter_params)
         )
@@ -469,11 +375,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (list[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         query: Select = (
             self.query_collection.fetch_by_patient_and_diagnosis(filter_params)
         )
@@ -487,11 +389,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
                        *,
                        include_symptoms: bool,
                        include_reviews: bool
-                       ) -> (list[dtos.MedicalBook] |
-                             list[dtos.MedicalBook] |
-                             list[dtos.MedicalBookWithSymptoms] |
-                             list[dtos.MedicalBookWithItemReviews] |
-                             list[None]):
+                       ) -> Sequence[entities.MedicalBook | None]:
         query: Select = self.query_collection.fetch_by_items(filter_params)
         query: Select = self.query_pagination.apply(query, filter_params)
         return self.query_executor.get_med_book_list(query,
@@ -503,11 +401,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
                                    *,
                                    include_symptoms: bool,
                                    include_reviews: bool
-                                   ) -> (list[dtos.MedicalBook] |
-                                         list[dtos.MedicalBook] |
-                                         list[dtos.MedicalBookWithSymptoms] |
-                                         list[dtos.MedicalBookWithItemReviews] |
-                                         list[None]):
+                                   ) -> Sequence[entities.MedicalBook | None]:
         query: Select = self.query_collection.fetch_by_patient_and_items(filter_params)
         query: Select = self.query_pagination.apply(query, filter_params)
         return self.query_executor.get_med_book_list(query,
@@ -519,11 +413,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
                                          *,
                                          include_symptoms: bool,
                                          include_reviews: bool
-                                         ) -> (list[dtos.MedicalBook] |
-                                               list[dtos.MedicalBook] |
-                                               list[dtos.MedicalBookWithSymptoms] |
-                                               list[dtos.MedicalBookWithItemReviews] |
-                                               list[None]):
+                                         ) -> Sequence[entities.MedicalBook | None]:
         query: Select = (
             self.query_collection.fetch_by_items_and_helped_status(filter_params)
         )
@@ -537,11 +427,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
                                      *,
                                      include_symptoms: bool,
                                      include_reviews: bool
-                                     ) -> (list[dtos.MedicalBook] |
-                                           list[dtos.MedicalBook] |
-                                           list[dtos.MedicalBookWithSymptoms] |
-                                           list[dtos.MedicalBookWithItemReviews] |
-                                           list[None]):
+                                     ) -> Sequence[entities.MedicalBook | None]:
         query: Select = self.query_collection.fetch_by_items_and_diagnosis(filter_params)
         query: Select = self.query_pagination.apply(query, filter_params)
         return self.query_executor.get_med_book_list(query,
@@ -553,11 +439,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
                                     *,
                                     include_symptoms: bool,
                                     include_reviews: bool
-                                    ) -> (list[dtos.MedicalBook] |
-                                          list[dtos.MedicalBook] |
-                                          list[dtos.MedicalBookWithSymptoms] |
-                                          list[dtos.MedicalBookWithItemReviews] |
-                                          list[None]):
+                                    ) -> Sequence[entities.MedicalBook | None]:
         query: Select = self.query_collection.fetch_by_items_and_symptoms(filter_params)
         query: Select = self.query_pagination.apply(query, filter_params)
         return self.query_executor.get_med_book_list(query,
@@ -570,11 +452,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (list[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         query: Select = (
             self.query_collection.fetch_by_items_with_matching_all_symptoms(filter_params)
         )
@@ -589,11 +467,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (list[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         query: Select = (
             self.query_collection.fetch_by_diagnosis_items_with_matching_all_symptoms(
                 filter_params
@@ -610,11 +484,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (list[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         query: Select = (
             self.query_collection.fetch_by_helped_status_items_with_matching_all_symptoms(
                 filter_params
@@ -631,11 +501,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (list[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         query: Select = (
             self.query_collection.fetch_by_helped_status_diagnosis_and_items(
                 filter_params
@@ -652,11 +518,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (list[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         query: Select = (
             self
             .query_collection
@@ -675,11 +537,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (list[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         query: Select = (
             self.query_collection.fetch_by_patient_diagnosis_and_items(filter_params)
         )
@@ -694,11 +552,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (list[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         query: Select = (
             self
             .query_collection
@@ -717,11 +571,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (list[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         query: Select = (
             self.query_collection.fetch_by_patient_helped_status_and_items(filter_params)
         )
@@ -736,11 +586,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (list[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         query: Select = (
             self.query_collection.fetch_by_patient_helped_status_diagnosis_and_items(
                 filter_params
@@ -757,11 +603,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (list[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         query: Select = (
             self
             .query_collection
@@ -780,11 +622,7 @@ class MedicalBooksRepo(BaseRepository, interfaces.MedicalBooksRepo):
         *,
         include_symptoms: bool,
         include_reviews: bool
-    ) -> (list[dtos.MedicalBook] |
-          list[dtos.MedicalBook] |
-          list[dtos.MedicalBookWithSymptoms] |
-          list[dtos.MedicalBookWithItemReviews] |
-          list[None]):
+    ) -> Sequence[entities.MedicalBook | None]:
         query: Select = (
             self
             .query_collection
@@ -816,93 +654,36 @@ class _MedicalBookQueryExecutor:
                      query: Select,
                      include_symptoms: bool,
                      include_reviews: bool
-                     ) -> (dtos.MedicalBook |
-                           dtos.MedicalBookWithSymptoms |
-                           dtos.MedicalBookWithItemReviews |
-                           entities.MedicalBook |
-                           None):
+                     ) -> entities.MedicalBook | None:
 
-        if include_symptoms and include_reviews:
-            return self._fetch_med_book_with_symptoms_and_reviews(query)
-
-        if include_reviews:
-            return self._fetch_med_book_with_reviews(query)
-
-        if include_symptoms:
-            return self._fetch_med_book_with_symptoms(query)
-
-        return self._fetch_med_book(query)
+        self._set_query_options(query, include_symptoms, include_reviews)
+        return self.session.execute(query).scalars().unique().one_or_none()
 
     def get_med_book_list(self,
                           query: Select,
                           include_symptoms: bool,
                           include_reviews: bool
-                          ) -> (list[dtos.MedicalBook] |
-                                list[dtos.MedicalBookWithSymptoms] |
-                                list[dtos.MedicalBookWithItemReviews] |
-                                list[dtos.MedicalBookWithSymptomsAndItemReviews] |
-                                list[None]):
+                          ) -> Sequence[entities.MedicalBook | None]:
 
+        self._set_query_options(query, include_symptoms, include_reviews)
+        return self.session.execute(query).scalars().unique().all()
+
+    @staticmethod
+    def _set_query_options(query: Select,
+                           include_symptoms: bool,
+                           include_reviews: bool
+                           ) -> Select:
         if include_symptoms and include_reviews:
-            return self._fetch_med_book_list_with_symptoms_and_reviews(query)
+            return query.options(joinedload(entities.MedicalBook.symptoms),
+                                 joinedload(entities.MedicalBook.item_reviews))
 
         if include_reviews:
-            return self._fetch_med_book_list_with_reviews(query)
+            return query.options(joinedload(entities.MedicalBook.item_reviews))
 
         if include_symptoms:
-            return self._fetch_med_book_list_with_symptoms(query)
+            return query.options(joinedload(entities.MedicalBook.symptoms))
 
-        return self._fetch_med_book_list(query)
-
-    def _fetch_med_book(self, query: Select) -> dtos.MedicalBook | None:
-        result = self.session.execute(query).scalar()
-        return dtos.MedicalBook.from_orm(result) if result else None
-
-    def _fetch_med_book_with_symptoms(self,
-                                      query: Select) -> dtos.MedicalBookWithSymptoms:
-        result = self.session.execute(query).scalar()
-        return dtos.MedicalBookWithSymptoms.from_orm(result) if result else None
-
-    def _fetch_med_book_with_reviews(self,
-                                     query: Select) -> dtos.MedicalBookWithItemReviews:
-        result = self.session.execute(query).scalar()
-        return dtos.MedicalBookWithItemReviews.from_orm(result) if result else None
-
-    def _fetch_med_book_with_symptoms_and_reviews(self,
-                                                  query: Select
-                                                  ) -> entities.MedicalBook:
-        query = query.options(joinedload(entities.MedicalBook.symptoms),
-                              joinedload(entities.MedicalBook.item_reviews))
-        return self.session.execute(query).scalars().unique().one_or_none()
-
-    def _fetch_med_book_list(self, query: Select) -> list[dtos.MedicalBook]:
-        result = self.session.execute(query).scalars().all()
-        return [dtos.MedicalBook.from_orm(row) for row in result]
-
-    def _fetch_med_book_list_with_symptoms(self,
-                                           query: Select
-                                           ) -> list[dtos.MedicalBookWithSymptoms]:
-        query = query.options(joinedload(entities.MedicalBook.symptoms))
-        result = self.session.execute(query).scalars().unique().all()
-        return [dtos.MedicalBookWithSymptoms.from_orm(row) for row in result]
-
-    def _fetch_med_book_list_with_reviews(self,
-                                          query: Select
-                                          ) -> list[dtos.MedicalBookWithItemReviews]:
-        query = query.options(joinedload(entities.MedicalBook.item_reviews))
-        result = self.session.execute(query).scalars().unique().all()
-        return [dtos.MedicalBookWithItemReviews.from_orm(row) for row in result]
-
-    def _fetch_med_book_list_with_symptoms_and_reviews(
-        self,
-        query: Select
-    ) -> list[dtos.MedicalBookWithSymptomsAndItemReviews]:
-
-        query = query.options(joinedload(entities.MedicalBook.symptoms),
-                              joinedload(entities.MedicalBook.item_reviews))
-        result = self.session.execute(query).scalars().unique().all()
-        return [dtos.MedicalBookWithSymptomsAndItemReviews.from_orm(row)
-                for row in result]
+        return query
 
 
 class _MedicalBookQueryPagination:

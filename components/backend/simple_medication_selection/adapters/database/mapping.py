@@ -1,7 +1,6 @@
 from sqlalchemy.orm import registry, relationship
 
 from simple_medication_selection.application import entities
-
 from . import tables
 
 mapper = registry()
@@ -43,10 +42,18 @@ mapper.map_imperatively(
             order_by=tables.item_reviews.c.item_rating.desc()
         ),
         'diagnosis': relationship(
-            entities.Diagnosis, uselist=False, lazy='select', backref='medical_books'
+            entities.Diagnosis,
+            uselist=False,
+            lazy='select',
+            backref='medical_books',
+            order_by=tables.diagnoses.c.name.asc()
         ),
         'patient': relationship(
-            entities.Patient, uselist=False, lazy='select', backref='medical_books'
+            entities.Patient,
+            uselist=False,
+            lazy='select',
+            cascade='save-update, merge',
+            order_by=tables.patients.c.nickname.asc()
         ),
     }
 )

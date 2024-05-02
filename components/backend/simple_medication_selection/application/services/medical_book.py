@@ -1,5 +1,5 @@
 from collections import namedtuple
-from typing import Callable
+from typing import Callable, Sequence
 
 from pydantic import validate_arguments
 
@@ -33,14 +33,14 @@ class MedicalBook:
     @validate_arguments
     def get_med_book(self, med_book_id: int) -> dtos.MedicalBook:
 
-        medical_book: dtos.MedicalBook = self.med_books_repo.fetch_by_id(
+        medical_book: entities.MedicalBook = self.med_books_repo.fetch_by_id(
             med_book_id, include_symptoms=False, include_reviews=False
         )
 
         if not medical_book:
             raise errors.MedicalBookNotFound(id=med_book_id)
 
-        return medical_book
+        return dtos.MedicalBook.from_orm(medical_book)
 
     @register_method
     @validate_arguments
@@ -48,14 +48,14 @@ class MedicalBook:
                                    med_book_id: int
                                    ) -> dtos.MedicalBookWithSymptoms:
 
-        medical_book: dtos.MedicalBookWithSymptoms = self.med_books_repo.fetch_by_id(
+        medical_book: entities.MedicalBook = self.med_books_repo.fetch_by_id(
             med_book_id, include_symptoms=True, include_reviews=False
         )
 
         if not medical_book:
             raise errors.MedicalBookNotFound(id=med_book_id)
 
-        return medical_book
+        return dtos.MedicalBookWithSymptoms.from_orm(medical_book)
 
     @register_method
     @validate_arguments
@@ -63,20 +63,21 @@ class MedicalBook:
                                   med_book_id: int
                                   ) -> dtos.MedicalBookWithItemReviews:
 
-        medical_book: dtos.MedicalBookWithItemReviews = self.med_books_repo.fetch_by_id(
+        medical_book: entities.MedicalBook = self.med_books_repo.fetch_by_id(
             med_book_id, include_symptoms=False, include_reviews=True
         )
 
         if not medical_book:
             raise errors.MedicalBookNotFound(id=med_book_id)
 
-        return medical_book
+        return dtos.MedicalBookWithItemReviews.from_orm(medical_book)
 
     @register_method
     @validate_arguments
-    def get_med_book_with_symptoms_and_reviews(self,
-                                               med_book_id: int
-                                               ) -> entities.MedicalBook:
+    def get_med_book_with_symptoms_and_reviews(
+        self,
+        med_book_id: int
+    ) -> dtos.MedicalBookWithSymptomsAndItemReviews:
 
         medical_book: entities.MedicalBook = self.med_books_repo.fetch_by_id(
             med_book_id, include_symptoms=True, include_reviews=True
@@ -85,7 +86,7 @@ class MedicalBook:
         if not medical_book:
             raise errors.MedicalBookNotFound(id=med_book_id)
 
-        return medical_book
+        return dtos.MedicalBookWithSymptomsAndItemReviews.from_orm(medical_book)
 
     @register_method
     @validate_arguments
@@ -95,8 +96,11 @@ class MedicalBook:
     ) -> list[dtos.MedicalBook | None]:
 
         repo_method: Callable = self._search_strategy_selector.get_method(filter_params)
+        med_books: Sequence[entities.MedicalBook | None] = (
+            repo_method(filter_params, include_symptoms=False, include_reviews=False)
+        )
 
-        return repo_method(filter_params, include_symptoms=False, include_reviews=False)
+        return [dtos.MedicalBook.from_orm(med_book) for med_book in med_books]
 
     @register_method
     @validate_arguments
@@ -106,8 +110,11 @@ class MedicalBook:
     ) -> list[dtos.MedicalBookWithSymptoms | None]:
 
         repo_method: Callable = self._search_strategy_selector.get_method(filter_params)
+        med_books: Sequence[entities.MedicalBook | None] = (
+            repo_method(filter_params, include_symptoms=True, include_reviews=False)
+        )
 
-        return repo_method(filter_params, include_symptoms=True, include_reviews=False)
+        return [dtos.MedicalBookWithSymptoms.from_orm(med_book) for med_book in med_books]
 
     @register_method
     @validate_arguments
@@ -117,8 +124,12 @@ class MedicalBook:
     ) -> list[dtos.MedicalBookWithItemReviews | None]:
 
         repo_method: Callable = self._search_strategy_selector.get_method(filter_params)
+        med_books: Sequence[entities.MedicalBook | None] = (
+            repo_method(filter_params, include_symptoms=False, include_reviews=True)
+        )
 
-        return repo_method(filter_params, include_symptoms=False, include_reviews=True)
+        return [dtos.MedicalBookWithItemReviews.from_orm(med_book)
+                for med_book in med_books]
 
     @register_method
     @validate_arguments
@@ -128,14 +139,18 @@ class MedicalBook:
     ) -> list[dtos.MedicalBookWithSymptomsAndItemReviews | None]:
 
         repo_method: Callable = self._search_strategy_selector.get_method(filter_params)
+        med_books: Sequence[entities.MedicalBook | None] = (
+            repo_method(filter_params, include_symptoms=True, include_reviews=True)
+        )
 
-        return repo_method(filter_params, include_symptoms=True, include_reviews=True)
+        return [dtos.MedicalBookWithSymptomsAndItemReviews.from_orm(med_book)
+                for med_book in med_books]
 
     @register_method
     @validate_arguments
     def add(self,
             new_med_book_info: dtos.NewMedicalBookInfo
-            ) -> entities.MedicalBook:
+            ) -> dtos.MedicalBookWithSymptomsAndItemReviews:
 
         patient: entities.Patient = (
             self.patients_repo.fetch_by_id(new_med_book_info.patient_id)
@@ -167,13 +182,14 @@ class MedicalBook:
                     raise errors.ItemReviewNotFound(id=review_id)
                 new_medical_book.add_item_reviews([review])
 
-        return self.med_books_repo.add(new_medical_book)
+        added_medical_book = self.med_books_repo.add(new_medical_book)
+        return dtos.MedicalBookWithSymptomsAndItemReviews.from_orm(added_medical_book)
 
     @register_method
     @validate_arguments
     def change(self,
                new_med_book_info: dtos.UpdatedMedicalBookInfo
-               ) -> entities.MedicalBook:
+               ) -> dtos.MedicalBookWithSymptomsAndItemReviews:
 
         medical_book: entities.MedicalBook = (
             self.med_books_repo.fetch_by_id(new_med_book_info.id,
@@ -219,21 +235,22 @@ class MedicalBook:
                 reviews.append(review)
             updated_med_book.item_reviews = reviews
 
-        return updated_med_book
+        return dtos.MedicalBookWithSymptomsAndItemReviews.from_orm(updated_med_book)
 
     @register_method
     @validate_arguments
-    def delete(self, med_book_id: int) -> entities.MedicalBook:
+    def delete(self, med_book_id: int) -> dtos.MedicalBook:
 
         medical_book: entities.MedicalBook = (
             self.med_books_repo.fetch_by_id(med_book_id,
-                                            include_symptoms=True,
-                                            include_reviews=True)
+                                            include_symptoms=False,
+                                            include_reviews=False)
         )
         if not medical_book:
             raise errors.MedicalBookNotFound(id=med_book_id)
 
-        return self.med_books_repo.remove(medical_book)
+        removed_med_book = self.med_books_repo.remove(medical_book)
+        return dtos.MedicalBook.from_orm(removed_med_book)
 
 
 class _MedBookSearchStrategySelector:
@@ -392,7 +409,6 @@ class _MedBookSearchStrategySelector:
         self,
         filter_params: schemas.FindMedicalBooks
     ) -> namedtuple:
-
         return self.StrategyKey(
             patient_id=True if filter_params.patient_id is not None else False,
             is_helped=True if filter_params.is_helped is not None else False,
@@ -408,6 +424,5 @@ class _MedBookSearchStrategySelector:
         self,
         filter_params: schemas.FindMedicalBooks
     ) -> Callable:
-
         key: namedtuple = self._build_key(filter_params)
         return self.strategies.get(key)

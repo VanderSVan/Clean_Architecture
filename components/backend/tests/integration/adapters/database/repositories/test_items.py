@@ -1,12 +1,10 @@
 from itertools import product
-from typing import Sequence
 
 import pytest
 from sqlalchemy import select, func
 
 from simple_medication_selection.adapters.database import repositories
-from simple_medication_selection.application import entities, dtos, schemas
-
+from simple_medication_selection.application import entities, schemas
 from .. import test_data
 from ..conftest import session
 
@@ -861,7 +859,7 @@ class TestRemove:
         assert before_count - 1 == after_count
         assert isinstance(result, entities.TreatmentItem)
 
-    def test__cascade_delete_reviews(self, repo, session, fill_db):
+    def test__cascade_delete_orphaned_reviews(self, repo, session, fill_db):
         # Setup
         item_to_remove: entities.TreatmentItem = (
             session.execute(
