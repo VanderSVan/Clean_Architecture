@@ -37,20 +37,6 @@ class TreatmentItemWithReviews(TreatmentItem):
     reviews: list[ItemReview]
 
 
-# class TreatmentItemOptionalFields(_BaseTreatmentItem):
-#     id: int | None = Field(ge=1)
-#     title: str | None = Field(min_length=1, max_length=255)
-#     price: Decimal | None = Field(max_digits=12, decimal_places=2, ge=0)
-#     description: str | None = Field(min_length=1, max_length=1000)
-#     category_id: int | None = Field(ge=1)
-#     type_id: int | None = Field(ge=1)
-#     avg_rating: float | None = Field(ge=1, le=10)
-
-
-# class TreatmentItemWithReviewsOptionalFields(TreatmentItemOptionalFields):
-#     reviews: list[ItemReviewOptionalFields]
-
-
 class NewTreatmentItemInfo(DTO):
     title: str = Field(min_length=1, max_length=255)
     price: Decimal | None = Field(max_digits=12, decimal_places=2)
