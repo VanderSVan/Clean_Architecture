@@ -12,6 +12,7 @@ from .utils import error_handlers
 
 def create_app(diagnosis: services.Diagnosis,
                catalog: services.TreatmentItemCatalog,
+               item_category: services.ItemCategory,
                item_review: services.ItemReview,
                medical_book: services.MedicalBook,
                patient: services.Patient,
@@ -44,14 +45,6 @@ def create_app(diagnosis: services.Diagnosis,
     app.add_route('/symptoms/{symptom_id}', controllers.Symptoms(symptom=symptom),
                   suffix='by_id')
 
-    # Item Reviews
-    app.add_route('/item_reviews', controllers.ItemReviews(item_review=item_review))
-    app.add_route('/item_reviews/{review_id}',
-                  controllers.ItemReviews(item_review=item_review),
-                  suffix='by_id')
-    app.add_route('/item_reviews/new', controllers.ItemReviews(item_review=item_review),
-                  suffix='new')
-
     # Item Catalog
     app.add_route('/items', controllers.Catalog(catalog=catalog))
     app.add_route('/items/new', controllers.Catalog(catalog=catalog),
@@ -62,6 +55,24 @@ def create_app(diagnosis: services.Diagnosis,
                   suffix='by_id_with_reviews')
     app.add_route('/items/reviews', controllers.Catalog(catalog=catalog),
                   suffix='with_reviews')
+
+    # Item Categories
+    app.add_route('/item_categories',
+                  controllers.ItemCategories(item_category=item_category))
+    app.add_route('/item_categories/new',
+                  controllers.ItemCategories(item_category=item_category),
+                  suffix='new')
+    app.add_route('/item_categories/{category_id}',
+                  controllers.ItemCategories(item_category=item_category),
+                  suffix='by_id')
+
+    # Item Reviews
+    app.add_route('/item_reviews', controllers.ItemReviews(item_review=item_review))
+    app.add_route('/item_reviews/{review_id}',
+                  controllers.ItemReviews(item_review=item_review),
+                  suffix='by_id')
+    app.add_route('/item_reviews/new', controllers.ItemReviews(item_review=item_review),
+                  suffix='new')
 
     # Medical books
     app.add_route('/medical_books',

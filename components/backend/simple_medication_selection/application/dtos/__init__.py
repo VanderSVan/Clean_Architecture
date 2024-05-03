@@ -10,9 +10,8 @@ from .item import (
     UpdatedTreatmentItemInfo,
 )
 from .item_category import (
-    ItemCategoryCreateSchema,
-    ItemCategoryGetSchema,
-    ItemCategoryUpdateSchema,
+    NewItemCategoryInfo,
+    ItemCategory,
 )
 from .item_review import (
     NewItemReviewInfo,

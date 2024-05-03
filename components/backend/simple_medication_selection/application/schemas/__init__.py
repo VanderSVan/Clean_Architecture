@@ -5,6 +5,7 @@ from .item import (
     FindTreatmentItems,
     FindTreatmentItemsWithReviews
 )
+from .item_categories import FindItemCategories
 from .item_review import FindItemReviews
 from .medical_book import FindMedicalBooks
 from .patient import FindPatients
