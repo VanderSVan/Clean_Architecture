@@ -14,6 +14,7 @@ def create_app(diagnosis: services.Diagnosis,
                catalog: services.TreatmentItemCatalog,
                item_category: services.ItemCategory,
                item_review: services.ItemReview,
+               item_type: services.ItemType,
                medical_book: services.MedicalBook,
                patient: services.Patient,
                symptom: services.Symptom
@@ -73,6 +74,13 @@ def create_app(diagnosis: services.Diagnosis,
                   suffix='by_id')
     app.add_route('/item_reviews/new', controllers.ItemReviews(item_review=item_review),
                   suffix='new')
+
+    # Item Types
+    app.add_route('/item_types', controllers.ItemTypes(item_type=item_type))
+    app.add_route('/item_types/new', controllers.ItemTypes(item_type=item_type),
+                  suffix='new')
+    app.add_route('/item_types/{type_id}', controllers.ItemTypes(item_type=item_type),
+                  suffix='by_id')
 
     # Medical books
     app.add_route('/medical_books',

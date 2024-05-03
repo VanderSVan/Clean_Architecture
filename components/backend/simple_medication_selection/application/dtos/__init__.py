@@ -19,9 +19,8 @@ from .item_review import (
     UpdatedItemReviewInfo,
 )
 from .item_type import (
-    ItemTypeCreateSchema,
-    ItemTypeGetSchema,
-    ItemTypeUpdateSchema,
+    NewItemTypeInfo,
+    ItemType,
 )
 from .medical_book import (
     NewMedicalBookInfo,
