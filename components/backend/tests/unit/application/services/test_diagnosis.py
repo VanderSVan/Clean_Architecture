@@ -3,7 +3,7 @@ from unittest.mock import Mock, call
 import pytest
 
 from simple_medication_selection.application import (
-    dtos, entities, errors, interfaces, services
+    dtos, entities, errors, interfaces, services, schemas
 )
 
 
@@ -55,8 +55,48 @@ class TestGet:
         assert repo.method_calls == [call.fetch_by_id(repo_output.id)]
 
 
+class TestFind:
+    @pytest.mark.parametrize("repo_output, filter_params, service_output", [
+        (
+            [entities.Diagnosis(id=1, name='Розацеа')],
+            schemas.FindDiagnoses(keywords='роза'),
+            [dtos.Diagnosis(id=1, name='Розацеа')]
+        )
+    ])
+    def test__find_by_keywords(self, repo_output, filter_params, service_output, service,
+                               repo):
+        # Setup
+        repo.search_by_name.return_value = repo_output
+
+        # Call
+        result = service.find(filter_params=filter_params)
+
+        # Assert
+        assert repo.method_calls == [call.search_by_name(filter_params)]
+        assert result == service_output
+
+    @pytest.mark.parametrize("repo_output, filter_params, service_output", [
+        (
+            [entities.Diagnosis(id=1, name='Розацеа')],
+            schemas.FindDiagnoses(),
+            [dtos.Diagnosis(id=1, name='Розацеа')]
+        )
+    ])
+    def test__find_without_keywords(self, repo_output, filter_params, service_output,
+                                    service, repo):
+        # Setup
+        repo.fetch_all.return_value = repo_output
+
+        # Call
+        result = service.find(filter_params=filter_params)
+
+        # Assert
+        assert repo.method_calls == [call.fetch_all(filter_params)]
+        assert result == service_output
+
+
 class TestAdd:
-    @pytest.mark.parametrize("added_entity, input_dto, repo_output, service_output", [
+    @pytest.mark.parametrize("new_entity, input_dto, repo_output, service_output", [
         (
             entities.Diagnosis(name='Розацеа'),
             dtos.NewDiagnosisInfo(name='Розацеа'),
@@ -64,7 +104,7 @@ class TestAdd:
             dtos.Diagnosis(id=1, name='Розацеа')
         )
     ])
-    def test__add_new_diagnosis(self, added_entity, input_dto, repo_output,
+    def test__add_new_diagnosis(self, new_entity, input_dto, repo_output,
                                 service_output, service, repo):
         # Setup
         repo.fetch_by_name.return_value = None
@@ -76,7 +116,7 @@ class TestAdd:
         # Assert
         assert repo.method_calls == [
             call.fetch_by_name(input_dto.name),
-            call.add(added_entity)
+            call.add(new_entity)
         ]
         assert result == service_output
 
@@ -139,7 +179,7 @@ class TestChange:
             dtos.Diagnosis(id=1, name='Атопический дерматит')
         ),
     ])
-    def test__change_existing_diagnosis_with_same_name(
+    def test__change_diagnosis_with_same_name(
         self, repo_fetch_by_id_output, repo_fetch_by_name_output, dto, service, repo
     ):
         # Setup
