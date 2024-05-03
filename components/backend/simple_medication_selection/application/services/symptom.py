@@ -55,7 +55,8 @@ class Symptom:
         if not symptom:
             raise errors.SymptomNotFound(id=new_symptom_info.id)
 
-        if new_symptom_info.name == symptom.name:
+        symptom_with_same_name = self.symptoms_repo.fetch_by_name(new_symptom_info.name)
+        if symptom_with_same_name and symptom_with_same_name.id != symptom.id:
             raise errors.SymptomAlreadyExists(name=new_symptom_info.name)
 
         return new_symptom_info.populate_obj(symptom)

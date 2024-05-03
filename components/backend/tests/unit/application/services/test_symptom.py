@@ -123,24 +123,27 @@ class TestCreate:
 
 
 class TestChange:
-    @pytest.mark.parametrize("existing_entity, dto, updated_entity", [
+    @pytest.mark.parametrize("repo_output, dto, service_output", [
         (
             entities.Symptom(id=1, name='Температура'),
             dtos.Symptom(id=1, name='Кашель'),
             entities.Symptom(id=1, name='Кашель')
         ),
     ])
-    def test__change_existing_symptom(self, existing_entity, dto, updated_entity,
-                                      service, repo):
+    def test__change(self, repo_output, dto, service_output, service, repo):
         # Setup
-        repo.fetch_by_id.return_value = existing_entity
+        repo.fetch_by_id.return_value = repo_output
+        repo.fetch_by_name.return_value = None
 
         # Call
         result = service.change(new_symptom_info=dto)
 
         # Assert
-        assert repo.method_calls == [call.fetch_by_id(dto.id)]
-        assert result == updated_entity
+        assert repo.method_calls == [
+            call.fetch_by_id(dto.id),
+            call.fetch_by_name(dto.name)
+        ]
+        assert result == service_output
 
     @pytest.mark.parametrize("dto", [
         dtos.Symptom(id=1, name='Кашель')
@@ -168,7 +171,10 @@ class TestChange:
         with pytest.raises(errors.SymptomAlreadyExists):
             service.change(new_symptom_info=dto)
 
-        assert repo.method_calls == [call.fetch_by_id(dto.id)]
+        assert repo.method_calls == [
+            call.fetch_by_id(dto.id),
+            call.fetch_by_name(dto.name)
+        ]
 
 
 class TestDelete:
