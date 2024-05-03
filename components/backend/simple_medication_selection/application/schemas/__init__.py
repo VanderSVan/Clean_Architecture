@@ -1,3 +1,4 @@
+from .diagnosis import FindDiagnoses
 from .item import (
     GetTreatmentItem,
     GetTreatmentItemWithReviews,

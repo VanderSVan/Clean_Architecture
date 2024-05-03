@@ -8,6 +8,11 @@ from simple_medication_selection.application import services
 
 
 @pytest.fixture(scope='function')
+def diagnosis_service() -> Mock:
+    return Mock(services.Diagnosis)
+
+
+@pytest.fixture(scope='function')
 def patient_service() -> Mock:
     return Mock(services.Patient)
 
@@ -33,12 +38,14 @@ def medical_book_service() -> Mock:
 
 
 @pytest.fixture(scope='function')
-def client(patient_service,
+def client(diagnosis_service,
+           patient_service,
            symptom_service,
            item_review_service,
            catalog_service,
            medical_book_service):
-    app = create_app(patient=patient_service,
+    app = create_app(diagnosis=diagnosis_service,
+                     patient=patient_service,
                      symptom=symptom_service,
                      item_review=item_review_service,
                      catalog=catalog_service,

@@ -1,8 +1,7 @@
 from .base import DTO
 from .diagnosis import (
-    DiagnosisCreateSchema,
-    DiagnosisGetSchema,
-    DiagnosisUpdateSchema,
+    NewDiagnosisInfo,
+    Diagnosis,
 )
 from .item import (
     NewTreatmentItemInfo,

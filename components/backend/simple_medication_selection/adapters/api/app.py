@@ -10,17 +10,26 @@ from .spec import spectree
 from .utils import error_handlers
 
 
-def create_app(patient: services.Patient,
-               symptom: services.Symptom,
+def create_app(diagnosis: services.Diagnosis,
                catalog: services.TreatmentItemCatalog,
                item_review: services.ItemReview,
-               medical_book: services.MedicalBook
+               medical_book: services.MedicalBook,
+               patient: services.Patient,
+               symptom: services.Symptom
                ) -> falcon.App:
     app = falcon.App()
 
     app.add_error_handler(ValidationError, error_handlers.validation_error)
     app.add_error_handler(Error, error_handlers.app_error)
     app.add_error_handler(ErrorsList, error_handlers.app_errors_list)
+
+    # Diagnoses
+    app.add_route('/diagnoses', controllers.Diagnoses(diagnosis=diagnosis))
+    app.add_route('/diagnoses/new', controllers.Diagnoses(diagnosis=diagnosis),
+                  suffix='new')
+    app.add_route('/diagnoses/{diagnosis_id}', controllers.Diagnoses(diagnosis=diagnosis),
+                  suffix='by_id')
+
     # Patients
     app.add_route('/patients', controllers.Patients(patient=patient))
     app.add_route('/patients/new', controllers.Patients(patient=patient),
