@@ -49,7 +49,7 @@ class ItemReview:
 
     @register_method
     @validate_arguments
-    def add(self, new_review_info: dtos.NewItemReviewInfo) -> entities.ItemReview:
+    def add(self, new_review_info: dtos.NewItemReviewInfo) -> dtos.ItemReview:
         item: entities.TreatmentItem = self.items_repo.fetch_by_id(
             new_review_info.item_id, False
         )
@@ -59,11 +59,11 @@ class ItemReview:
         new_review: entities.ItemReview = new_review_info.create_obj(entities.ItemReview)
         added_review: entities.ItemReview = self.reviews_repo.add(new_review)
         self.items_repo.update_avg_rating(item)
-        return added_review
+        return dtos.ItemReview.from_orm(added_review)
 
     @register_method
     @validate_arguments
-    def change(self, new_review_info: dtos.UpdatedItemReviewInfo) -> entities.ItemReview:
+    def change(self, new_review_info: dtos.UpdatedItemReviewInfo) -> dtos.ItemReview:
         review: entities.ItemReview = self.reviews_repo.fetch_by_id(new_review_info.id)
         if not review:
             raise errors.ItemReviewNotFound(id=new_review_info.id)
@@ -83,16 +83,17 @@ class ItemReview:
             )
             self.items_repo.update_avg_rating(item)
 
-        return updated_review
+        return dtos.ItemReview.from_orm(updated_review)
 
     @register_method
     @validate_arguments
-    def delete(self, review_id: int) -> entities.ItemReview:
+    def delete(self, review_id: int) -> dtos.ItemReview:
         review: entities.ItemReview = self.reviews_repo.fetch_by_id(review_id)
         if not review:
             raise errors.ItemReviewNotFound(id=review_id)
 
-        return self.reviews_repo.remove(review)
+        removed_review: entities.ItemReview = self.reviews_repo.remove(review)
+        return dtos.ItemReview.from_orm(removed_review)
 
 
 class _ItemReviewStrategySelector:

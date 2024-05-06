@@ -179,7 +179,7 @@ class TestAdd:
             call.fetch_by_id(dto.item_id, False), call.update_avg_rating(dto.item_id)
         ]
         assert reviews_repo.method_calls == [call.add(new_entity)]
-        assert result == created_entity
+        assert result == dtos.ItemReview.from_orm(created_entity)
 
     @pytest.mark.parametrize("dto", [
         (
@@ -235,7 +235,7 @@ class TestChange:
             call.fetch_by_id(dto.item_id, False),
             call.update_avg_rating(dto.item_id)
         ]
-        assert result == updated_entity
+        assert result == dtos.ItemReview.from_orm(updated_entity)
 
     @pytest.mark.parametrize("dto", [
         dtos.UpdatedItemReviewInfo(
@@ -308,7 +308,7 @@ class TestDelete:
         assert reviews_repo.method_calls == [call.fetch_by_id(existing_entity.id),
                                              call.remove(existing_entity)]
         assert items_repo.method_calls == []
-        assert result == removed_entity
+        assert result == dtos.ItemReview.from_orm(removed_entity)
 
     def test__review_not_found(self, service, reviews_repo, items_repo):
         # Setup

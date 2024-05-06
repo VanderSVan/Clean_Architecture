@@ -63,9 +63,9 @@ class ItemReviews:
         Добавление нового отзыва.
         """
         new_review_info = dtos.NewItemReviewInfo(**req.media)
-        new_review: entities.ItemReview = self.review.add(new_review_info)
+        new_review: dtos.ItemReview = self.review.add(new_review_info)
 
-        resp.media = asdict(new_review)
+        resp.media = new_review.dict(exclude_none=True, exclude_unset=True)
         resp.status = status_codes.HTTP_201
 
     @spectree.validate(
@@ -80,9 +80,9 @@ class ItemReviews:
         """
         req.media.update({'id': review_id})
         updated_review_info = dtos.UpdatedItemReviewInfo(**req.media)
-        updated_review: entities.ItemReview = self.review.change(updated_review_info)
+        updated_review: dtos.ItemReview = self.review.change(updated_review_info)
 
-        resp.media = asdict(updated_review)
+        resp.media = updated_review.dict(exclude_none=True, exclude_unset=True)
         resp.status = status_codes.HTTP_200
 
     @spectree.validate(
@@ -94,7 +94,7 @@ class ItemReviews:
         """
         Удаление отзыва.
         """
-        removed_review: entities.ItemReview = self.review.delete(review_id)
+        removed_review: dtos.ItemReview = self.review.delete(review_id)
 
-        resp.media = asdict(removed_review)
+        resp.media = removed_review.dict(exclude_none=True, exclude_unset=True)
         resp.status = status_codes.HTTP_200

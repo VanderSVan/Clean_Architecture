@@ -106,7 +106,7 @@ class TestOnPostNew:
             item_id=1, patient_id=1, is_helped=True, item_rating=9.5, item_count=5,
             usage_period=7776000
         )
-        returned_review = entities.ItemReview(**new_review_info.dict(), id=4)
+        returned_review = dtos.ItemReview(**new_review_info.dict(), id=4)
         item_review_service.add.return_value = returned_review
 
         # Call
@@ -114,7 +114,9 @@ class TestOnPostNew:
 
         # Assert
         assert response.status_code == 201
-        assert response.json == asdict(returned_review)
+        assert response.json == returned_review.dict(
+            exclude_none=True, exclude_unset=True
+        )
         assert item_review_service.method_calls == [
             call.add(new_review_info)
         ]
@@ -124,7 +126,7 @@ class TestOnPutById:
     def test__on_put_by_id(self, item_review_service, client):
         # Setup
         updated_review_info = dtos.UpdatedItemReviewInfo(**asdict(REVIEW_1))
-        returned_review = REVIEW_1
+        returned_review = dtos.ItemReview(**asdict(REVIEW_1))
         item_review_service.change.return_value = returned_review
 
         # Call
@@ -133,7 +135,9 @@ class TestOnPutById:
 
         # Assert
         assert response.status_code == 200
-        assert response.json == asdict(returned_review)
+        assert response.json == returned_review.dict(
+            exclude_none=True, exclude_unset=True
+        )
         assert item_review_service.method_calls == [
             call.change(updated_review_info)
         ]
@@ -142,7 +146,7 @@ class TestOnPutById:
 class TestDeleteById:
     def test__on_delete_by_id(self, item_review_service, client):
         # Setup
-        returned_review = REVIEW_1
+        returned_review = dtos.ItemReview(**asdict(REVIEW_1))
         item_review_service.delete.return_value = returned_review
 
         # Call
@@ -150,5 +154,7 @@ class TestDeleteById:
 
         # Assert
         assert response.status_code == 200
-        assert response.json == asdict(returned_review)
+        assert response.json == returned_review.dict(
+            exclude_none=True, exclude_unset=True
+        )
         assert item_review_service.method_calls == [call.delete(f'{returned_review.id}')]
