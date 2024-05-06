@@ -145,7 +145,7 @@ class Catalog:
 
     @spectree.validate(
         path_parameter_descriptions={"item_id": "Integer"},
-        json=dtos.UpdatedTreatmentItemInfo,
+        json=api_schemas.PutTreatmentItemInfo,
         resp=Response(HTTP_200=dtos.TreatmentItemWithReviews),
         tags=["Items"]
     )

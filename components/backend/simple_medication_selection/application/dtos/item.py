@@ -46,7 +46,7 @@ class NewTreatmentItemInfo(DTO):
 
 
 class UpdatedTreatmentItemInfo(DTO):
-    id: int | None = Field(ge=1)
+    id: int = Field(ge=1)
     title: str | None = Field(min_length=1, max_length=255)
     price: Decimal | None = Field(max_digits=12, decimal_places=2)
     description: str | None = Field(min_length=1, max_length=1000)
