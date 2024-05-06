@@ -29,11 +29,12 @@ class Symptoms:
             limit=req.context.query.limit,
             offset=req.context.query.offset
         )
-        found_symptoms: Sequence[entities.Symptom | None] = (
+        found_symptoms: list[dtos.Symptom | None] = (
             self.symptom.find_symptoms(filter_params)
         )
 
-        resp.media = [asdict(symptom) for symptom in found_symptoms]
+        resp.media = [symptom.dict(exclude_none=True, exclude_unset=True)
+                      for symptom in found_symptoms]
         resp.status = status_codes.HTTP_200
 
     @spectree.validate(
@@ -45,9 +46,9 @@ class Symptoms:
         """
         Получение симптома по его идентификатору.
         """
-        symptom: entities.Symptom = self.symptom.get(symptom_id)
+        symptom: dtos.Symptom = self.symptom.get(symptom_id)
 
-        resp.media = asdict(symptom)
+        resp.media = symptom.dict(exclude_none=True, exclude_unset=True)
         resp.status = status_codes.HTTP_200
 
     @spectree.validate(
@@ -57,12 +58,12 @@ class Symptoms:
     )
     def on_post_new(self, req, resp):
         """
-        Создание симптома.
+        Добавление нового симптома.
         """
         new_symptom_info = dtos.NewSymptomInfo(**req.media)
-        new_symptom: entities.Symptom = self.symptom.create(new_symptom_info)
+        new_symptom: dtos.Symptom = self.symptom.add(new_symptom_info)
 
-        resp.media = asdict(new_symptom)
+        resp.media = new_symptom.dict(exclude_none=True, exclude_unset=True)
         resp.status = status_codes.HTTP_201
 
     @spectree.validate(
@@ -73,13 +74,13 @@ class Symptoms:
     )
     def on_put_by_id(self, req, resp, symptom_id: int):
         """
-        Изменение симптома.
+        Изменение информации о симптоме.
         """
         req.media.update({'id': symptom_id})
         new_symptom_info = dtos.Symptom(**req.media)
-        updated_symptom: entities.Symptom = self.symptom.change(new_symptom_info)
+        updated_symptom: dtos.Symptom = self.symptom.change(new_symptom_info)
 
-        resp.media = asdict(updated_symptom)
+        resp.media = updated_symptom.dict(exclude_none=True, exclude_unset=True)
         resp.status = status_codes.HTTP_200
 
     @spectree.validate(
@@ -91,8 +92,8 @@ class Symptoms:
         """
         Удаление симптома.
         """
-        removed_symptom: entities.Symptom = self.symptom.delete(symptom_id)
+        removed_symptom: dtos.Symptom = self.symptom.delete(symptom_id)
 
-        resp.media = asdict(removed_symptom)
+        resp.media = removed_symptom.dict(exclude_none=True, exclude_unset=True)
         resp.status = status_codes.HTTP_200
         

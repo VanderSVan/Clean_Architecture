@@ -18,9 +18,10 @@ SYMPTOM_LIST = [SYMPTOM_1, SYMPTOM_2, SYMPTOM_3]
 class TestOnGet:
     def test__on_get(self, symptom_service, client):
         # Setup
-        symptom_service.find_symptoms.return_value = [
-            entities.Symptom(**symptom_info) for symptom_info in SYMPTOM_LIST
+        result_output: list[dtos.Symptom] = [
+            dtos.Symptom(**symptom_info) for symptom_info in SYMPTOM_LIST
         ]
+        symptom_service.find_symptoms.return_value = result_output
         filter_params = schemas.FindSymptoms(keywords='Симптом',
                                              sort_field='id',
                                              sort_direction='asc',
@@ -39,55 +40,62 @@ class TestOnGet:
 
         # Assert
         assert response.status_code == 200
-        assert response.json == SYMPTOM_LIST
+        assert response.json == [symptom.dict(exclude_none=True, exclude_unset=True)
+                                 for symptom in result_output]
         assert symptom_service.method_calls == [call.find_symptoms(filter_params)]
 
     def test__on_get_default(self, symptom_service, client):
         # Call
-        result_output: list[entities.Symptom] = [
-            entities.Symptom(**symptom_info) for symptom_info in SYMPTOM_LIST
+        result_output: list[dtos.Symptom] = [
+            dtos.Symptom(**symptom_info) for symptom_info in SYMPTOM_LIST
         ]
         symptom_service.find_symptoms.return_value = result_output
+        filter_params = schemas.FindSymptoms()
         response = client.simulate_get('/symptoms')
 
         assert response.status_code == 200
-        assert response.json == [asdict(symptom) for symptom in result_output]
+        assert response.json == [symptom.dict(exclude_none=True, exclude_unset=True)
+                                 for symptom in result_output]
+        assert symptom_service.method_calls == [call.find_symptoms(filter_params)]
 
 
 class TestOnGetById:
     def test__on_get_by_id(self, symptom_service, client):
         # Setup
-        symptom_service.get.return_value = entities.Symptom(**SYMPTOM_1)
+        service_output = dtos.Symptom(**SYMPTOM_1)
+        symptom_service.get.return_value = service_output
 
         # Call
         response = client.simulate_get('/symptoms/1')
 
         # Assert
         assert response.status_code == 200
-        assert response.json == SYMPTOM_1
+        assert response.json == service_output.dict(exclude_none=True, exclude_unset=True)
         assert symptom_service.method_calls == [call.get('1')]
 
 
 class TestOnPostNew:
     def test__on_post(self, symptom_service, client):
         # Setup
-        symptom_service.create.return_value = entities.Symptom(**SYMPTOM_2)
+        service_output = dtos.Symptom(**SYMPTOM_2)
+        symptom_service.add.return_value = service_output
 
         # Call
         response = client.simulate_post('/symptoms/new', json=SYMPTOM_2)
 
         # Assert
         assert response.status_code == 201
-        assert response.json == SYMPTOM_2
+        assert response.json == service_output.dict(exclude_none=True, exclude_unset=True)
         assert symptom_service.method_calls == [
-            call.create(dtos.NewSymptomInfo(**SYMPTOM_2))
+            call.add(dtos.NewSymptomInfo(**SYMPTOM_2))
         ]
 
 
 class TestOnPutById:
     def test__on_put(self, symptom_service, client):
         # Setup
-        symptom_service.change.return_value = entities.Symptom(**SYMPTOM_3)
+        service_output = dtos.Symptom(**SYMPTOM_3)
+        symptom_service.change.return_value = service_output
         symptom_id = SYMPTOM_3['id']
 
         # Call
@@ -95,19 +103,20 @@ class TestOnPutById:
 
         # Assert
         assert response.status_code == 200
-        assert response.json == SYMPTOM_3
+        assert response.json == service_output.dict(exclude_none=True, exclude_unset=True)
         assert symptom_service.method_calls == [call.change(dtos.Symptom(**SYMPTOM_3))]
 
 
 class TestOnDeleteById:
     def test__on_delete(self, symptom_service, client):
         # Setup
-        symptom_service.delete.return_value = entities.Symptom(**SYMPTOM_1)
+        service_output = dtos.Symptom(**SYMPTOM_1)
+        symptom_service.delete.return_value = service_output
 
         # Call
         response = client.simulate_delete('/symptoms/1')
 
         # Assert
         assert response.status_code == 200
-        assert response.json == SYMPTOM_1
+        assert response.json == service_output.dict(exclude_none=True, exclude_unset=True)
         assert symptom_service.method_calls == [call.delete('1')]

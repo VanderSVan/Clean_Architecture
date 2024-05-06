@@ -17,40 +17,46 @@ class Symptom:
 
     @register_method
     @validate_arguments
-    def get(self, symptom_id: int) -> entities.Symptom:
+    def get(self, symptom_id: int) -> dtos.Symptom:
         symptom = self.symptoms_repo.fetch_by_id(symptom_id)
 
         if not symptom:
             raise errors.SymptomNotFound(id=symptom_id)
 
-        return symptom
+        return dtos.Symptom.from_orm(symptom)
 
     @register_method
     @validate_arguments
     def find_symptoms(self,
                       filter_params: schemas.FindSymptoms
-                      ) -> Sequence[entities.Symptom | None]:
+                      ) -> list[dtos.Symptom | None]:
         if filter_params.keywords:
-            return self.symptoms_repo.search_by_name(filter_params)
+            found_symptoms: Sequence[entities.Symptom | None] = (
+                self.symptoms_repo.search_by_name(filter_params)
+            )
+        else:
+            found_symptoms: Sequence[entities.Symptom | None] = (
+                self.symptoms_repo.fetch_all(filter_params)
+            )
 
-        return self.symptoms_repo.fetch_all(filter_params)
+        return [dtos.Symptom.from_orm(symptom) for symptom in found_symptoms]
 
     @register_method
     @validate_arguments
-    def create(self, new_symptom_info: dtos.NewSymptomInfo) -> entities.Symptom:
+    def add(self, new_symptom_info: dtos.NewSymptomInfo) -> dtos.Symptom:
         symptom: entities.Symptom = (
             self.symptoms_repo.fetch_by_name(new_symptom_info.name)
         )
-
         if symptom:
             raise errors.SymptomAlreadyExists(name=new_symptom_info.name)
 
         new_symptom: entities.Symptom = new_symptom_info.create_obj(entities.Symptom)
-        return self.symptoms_repo.add(new_symptom)
+        added_symptom: entities.Symptom = self.symptoms_repo.add(new_symptom)
+        return dtos.Symptom.from_orm(added_symptom)
 
     @register_method
     @validate_arguments
-    def change(self, new_symptom_info: dtos.Symptom) -> entities.Symptom:
+    def change(self, new_symptom_info: dtos.Symptom) -> dtos.Symptom:
         symptom: entities.Symptom = self.symptoms_repo.fetch_by_id(new_symptom_info.id)
         if not symptom:
             raise errors.SymptomNotFound(id=new_symptom_info.id)
@@ -59,14 +65,16 @@ class Symptom:
         if symptom_with_same_name and symptom_with_same_name.id != symptom.id:
             raise errors.SymptomAlreadyExists(name=new_symptom_info.name)
 
-        return new_symptom_info.populate_obj(symptom)
+        updated_symptom: entities.Symptom = new_symptom_info.populate_obj(symptom)
+        return dtos.Symptom.from_orm(updated_symptom)
 
     @register_method
     @validate_arguments
-    def delete(self, symptom_id: int) -> entities.Symptom:
-        symptom = self.symptoms_repo.fetch_by_id(symptom_id)
+    def delete(self, symptom_id: int) -> dtos.Symptom:
+        symptom: entities.Symptom = self.symptoms_repo.fetch_by_id(symptom_id)
 
         if not symptom:
             raise errors.SymptomNotFound(id=symptom_id)
 
-        return self.symptoms_repo.remove(symptom)
+        removed_symptom: entities.Symptom = self.symptoms_repo.remove(symptom)
+        return dtos.Symptom.from_orm(removed_symptom)

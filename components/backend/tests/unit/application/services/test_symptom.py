@@ -25,7 +25,7 @@ def service(repo) -> services.Symptom:
 @pytest.mark.parametrize("entity", [entities.Symptom(id=1, name='Температура')])
 class TestGet:
 
-    def test__get_existing_symptom(self, entity, service, repo):
+    def test__get_symptom(self, entity, service, repo):
         # Setup
         repo.fetch_by_id.return_value = entity
 
@@ -34,7 +34,7 @@ class TestGet:
 
         # Assert
         assert repo.method_calls == [call.fetch_by_id(entity.id)]
-        assert result == entity
+        assert result == dtos.Symptom.from_orm(entity)
 
     def test_get_non_existing_symptom(self, entity, service, repo):
         # Setup
@@ -64,7 +64,7 @@ class TestFindSymptoms:
 
         # Assert
         assert repo.method_calls == [call.search_by_name(filter_params)]
-        assert result == result_output
+        assert result == [dtos.Symptom.from_orm(entity) for entity in result_output]
 
     @pytest.mark.parametrize("result_output", [
         [
@@ -82,7 +82,7 @@ class TestFindSymptoms:
 
         # Assert
         assert repo.method_calls == [call.fetch_all(filter_params)]
-        assert result == result_output
+        assert result == [dtos.Symptom.from_orm(entity) for entity in result_output]
 
 
 class TestCreate:
@@ -99,11 +99,11 @@ class TestCreate:
         repo.add.return_value = created_entity
 
         # Call
-        result = service.create(new_symptom_info=dto)
+        result = service.add(new_symptom_info=dto)
 
         # Assert
         assert repo.method_calls == [call.fetch_by_name(dto.name), call.add(new_entity)]
-        assert result == created_entity
+        assert result == dtos.Symptom.from_orm(created_entity)
 
     @pytest.mark.parametrize("existing_entity, dto", [
         (
@@ -117,7 +117,7 @@ class TestCreate:
 
         # Call and Assert
         with pytest.raises(errors.SymptomAlreadyExists):
-            service.create(new_symptom_info=dto)
+            service.add(new_symptom_info=dto)
 
         assert repo.method_calls == [call.fetch_by_name(dto.name)]
 
@@ -143,7 +143,7 @@ class TestChange:
             call.fetch_by_id(dto.id),
             call.fetch_by_name(dto.name)
         ]
-        assert result == service_output
+        assert result == dtos.Symptom.from_orm(service_output)
 
     @pytest.mark.parametrize("dto", [
         dtos.Symptom(id=1, name='Кашель')
@@ -193,7 +193,7 @@ class TestDelete:
         # Assert
         assert repo.method_calls == [call.fetch_by_id(symptom_id),
                                      call.remove(existing_entity)]
-        assert result == existing_entity
+        assert result == dtos.Symptom.from_orm(existing_entity)
 
     def test__delete_non_existing_symptom(self, service, repo):
         # Setup
