@@ -338,10 +338,9 @@ class TestOnPostNew:
     def test__on_post(self, catalog_service, client):
         # Setup
         item_info_to_create = ITEM_2.to_dict()
-        if item_info_to_create.get("reviews"):
-            del item_info_to_create["reviews"]
+        item_info_to_create["reviews"] = []
 
-        returned_item = entities.TreatmentItem(**item_info_to_create)
+        returned_item = dtos.TreatmentItemWithReviews(**item_info_to_create)
         catalog_service.add_item.return_value = returned_item
 
         # Call
@@ -349,7 +348,9 @@ class TestOnPostNew:
 
         # Assert
         assert response.status_code == 201
-        assert response.json == returned_item.to_dict()
+        assert response.json == returned_item.dict(
+            decode=True, exclude_none=True, exclude_unset=True
+        )
         assert catalog_service.method_calls == [
             call.add_item(dtos.NewTreatmentItemInfo(**item_info_to_create))
         ]
@@ -359,10 +360,9 @@ class TestOnPutById:
     def test__on_put_by_id(self, catalog_service, client):
         # Setup
         updated_item_info = ITEM_3.to_dict()
-        if updated_item_info.get("reviews"):
-            del updated_item_info["reviews"]
+        updated_item_info["reviews"] = []
 
-        returned_item = entities.TreatmentItem(**updated_item_info)
+        returned_item = dtos.TreatmentItemWithReviews(**updated_item_info)
         item_id = returned_item.id
         catalog_service.change_item.return_value = returned_item
 
@@ -371,7 +371,9 @@ class TestOnPutById:
 
         # Assert
         assert response.status_code == 200
-        assert response.json == returned_item.to_dict()
+        assert response.json == returned_item.dict(
+            decode=True, exclude_none=True, exclude_unset=True
+        )
         assert catalog_service.method_calls == [
             call.change_item(dtos.UpdatedTreatmentItemInfo(**updated_item_info))
         ]
@@ -380,7 +382,7 @@ class TestOnPutById:
 class TestOnDeleteById:
     def test__on_delete_by_id(self, catalog_service, client):
         # Setup
-        returned_item = ITEM_3
+        returned_item = dtos.TreatmentItemWithReviews(**ITEM_1.to_dict())
         item_id = returned_item.id
         catalog_service.delete_item.return_value = returned_item
 
@@ -389,5 +391,7 @@ class TestOnDeleteById:
 
         # Assert
         assert response.status_code == 200
-        assert response.json == returned_item.to_dict()
+        assert response.json == returned_item.dict(
+            decode=True, exclude_none=True, exclude_unset=True
+        )
         assert catalog_service.method_calls == [call.delete_item(str(item_id))]

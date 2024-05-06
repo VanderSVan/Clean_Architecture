@@ -138,9 +138,9 @@ class Catalog:
         Создание item.
         """
         new_item_info = dtos.NewTreatmentItemInfo(**req.media)
-        new_item: entities.TreatmentItem = self.catalog.add_item(new_item_info)
+        new_item: dtos.TreatmentItem = self.catalog.add_item(new_item_info)
 
-        resp.media = new_item.to_dict()
+        resp.media = new_item.dict(decode=True, exclude_none=True, exclude_unset=True)
         resp.status = status_codes.HTTP_201
 
     @spectree.validate(
@@ -155,9 +155,9 @@ class Catalog:
         """
         req.media.update({'id': item_id})
         updated_item_info = dtos.UpdatedTreatmentItemInfo(**req.media)
-        updated_item: entities.TreatmentItem = self.catalog.change_item(updated_item_info)
+        updated_item: dtos.TreatmentItem = self.catalog.change_item(updated_item_info)
 
-        resp.media = updated_item.to_dict()
+        resp.media = updated_item.dict(decode=True, exclude_none=True, exclude_unset=True)
         resp.status = status_codes.HTTP_200
 
     @spectree.validate(
@@ -169,7 +169,7 @@ class Catalog:
         """
         Удаление item.
         """
-        removed_item: entities.TreatmentItem = self.catalog.delete_item(item_id)
+        removed_item: dtos.TreatmentItem = self.catalog.delete_item(item_id)
 
-        resp.media = removed_item.to_dict()
+        resp.media = removed_item.dict(decode=True, exclude_none=True, exclude_unset=True)
         resp.status = status_codes.HTTP_200

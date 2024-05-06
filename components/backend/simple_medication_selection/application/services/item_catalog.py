@@ -119,7 +119,7 @@ class TreatmentItemCatalog:
     @validate_arguments
     def add_item(self,
                  new_item_info: dtos.NewTreatmentItemInfo
-                 ) -> entities.TreatmentItem:
+                 ) -> dtos.TreatmentItemWithReviews:
 
         category: entities.ItemCategory = self.categories_repo.fetch_by_id(
             new_item_info.category_id)
@@ -134,13 +134,14 @@ class TreatmentItemCatalog:
         new_item: entities.TreatmentItem = new_item_info.create_obj(
             entities.TreatmentItem)
 
-        return self.items_repo.add(new_item)
+        added_item: entities.TreatmentItem = self.items_repo.add(new_item)
+        return dtos.TreatmentItemWithReviews.from_orm(added_item)
 
     @register_method
     @validate_arguments
     def change_item(self,
                     new_item_info: dtos.UpdatedTreatmentItemInfo
-                    ) -> entities.TreatmentItem:
+                    ) -> dtos.TreatmentItemWithReviews:
 
         item: entities.TreatmentItem = self.items_repo.fetch_by_id(new_item_info.id, True)
         if not item:
@@ -158,17 +159,19 @@ class TreatmentItemCatalog:
             if not type_:
                 raise errors.ItemTypeNotFound(id=new_item_info.type_id)
 
-        return new_item_info.populate_obj(item)
+        updated_item: entities.TreatmentItem = new_item_info.populate_obj(item)
+        return dtos.TreatmentItemWithReviews.from_orm(updated_item)
 
     @register_method
     @validate_arguments
-    def delete_item(self, item_id: int) -> entities.TreatmentItem:
+    def delete_item(self, item_id: int) -> dtos.TreatmentItemWithReviews:
 
         item: entities.TreatmentItem = self.items_repo.fetch_by_id(item_id, True)
         if not item:
             raise errors.TreatmentItemNotFound(id=item_id)
 
-        return self.items_repo.remove(item)
+        removed_item: entities.TreatmentItem = self.items_repo.remove(item)
+        return dtos.TreatmentItemWithReviews.from_orm(removed_item)
 
     def _get_items_with_reviews(self,
                                 filter_params: schemas.FindTreatmentItemsWithReviews

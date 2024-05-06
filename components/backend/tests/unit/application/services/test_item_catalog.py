@@ -452,7 +452,7 @@ class TestAddItem:
         assert items_repo.method_calls == [call.add(new_entity)]
         assert categories_repo.method_calls == [call.fetch_by_id(dto.category_id)]
         assert types_repo.method_calls == [call.fetch_by_id(dto.type_id)]
-        assert result == saved_entity
+        assert result == dtos.TreatmentItemWithReviews.from_orm(saved_entity)
 
     @pytest.mark.parametrize("dto", [
         dtos.NewTreatmentItemInfo(title='Продукт 1', category_id=1, type_id=10),
@@ -510,7 +510,7 @@ class TestChangeItem:
         assert items_repo.method_calls == [call.fetch_by_id(dto.id, True)]
         assert categories_repo.method_calls == [call.fetch_by_id(dto.category_id)]
         assert types_repo.method_calls == [call.fetch_by_id(dto.type_id)]
-        assert result == updated_entity
+        assert result == dtos.TreatmentItemWithReviews.from_orm(updated_entity)
 
     @pytest.mark.parametrize("dto", [
         dtos.UpdatedTreatmentItemInfo(id=100, title='Продукт 1', category_id=1,
@@ -591,7 +591,7 @@ class TestDeleteItem:
         # Assert
         assert items_repo.method_calls == [call.fetch_by_id(item_id, True),
                                            call.remove(removed_entity)]
-        assert result == removed_entity
+        assert result == dtos.TreatmentItemWithReviews.from_orm(removed_entity)
 
     def test__item_does_not_exist(self, service, items_repo):
         # Setup
