@@ -1,4 +1,5 @@
 from collections import namedtuple
+from functools import singledispatchmethod
 from typing import Callable, Sequence
 
 from pydantic import validate_arguments
@@ -25,9 +26,10 @@ class MedicalBook:
         self.diagnoses_repo = diagnoses_repo
         self.symptoms_repo = symptoms_repo
         self.reviews_repo = reviews_repo
-        self._search_strategy_selector = _MedBookSearchStrategySelector(
-            medical_books_repo
+        self._search_strategy_selector = (
+            _MedBookSearchStrategySelector(medical_books_repo)
         )
+        self._entity_checker = _EntityExistsChecker()
 
     @register_method
     @validate_arguments
@@ -153,89 +155,58 @@ class MedicalBook:
             ) -> dtos.MedicalBookWithSymptomsAndItemReviews:
 
         # Проверки
-        self._check_patient_exists(new_med_book_info.patient_id)
-        self._check_diagnosis_exists(new_med_book_info.diagnosis_id)
+        self._entity_checker.check_and_return(
+            self.patients_repo, new_med_book_info.patient_id
+        )
+        self._entity_checker.check_and_return(
+            self.diagnoses_repo, new_med_book_info.diagnosis_id
+        )
 
-        # Добавление новой информации к сущности
-        if new_med_book_info.id is not None:
-            found_medical_book: entities.MedicalBook = (
-                self._check_medical_book_exists(new_med_book_info.id)
-            )
-            medical_book = new_med_book_info.populate_obj(
-                found_medical_book, exclude={
-                    'symptom_ids_to_add', 'symptom_ids_to_remove',
-                    'item_review_ids_to_add', 'item_review_ids_to_remove'
-                }
-            )
-        else:
-            medical_book: entities.MedicalBook = new_med_book_info.create_obj(
-                entities.MedicalBook, exclude={
-                    'symptom_ids_to_add', 'symptom_ids_to_remove',
-                    'item_review_ids_to_add', 'item_review_ids_to_remove'
-                }
-            )
+        # Создание новой сущности без симптомов и отзывов
+        medical_book: entities.MedicalBook = new_med_book_info.create_obj(
+            entities.MedicalBook, exclude={'symptom_ids', 'item_review_ids'}
+        )
+        schema: dict = new_med_book_info.schema()['properties']
 
-        if new_med_book_info.symptom_ids_to_add:
+        # Добавление симптомов и отзывов
+        if schema.get('symptom_ids'):
             symptoms: list[entities.Symptom] = [
-                self._check_symptom_exists(symptom_id)
-                for symptom_id in new_med_book_info.symptom_ids_to_add
+                self._entity_checker.check_and_return(self.symptoms_repo, symptom_id)
+                for symptom_id in new_med_book_info.symptom_ids
             ]
-            medical_book.add_symptoms(symptoms)
+            medical_book.symptoms = symptoms
 
-        if new_med_book_info.item_review_ids_to_add:
+        if schema.get('item_review_ids'):
             reviews: list[entities.ItemReview] = [
-                self._check_item_review_exists(review_id)
-                for review_id in new_med_book_info.item_review_ids_to_add
+                self._entity_checker.check_and_return(self.reviews_repo, review_id)
+                for review_id in new_med_book_info.item_review_ids
             ]
-            medical_book.add_item_reviews(reviews)
-
-        if new_med_book_info.symptom_ids_to_remove:
-            symptoms: list[entities.Symptom] = [
-                self._check_symptom_exists(symptom_id)
-                for symptom_id in new_med_book_info.symptom_ids_to_remove
-            ]
-            medical_book.remove_symptoms(symptoms)
-
-        if new_med_book_info.item_review_ids_to_remove:
-            reviews: list[entities.ItemReview] = [
-                self._check_item_review_exists(review_id)
-                for review_id in new_med_book_info.item_review_ids_to_remove
-            ]
-            medical_book.remove_item_reviews(reviews)
+            medical_book.item_reviews = reviews
 
         added_medical_book = self.med_books_repo.add(medical_book)
         return dtos.MedicalBookWithSymptomsAndItemReviews.from_orm(added_medical_book)
 
     @register_method
     @validate_arguments
-    def change(self,
-               new_med_book_info: dtos.UpdatedMedicalBookInfo
-               ) -> dtos.MedicalBookWithSymptomsAndItemReviews:
+    def change(self, new_med_book_info) -> dtos.MedicalBookWithSymptomsAndItemReviews:
 
         # Проверки
-        medical_book: entities.MedicalBook = (
-            self._check_medical_book_exists(new_med_book_info.id)
+        found_medical_book: entities.MedicalBook = (
+            self._entity_checker.check_and_return(self.med_books_repo,
+                                                  new_med_book_info.id)
         )
-        self._check_patient_exists(new_med_book_info.patient_id)
-        self._check_diagnosis_exists(new_med_book_info.diagnosis_id)
+        self._entity_checker.check_and_return(self.patients_repo,
+                                              new_med_book_info.patient_id)
+        self._entity_checker.check_and_return(self.diagnoses_repo,
+                                              new_med_book_info.diagnosis_id)
 
-        # Обновление существующей информации
-        updated_med_book: entities.MedicalBook = new_med_book_info.populate_obj(
-            medical_book, exclude={'symptom_ids', 'item_review_ids'}
+        # Изменение существующей информации
+        change_method = _ChangeMethodHandler(
+            self._entity_checker, self.symptoms_repo, self.reviews_repo
         )
-        if new_med_book_info.symptom_ids:
-            symptoms: list[entities.Symptom] = [
-                self._check_symptom_exists(symptom_id)
-                for symptom_id in new_med_book_info.symptom_ids
-            ]
-            updated_med_book.symptoms = symptoms
-
-        if new_med_book_info.item_review_ids:
-            reviews: list[entities.ItemReview] = [
-                self._check_item_review_exists(review_id)
-                for review_id in new_med_book_info.item_review_ids
-            ]
-            updated_med_book.item_reviews = reviews
+        updated_med_book: entities.MedicalBook = (
+            change_method.execute(new_med_book_info, found_medical_book)
+        )
 
         return dtos.MedicalBookWithSymptomsAndItemReviews.from_orm(updated_med_book)
 
@@ -253,40 +224,6 @@ class MedicalBook:
 
         removed_med_book = self.med_books_repo.remove(medical_book)
         return dtos.MedicalBook.from_orm(removed_med_book)
-
-    def _check_patient_exists(self, patient_id: int) -> entities.Patient:
-        patient: entities.Patient = self.patients_repo.fetch_by_id(patient_id)
-        if not patient:
-            raise errors.PatientNotFound(id=patient_id)
-        return patient
-
-    def _check_diagnosis_exists(self, diagnosis_id: int) -> entities.Diagnosis:
-        diagnosis: entities.Diagnosis = self.diagnoses_repo.fetch_by_id(diagnosis_id)
-        if not diagnosis:
-            raise errors.DiagnosisNotFound(id=diagnosis_id)
-        return diagnosis
-
-    def _check_medical_book_exists(self, med_book_id: int) -> entities.MedicalBook:
-        medical_book: entities.MedicalBook = (
-            self.med_books_repo.fetch_by_id(med_book_id,
-                                            include_symptoms=False,
-                                            include_reviews=False)
-        )
-        if not medical_book:
-            raise errors.MedicalBookNotFound(id=med_book_id)
-        return medical_book
-
-    def _check_symptom_exists(self, symptom_id: int) -> entities.Symptom:
-        symptom: entities.Symptom = self.symptoms_repo.fetch_by_id(symptom_id)
-        if not symptom:
-            raise errors.SymptomNotFound(id=symptom_id)
-        return symptom
-
-    def _check_item_review_exists(self, review_id: int) -> entities.ItemReview:
-        review: entities.ItemReview = self.reviews_repo.fetch_by_id(review_id)
-        if not review:
-            raise errors.ItemReviewNotFound(id=review_id)
-        return review
 
 
 class _MedBookSearchStrategySelector:
@@ -462,3 +399,182 @@ class _MedBookSearchStrategySelector:
     ) -> Callable:
         key: namedtuple = self._build_key(filter_params)
         return self.strategies.get(key)
+
+
+class _EntityExistsChecker:
+
+    @singledispatchmethod
+    def check_and_return(self, repo, entity_id):
+        raise NotImplementedError(f"Type {type(repo)} is not supported")
+
+    @check_and_return.register
+    def _check_patient_exists(self,
+                              repo: interfaces.PatientsRepo,
+                              patient_id: int
+                              ) -> entities.Patient | None:
+        if patient_id is None:
+            return None
+
+        patient: entities.Patient = repo.fetch_by_id(patient_id)
+        if not patient:
+            raise errors.PatientNotFound(id=patient_id)
+        return patient
+
+    @check_and_return.register
+    def _check_diagnosis_exists(self,
+                                repo: interfaces.DiagnosesRepo,
+                                diagnosis_id: int
+                                ) -> entities.Diagnosis | None:
+        if diagnosis_id is None:
+            return None
+
+        diagnosis: entities.Diagnosis = repo.fetch_by_id(diagnosis_id)
+        if not diagnosis:
+            raise errors.DiagnosisNotFound(id=diagnosis_id)
+        return diagnosis
+
+    @check_and_return.register
+    def _check_medical_book_exists(self,
+                                   repo: interfaces.MedicalBooksRepo,
+                                   med_book_id: int
+                                   ) -> entities.MedicalBook:
+        medical_book: entities.MedicalBook = repo.fetch_by_id(med_book_id,
+                                                              include_symptoms=False,
+                                                              include_reviews=False)
+        if not medical_book:
+            raise errors.MedicalBookNotFound(id=med_book_id)
+        return medical_book
+
+    @check_and_return.register
+    def _check_symptom_exists(self,
+                              repo: interfaces.SymptomsRepo,
+                              symptom_id: int
+                              ) -> entities.Symptom | None:
+        if symptom_id is None:
+            return None
+
+        symptom: entities.Symptom = repo.fetch_by_id(symptom_id)
+        if not symptom:
+            raise errors.SymptomNotFound(id=symptom_id)
+        return symptom
+
+    @check_and_return.register
+    def _check_item_review_exists(self,
+                                  repo: interfaces.ItemReviewsRepo,
+                                  review_id: int
+                                  ) -> entities.ItemReview | None:
+        if review_id is None:
+            return None
+
+        review: entities.ItemReview = repo.fetch_by_id(review_id)
+        if not review:
+            raise errors.ItemReviewNotFound(id=review_id)
+        return review
+
+
+class _ChangeMethodHandler:
+    def __init__(self,
+                 entity_checker: _EntityExistsChecker,
+                 symptoms_repo: interfaces.SymptomsRepo,
+                 reviews_repo: interfaces.ItemReviewsRepo
+                 ) -> None:
+        self.entity_checker = entity_checker
+        self.symptoms_repo = symptoms_repo
+        self.reviews_repo = reviews_repo
+
+    @singledispatchmethod
+    def execute(self,
+                new_med_book_info,
+                med_book_to_change: entities.MedicalBook
+                ) -> entities.MedicalBook:
+        raise NotImplementedError(f"Type {type(new_med_book_info)} is not supported")
+
+    @execute.register
+    # @validate_arguments
+    def _(self,
+          new_med_book_info: dtos.UpdatedMedicalBookInfo,
+          med_book_to_change: entities.MedicalBook
+          ) -> entities.MedicalBook:
+
+        # Замена существующей информации без симптомов и отзывов
+        updated_med_book: entities.MedicalBook = new_med_book_info.populate_obj(
+            med_book_to_change, exclude={'symptom_ids', 'item_review_ids'}
+        )
+        schema: dict = new_med_book_info.schema()['properties']
+
+        # Замена новых симптомов
+        if schema.get('symptom_ids') and new_med_book_info.symptom_ids:
+            symptoms: list[entities.Symptom] = [
+                self.entity_checker.check_and_return(self.symptoms_repo, symptom_id)
+                for symptom_id in new_med_book_info.symptom_ids
+            ]
+            updated_med_book.symptoms = symptoms
+
+        # Замена новых отзывов
+        if schema.get('item_review_ids') and new_med_book_info.item_review_ids:
+            reviews: list[entities.ItemReview] = [
+                self.entity_checker.check_and_return(self.reviews_repo, review_id)
+                for review_id in new_med_book_info.item_review_ids
+            ]
+            updated_med_book.item_reviews = reviews
+
+        return updated_med_book
+
+    @execute.register
+    # @validate_arguments
+    def _(self,
+          new_med_book_info: dtos.MedicalBookInfoToUpdate,
+          med_book_to_change: entities.MedicalBook
+          ) -> entities.MedicalBook:
+
+        # Замена существующей информации без симптомов и отзывов
+        updated_med_book: entities.MedicalBook = new_med_book_info.populate_obj(
+            med_book_to_change, exclude={
+                'symptom_ids_to_add', 'symptom_ids_to_remove',
+                'item_review_ids_to_add', 'item_review_ids_to_remove',
+            }
+        )
+        schema: dict = new_med_book_info.schema()['properties']
+
+        # Добавление новых симптомов
+        if schema.get('symptom_ids_to_add') and new_med_book_info.symptom_ids_to_add:
+            symptoms: list[entities.Symptom] = [
+                self.entity_checker.check_and_return(self.symptoms_repo, symptom_id)
+                for symptom_id in new_med_book_info.symptom_ids_to_add
+            ]
+            updated_med_book.add_symptoms(symptoms)
+
+        # Добавление новых отзывов
+        if (
+            schema.get('item_review_ids_to_add') and
+            new_med_book_info.item_review_ids_to_add
+        ):
+            reviews: list[entities.ItemReview] = [
+                self.entity_checker.check_and_return(self.reviews_repo, review_id)
+                for review_id in new_med_book_info.item_review_ids_to_add
+            ]
+            updated_med_book.add_item_reviews(reviews)
+
+        # Удаление симптомов выборочно
+        if (
+            schema.get('symptom_ids_to_remove') and
+            new_med_book_info.symptom_ids_to_remove
+        ):
+            symptoms: list[entities.Symptom] = [
+                self.entity_checker.check_and_return(self.symptoms_repo, symptom_id)
+                for symptom_id in new_med_book_info.symptom_ids_to_remove
+            ]
+            updated_med_book.remove_symptoms(symptoms)
+
+        # Удаление отзывов выборочно
+        if (
+            schema.get('item_review_ids_to_remove') and
+            new_med_book_info.item_review_ids_to_remove
+        ):
+            reviews: list[entities.ItemReview] = [
+                self.entity_checker.check_and_return(self.reviews_repo, review_id)
+                for review_id in new_med_book_info.item_review_ids_to_remove
+            ]
+            updated_med_book.remove_item_reviews(reviews)
+
+        return updated_med_book

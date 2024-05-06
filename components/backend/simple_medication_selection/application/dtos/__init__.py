@@ -29,6 +29,7 @@ from .medical_book import (
     MedicalBookWithItemReviews,
     MedicalBookWithSymptomsAndItemReviews,
     UpdatedMedicalBookInfo,
+    MedicalBookInfoToUpdate,
 )
 from .patient import (
     NewPatientInfo,

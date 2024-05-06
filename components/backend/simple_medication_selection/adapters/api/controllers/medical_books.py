@@ -249,7 +249,7 @@ class MedicalBooks:
         resp.status = status_codes.HTTP_200
 
     @spectree.validate(
-        json=api_schemas.PostMedicalBookInfo,
+        json=dtos.NewMedicalBookInfo,
         resp=Response(HTTP_201=dtos.MedicalBookWithSymptomsAndItemReviews),
         tags=["Medical books"]
     )
@@ -273,7 +273,7 @@ class MedicalBooks:
 
     @spectree.validate(
         path_parameter_descriptions={"med_book_id": "Integer"},
-        json=dtos.UpdatedMedicalBookInfo,
+        json=api_schemas.PutMedicalBookInfo,
         resp=Response(HTTP_200=dtos.MedicalBookWithSymptomsAndItemReviews),
         tags=["Medical books"]
     )
@@ -292,7 +292,7 @@ class MedicalBooks:
 
     @spectree.validate(
         path_parameter_descriptions={"med_book_id": "Integer"},
-        json=dtos.NewMedicalBookInfo,
+        json=api_schemas.PatchMedicalBookInfo,
         resp=Response(HTTP_200=dtos.MedicalBookWithSymptomsAndItemReviews),
         tags=["Medical books"]
     )
@@ -301,9 +301,9 @@ class MedicalBooks:
         Изменение или добавление новой информации в медицинскую карту.
         """
         req.media.update({'id': med_book_id})
-        new_med_book_info = dtos.NewMedicalBookInfo(**req.media)
+        new_med_book_info = dtos.MedicalBookInfoToUpdate(**req.media)
         med_book: dtos.MedicalBookWithSymptomsAndItemReviews = (
-            self.med_book.add(new_med_book_info)
+            self.med_book.change(new_med_book_info)
         )
 
         resp.media = med_book.dict(exclude_unset=True, exclude_none=True)

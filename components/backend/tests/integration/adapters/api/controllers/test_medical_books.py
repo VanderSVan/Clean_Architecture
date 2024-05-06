@@ -557,8 +557,7 @@ class TestOnPostNew:
         medical_book_service.add.return_value = (
             dtos.MedicalBookWithSymptomsAndItemReviews(**asdict(MEDICAL_BOOK_1))
         )
-        data_to_post = api_schemas.PostMedicalBookInfo(**asdict(MEDICAL_BOOK_1))
-        # data_to_post.id = None
+        data_to_post = dtos.NewMedicalBookInfo(**asdict(MEDICAL_BOOK_1))
 
         # Call
         response = client.simulate_post('/medical_books/new',
@@ -590,6 +589,27 @@ class TestOnPutById:
         assert response.json == asdict(MEDICAL_BOOK_1)
         assert medical_book_service.method_calls == [
             call.change(dtos.UpdatedMedicalBookInfo(**asdict(MEDICAL_BOOK_1)))
+        ]
+
+
+class TestOnPatchById:
+    def test__on_patch_by_id(self, medical_book_service, client):
+        # Setup
+        medical_book_service.change.return_value = (
+            dtos.MedicalBookWithSymptomsAndItemReviews(**asdict(MEDICAL_BOOK_1))
+        )
+
+        med_book_id = MEDICAL_BOOK_1.id
+
+        # Call
+        response = client.simulate_patch(f'/medical_books/{med_book_id}',
+                                         json=asdict(MEDICAL_BOOK_1))
+
+        # Assert
+        assert response.status_code == 200
+        assert response.json == asdict(MEDICAL_BOOK_1)
+        assert medical_book_service.method_calls == [
+            call.change(dtos.MedicalBookInfoToUpdate(**asdict(MEDICAL_BOOK_1)))
         ]
 
 

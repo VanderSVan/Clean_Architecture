@@ -1,4 +1,7 @@
-from .item_catalog import GetTreatmentItemWithReviews
+from .item_catalog import (
+    GetTreatmentItemWithReviews,
+    PutTreatmentItemInfo,
+)
 from .item_review import ItemReviewOutput
 from .medical_book import (
     SearchMedicalBooks,
@@ -9,7 +12,8 @@ from .medical_book import (
     MedicalBookWithSymptomsOutput,
     MedicalBookWithItemReviewsOutput,
     MedicalBookWithSymptomsAndItemReviewsOutput,
-    PostMedicalBookInfo,
+    PutMedicalBookInfo,
+    PatchMedicalBookInfo,
 )
 from .patient import InputUpdatedPatientInfo
 from .symptom import SymptomOutput

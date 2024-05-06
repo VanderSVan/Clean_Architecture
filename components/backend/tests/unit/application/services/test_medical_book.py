@@ -650,8 +650,8 @@ class TestAdd:
             (
                 dtos.NewMedicalBookInfo(title_history='title', history='history',
                                         patient_id=1, diagnosis_id=1,
-                                        symptom_ids_to_add=[1],
-                                        item_review_ids_to_add=[2]),
+                                        symptom_ids=[1],
+                                        item_review_ids=[2]),
                 entities.MedicalBook(title_history='title', history='history',
                                      patient_id=1, diagnosis_id=1),
                 entities.MedicalBook(id=1, title_history='title', history='history',
@@ -707,8 +707,8 @@ class TestAdd:
     @pytest.mark.parametrize("dto", [
         dtos.NewMedicalBookInfo(title_history='title', history='history',
                                 patient_id=1000001, diagnosis_id=1,
-                                symptom_ids_to_add=[1],
-                                item_review_ids_to_add=[2]),
+                                symptom_ids=[1],
+                                item_review_ids=[2]),
     ])
     def test__patient_not_found(self, dto, service, med_books_repo, patients_repo,
                                 diagnoses_repo, symptoms_repo, reviews_repo):
@@ -728,8 +728,8 @@ class TestAdd:
     @pytest.mark.parametrize("dto", [
         dtos.NewMedicalBookInfo(title_history='title', history='history',
                                 patient_id=1, diagnosis_id=1000001,
-                                symptom_ids_to_add=[1],
-                                item_review_ids_to_add=[2]),
+                                symptom_ids=[1],
+                                item_review_ids=[2]),
     ])
     def test__diagnosis_not_found(self, dto, service, med_books_repo, patients_repo,
                                   diagnoses_repo, symptoms_repo, reviews_repo):
@@ -752,8 +752,8 @@ class TestAdd:
     @pytest.mark.parametrize("dto", [
         dtos.NewMedicalBookInfo(title_history='title', history='history',
                                 patient_id=1, diagnosis_id=1,
-                                symptom_ids_to_add=[1000001],
-                                item_review_ids_to_add=[2]),
+                                symptom_ids=[1000001],
+                                item_review_ids=[2]),
     ])
     def test__symptom_not_found(self, dto, service, med_books_repo, patients_repo,
                                 diagnoses_repo, symptoms_repo, reviews_repo):
@@ -772,15 +772,15 @@ class TestAdd:
 
         assert patients_repo.method_calls == [call.fetch_by_id(dto.patient_id)]
         assert diagnoses_repo.method_calls == [call.fetch_by_id(dto.diagnosis_id)]
-        assert symptoms_repo.method_calls == [call.fetch_by_id(dto.symptom_ids_to_add[0])]
+        assert symptoms_repo.method_calls == [call.fetch_by_id(dto.symptom_ids[0])]
         assert reviews_repo.method_calls == []
         assert med_books_repo.method_calls == []
 
     @pytest.mark.parametrize("dto", [
         dtos.NewMedicalBookInfo(title_history='title', history='history',
                                 patient_id=1, diagnosis_id=1,
-                                symptom_ids_to_add=[1000001],
-                                item_review_ids_to_add=[1000001]),
+                                symptom_ids=[1],
+                                item_review_ids=[1000001]),
     ])
     def test__item_review_not_found(self, dto, service, med_books_repo, patients_repo,
                                     diagnoses_repo, symptoms_repo, reviews_repo):
@@ -803,9 +803,9 @@ class TestAdd:
 
         assert patients_repo.method_calls == [call.fetch_by_id(dto.patient_id)]
         assert diagnoses_repo.method_calls == [call.fetch_by_id(dto.diagnosis_id)]
-        assert symptoms_repo.method_calls == [call.fetch_by_id(dto.symptom_ids_to_add[0])]
+        assert symptoms_repo.method_calls == [call.fetch_by_id(dto.symptom_ids[0])]
         assert reviews_repo.method_calls == [
-            call.fetch_by_id(dto.item_review_ids_to_add[0])
+            call.fetch_by_id(dto.item_review_ids[0])
         ]
         assert med_books_repo.method_calls == []
 
@@ -886,6 +886,86 @@ class TestChange:
         ]
         assert reviews_repo.method_calls == [
             call.fetch_by_id(input_dto.item_review_ids[0])
+        ]
+        assert result == service_output
+
+    @pytest.mark.parametrize(
+        "input_dto, repo_fetch_by_id_method_output, repo_change_method_output, "
+        "service_output", [
+            (
+                dtos.MedicalBookInfoToUpdate(id=2, title_history='blabla',
+                                             patient_id=5, diagnosis_id=101,
+                                             symptom_ids_to_add=[2],
+                                             symptom_ids_to_remove=[1],
+                                             item_review_ids_to_add=[3],
+                                             item_review_ids_to_remove=[2]),
+                entities.MedicalBook(id=1, title_history='title', history='history',
+                                     patient_id=1, diagnosis_id=1,
+                                     symptoms=[entities.Symptom(id=1, name='Symptom 1')],
+                                     item_reviews=[entities.ItemReview(id=2,
+                                                                       item_id=1,
+                                                                       is_helped=True,
+                                                                       item_rating=8,
+                                                                       item_count=72000)]
+                                     ),
+                entities.MedicalBook(id=2, title_history='blabla', history='history',
+                                     patient_id=5, diagnosis_id=101,
+                                     symptoms=[entities.Symptom(id=2, name='Symptom 2')],
+                                     item_reviews=[entities.ItemReview(id=3,
+                                                                       item_id=1,
+                                                                       is_helped=False,
+                                                                       item_rating=4,
+                                                                       item_count=52000)]
+                                     ),
+                dtos.MedicalBookWithSymptomsAndItemReviews(
+                    id=2, title_history='blabla', history='history', patient_id=5,
+                    diagnosis_id=101,
+                    symptoms=[dtos.Symptom(id=2, name='Symptom 2')],
+                    item_reviews=[
+                        dtos.ItemReview(id=3, item_id=1, is_helped=False, item_rating=4,
+                                        item_count=52000)
+                    ]
+                )
+
+            )
+        ])
+    def test__patch_med_book(self, input_dto, repo_fetch_by_id_method_output,
+                             repo_change_method_output, service_output, service,
+                             med_books_repo, patients_repo, diagnoses_repo,
+                             symptoms_repo, reviews_repo):
+        # Setup
+        med_books_repo.fetch_by_id.return_value = repo_fetch_by_id_method_output
+        patients_repo.fetch_by_id.return_value = entities.Patient(
+            id=5, nickname='Some', gender='male', age=18, skin_type='жирная'
+        )
+        diagnoses_repo.fetch_by_id.return_value = entities.Diagnosis(
+            id=101, name='Diagnosis'
+        )
+        symptoms_repo.fetch_by_id.side_effect = [
+            repo_fetch_by_id_method_output.symptoms[0],
+            repo_change_method_output.symptoms[0]
+        ]
+        reviews_repo.fetch_by_id.side_effect = [
+            repo_fetch_by_id_method_output.item_reviews[0],
+            repo_change_method_output.item_reviews[0]
+        ]
+
+        # Call
+        result = service.change(new_med_book_info=input_dto)
+
+        # Assert
+        assert med_books_repo.method_calls == [
+            call.fetch_by_id(input_dto.id, include_symptoms=False, include_reviews=False)
+        ]
+        assert patients_repo.method_calls == [call.fetch_by_id(input_dto.patient_id)]
+        assert diagnoses_repo.method_calls == [call.fetch_by_id(input_dto.diagnosis_id)]
+        assert symptoms_repo.method_calls == [
+            call.fetch_by_id(input_dto.symptom_ids_to_add[0]),
+            call.fetch_by_id(input_dto.symptom_ids_to_remove[0])
+        ]
+        assert reviews_repo.method_calls == [
+            call.fetch_by_id(input_dto.item_review_ids_to_add[0]),
+            call.fetch_by_id(input_dto.item_review_ids_to_remove[0])
         ]
         assert result == service_output
 

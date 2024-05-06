@@ -42,11 +42,32 @@ class MedicalBookWithSymptomsAndItemReviews(MedicalBookWithSymptoms,
 
 
 class NewMedicalBookInfo(DTO):
-    id: int | None = Field(ge=1)
     title_history: str = Field(min_length=1, max_length=255)
     history: str | None = Field(min_length=1, max_length=15000)
     patient_id: int = Field(ge=1)
     diagnosis_id: int = Field(ge=1)
+    symptom_ids: list[int] | None = Field(ge=1)
+    item_review_ids: list[int] | None = Field(ge=1)
+
+    @validator('symptom_ids', pre=True)
+    def make_symptoms_unique(cls, value) -> list[int] | None:
+        if isinstance(value, list):
+            return list(set(value))
+        return value
+
+    @validator('item_review_ids', pre=True)
+    def make_item_reviews_unique(cls, value) -> list[int] | None:
+        if isinstance(value, list):
+            return list(set(value))
+        return value
+
+
+class MedicalBookInfoToUpdate(DTO):
+    id: int = Field(ge=1)
+    title_history: str | None = Field(min_length=1, max_length=255)
+    history: str | None = Field(min_length=1, max_length=15000)
+    patient_id: int | None = Field(ge=1)
+    diagnosis_id: int | None = Field(ge=1)
     symptom_ids_to_add: list[int] | None = Field(ge=1)
     item_review_ids_to_add: list[int] | None = Field(ge=1)
     symptom_ids_to_remove: list[int] | None = Field(ge=1)
@@ -77,7 +98,7 @@ class NewMedicalBookInfo(DTO):
         return value
 
     @root_validator
-    def fix_symptoms(cls, values):
+    def fix_symptoms(cls, values) -> dict:
         symptom_ids_to_add: list[int] | None = values.get('symptom_ids_to_add')
         symptom_ids_to_remove: list[int] | None = values.get('symptom_ids_to_remove')
 
@@ -96,7 +117,7 @@ class NewMedicalBookInfo(DTO):
         return values
 
     @root_validator
-    def fix_item_reviews(cls, values):
+    def fix_item_reviews(cls, values) -> dict:
         item_review_ids_to_add: list[int] | None = values.get('item_review_ids_to_add')
         item_review_ids_to_remove: list[int] | None = (
             values.get('item_review_ids_to_remove')
