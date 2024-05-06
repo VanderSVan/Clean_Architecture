@@ -29,15 +29,14 @@ class Diagnosis:
     @validate_arguments
     def find(self, filter_params: schemas.FindDiagnoses) -> list[dtos.Diagnosis | None]:
         if filter_params.keywords:
-            diagnoses: Sequence[entities.Diagnosis | None] = (
+            found_diagnoses: Sequence[entities.Diagnosis | None] = (
                 self.diagnoses_repo.search_by_name(filter_params)
             )
-            return [dtos.Diagnosis.from_orm(diagnosis) for diagnosis in diagnoses]
-
-        diagnoses: Sequence[entities.Diagnosis | None] = (
-            self.diagnoses_repo.fetch_all(filter_params)
-        )
-        return [dtos.Diagnosis.from_orm(diagnosis) for diagnosis in diagnoses]
+        else:
+            found_diagnoses: Sequence[entities.Diagnosis | None] = (
+                self.diagnoses_repo.fetch_all(filter_params)
+            )
+        return [dtos.Diagnosis.from_orm(diagnosis) for diagnosis in found_diagnoses]
 
     @register_method
     @validate_arguments
