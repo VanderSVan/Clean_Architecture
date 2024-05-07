@@ -16,7 +16,7 @@
     ```
 5) Для создания новой миграции:
     ```commandline
-   python -m simple_medication_selection.launchers.alembic_runner revision --autogenerate -m "adding_some_new_code" 
+   python -m simple_medication_selection.launchers.alembic_runner revision --autogenerate -m "first_migration" 
     ```
 
 Запуск в синхронном режиме:
