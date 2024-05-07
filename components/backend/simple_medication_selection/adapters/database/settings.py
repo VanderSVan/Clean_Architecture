@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     DATABASE_HOST: str = Field(..., env='DATABASE_HOST')
     DATABASE_PORT: int = Field(..., env='DATABASE_PORT')
     DATABASE_USER: str = Field(..., env='DATABASE_USER')
-    DATABASE_PASS: str = Field(..., env='DATABASE_PASS')
+    DATABASE_PASSWORD: str = Field(..., env='DATABASE_PASSWORD')
 
     TEST_DATABASE_NAME: str = Field(None, env='TEST_DATABASE_NAME')
     TEST_DATABASE_HOST: str = Field(None, env='TEST_DATABASE_HOST')
@@ -16,12 +16,14 @@ class Settings(BaseSettings):
     TEST_DATABASE_USER: str = Field(None, env='TEST_DATABASE_USER')
     TEST_DATABASE_PASS: str = Field(None, env='TEST_DATABASE_PASS')
 
-    # Python путь к каталогу, где лежит запускатор alembic
-    # (пример: <project_name>.composites:alembic)
+    # Python путь к директории, в которой находится исполняемый файл alembic
+    # (пример: <project_name>.entrypoints:alembic)
     ALEMBIC_SCRIPT_LOCATION: str = 'simple_medication_selection.adapters.database:alembic'
 
-    # Python путь к каталогу с миграциями
-    ALEMBIC_VERSION_LOCATIONS: str = 'simple_medication_selection.adapters.database:migrations'
+    # Python путь к директории с миграциями
+    ALEMBIC_VERSION_LOCATIONS: str = (
+        'simple_medication_selection.adapters.database:migrations'
+    )
 
     ALEMBIC_MIGRATION_FILENAME_TEMPLATE: str = (
         '%%(year)d_'
@@ -45,7 +47,7 @@ class Settings(BaseSettings):
         return (
             'postgresql+psycopg2://'
             f'{self.DATABASE_USER}:'
-            f'{self.DATABASE_PASS}@'
+            f'{self.DATABASE_PASSWORD}@'
             f'{self.DATABASE_HOST}:'
             f'{self.DATABASE_PORT}/'
             f'{self.DATABASE_NAME}'

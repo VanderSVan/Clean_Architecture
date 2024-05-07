@@ -3,6 +3,7 @@ from unittest.mock import Mock
 import pytest
 from falcon import testing
 
+from simple_medication_selection.adapters.api import SwaggerSettings
 from simple_medication_selection.adapters.api.app import create_app
 from simple_medication_selection.application import services
 
@@ -56,7 +57,13 @@ def client(diagnosis_service,
            item_type_service,
            item_category_service,
            medical_book_service):
-    app = create_app(diagnosis=diagnosis_service,
+    swagger_settings = Mock(SwaggerSettings)
+    swagger_settings.ON = False
+
+    app = create_app(swagger_settings=swagger_settings,
+                     allow_origins='*',
+                     api_prefix='',
+                     diagnosis=diagnosis_service,
                      patient=patient_service,
                      symptom=symptom_service,
                      catalog=catalog_service,

@@ -8,15 +8,18 @@
 2) Перейди в терминал и убедись, что ты находишься в корневой директории.
 3) Для применения всех существующих миграций, выполни следующую команду:
     ```commandline
-    python -m simple_medication_selection.entrypoints.alembic_runner upgrade head
+    python -m simple_medication_selection.launchers.alembic_runner upgrade head
     ```
 4) Для возврата на предыдущую миграцию:
     ```commandline
-    python -m simple_medication_selection.entrypoints.alembic_runner downgrade -1
+    python -m simple_medication_selection.launchers.alembic_runner downgrade -1
     ```
 5) Для создания новой миграции:
     ```commandline
-   python -m simple_medication_selection.entrypoints.alembic_runner revision --autogenerate -m "adding_some_new_code" 
+   python -m simple_medication_selection.launchers.alembic_runner revision --autogenerate -m "adding_some_new_code" 
     ```
 
-
+Запуск:
+```commandline
+gunicorn simple_medication_selection.launchers.api:app
+```
