@@ -39,7 +39,7 @@ class Settings(BaseSettings):
     SA_LOGS: bool = False
 
     class Config:
-        env_file = Path(__file__).parent.parent.parent.joinpath(".env")
+        env_file = Path(__file__).parent.parent.parent.parent.joinpath(".env")
         env_file_encoding = 'utf-8'
 
     @property

@@ -12,7 +12,8 @@ class SwaggerSettings(BaseSettings):
 
     class Config:
         env_prefix = 'SWAGGER_'
-        env_file = Path(__file__).parent.parent.parent.joinpath(".env")
+        env_file = Path(__file__).parent.parent.parent.parent.joinpath(".env")
+        print(f"{env_file=}")
         env_file_encoding = 'utf-8'
 
 
