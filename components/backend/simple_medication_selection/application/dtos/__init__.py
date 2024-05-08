@@ -1,43 +1,44 @@
-from .symptom import (
-    SymptomCreateSchema,
-    SymptomGetSchema,
-    SymptomUpdateSchema,
-)
+from .base import DTO
 from .diagnosis import (
-    DiagnosisCreateSchema,
-    DiagnosisGetSchema,
-    DiagnosisUpdateSchema,
-)
-from .item_category import (
-    ItemCategoryCreateSchema,
-    ItemCategoryGetSchema,
-    ItemCategoryUpdateSchema,
-)
-from .item_type import (
-    ItemTypeCreateSchema,
-    ItemTypeGetSchema,
-    ItemTypeUpdateSchema,
+    NewDiagnosisInfo,
+    Diagnosis,
 )
 from .item import (
-    ItemCreateSchema,
-    ItemGetSchema,
-    ItemUpdateSchema,
-    ItemWithHelpedStatusGetSchema,
-    ItemWithHelpedStatusSymptomsGetSchema,
-    ItemWithHelpedStatusDiagnosisGetSchema,
+    NewTreatmentItemInfo,
+    TreatmentItem,
+    TreatmentItemWithReviews,
+    UpdatedTreatmentItemInfo,
+)
+from .item_category import (
+    NewItemCategoryInfo,
+    ItemCategory,
 )
 from .item_review import (
-    ItemReviewCreateSchema,
-    ItemReviewGetSchema,
-    ItemReviewUpdateSchema,
+    NewItemReviewInfo,
+    ItemReview,
+    UpdatedItemReviewInfo,
 )
-from .patient import (
-    PatientCreateSchema,
-    PatientGetSchema,
-    PatientUpdateSchema,
+from .item_type import (
+    NewItemTypeInfo,
+    ItemType,
 )
 from .medical_book import (
-    MedicalBookCreateSchema,
-    MedicalBookGetSchema,
-    MedicalBookUpdateSchema,
+    NewMedicalBookInfo,
+    MedicalBook,
+    MedicalBookWithSymptoms,
+    MedicalBookWithItemReviews,
+    MedicalBookWithSymptomsAndItemReviews,
+    UpdatedMedicalBookInfo,
+    MedicalBookInfoToUpdate,
+)
+from .patient import (
+    NewPatientInfo,
+    Patient,
+    UpdatedPatientInfo,
+    GenderEnum,
+    SkinTypeEnum
+)
+from .symptom import (
+    NewSymptomInfo,
+    Symptom,
 )

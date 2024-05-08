@@ -1,9 +1,9 @@
-from .base import AppError
+from .base import Error
 
 
-class DiagnosisNotFound(AppError):
-    msg_template = "No diagnosis with id '{id}'"
+class DiagnosisNotFound(Error):
+    message_template = "No diagnosis with id '{id}'"
 
 
-class DiagnosisAlreadyExists(AppError):
-    msg_template = "Diagnosis with name '{name}' already exists"
+class DiagnosisAlreadyExists(Error):
+    message_template = "Diagnosis with name '{name}' already exists"

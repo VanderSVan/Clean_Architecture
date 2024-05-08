@@ -1,9 +1,9 @@
 import pytest
-
 from sqlalchemy import select, func
+from sqlalchemy.orm import joinedload
 
 from simple_medication_selection.adapters.database import repositories
-from simple_medication_selection.application import entities
+from simple_medication_selection.application import entities, schemas
 from .. import test_data
 
 
@@ -61,11 +61,11 @@ class TestFetchById:
 class TestFetchAll:
 
     def test__fetch_all(self, repo, session, fill_db):
+        # Setup
+        filter_params = schemas.FindItemReviews()
+
         # Call
-        result = repo.fetch_all(order_field='item_rating',
-                                order_direction='desc',
-                                limit=None,
-                                offset=None)
+        result = repo.fetch_all(filter_params)
 
         # Assert
         assert len(result) == len(test_data.REVIEWS_DATA)
@@ -73,86 +73,83 @@ class TestFetchAll:
             assert isinstance(review, entities.ItemReview)
 
     def test__nulls_last(self, repo, session, fill_db):
+        # Setup
+        filter_params = schemas.FindItemReviews(sort_field='usage_period',
+                                                sort_direction='desc')
+
         # Call
-        result = repo.fetch_all(order_field='usage_period',
-                                order_direction='asc',
-                                limit=None,
-                                offset=None)
+        result = repo.fetch_all(filter_params)
 
         # Assert
         assert result[0].usage_period is not None
         assert result[-1].usage_period is None
 
-    @pytest.mark.parametrize('order_field', [
+    @pytest.mark.parametrize('sort_field', [
         'id', 'item_id', 'is_helped', 'item_rating', 'item_count', 'usage_period',
     ])
-    def test__order_is_asc(self, order_field, repo, session, fill_db):
+    def test__order_is_asc(self, sort_field, repo, session, fill_db):
+        # Setup
+        filter_params = schemas.FindItemReviews(sort_field=sort_field,
+                                                sort_direction='asc')
+
         # Call
-        result = repo.fetch_all(order_field=order_field,
-                                order_direction='asc',
-                                limit=None,
-                                offset=None)
+        result = repo.fetch_all(filter_params)
 
         # Assert
         assert result == sorted(
             result,
             key=lambda review: (
-                float('inf') if getattr(review, order_field) is None
-                else getattr(review, order_field)
+                float('inf') if getattr(review, sort_field) is None
+                else getattr(review, sort_field)
             ),
             reverse=False
         )
 
-    @pytest.mark.parametrize('order_field', [
+    @pytest.mark.parametrize('sort_field', [
         'id', 'item_id', 'is_helped', 'item_rating', 'item_count', 'usage_period',
     ])
-    def test__order_is_desc(self, order_field, repo, session, fill_db):
+    def test__order_is_desc(self, sort_field, repo, session, fill_db):
+        # Setup
+        filter_params = schemas.FindItemReviews(sort_field=sort_field,
+                                                sort_direction='desc')
+
         # Call
-        result = repo.fetch_all(order_field=order_field,
-                                order_direction='desc',
-                                limit=None,
-                                offset=None)
+        result = repo.fetch_all(filter_params)
 
         # Assert
         assert result == sorted(
             result,
             key=lambda review: (
-                float('-inf') if getattr(review, order_field) is None
-                else getattr(review, order_field)
+                float('-inf') if getattr(review, sort_field) is None
+                else getattr(review, sort_field)
             ),
             reverse=True
         )
 
     def test__with_limit(self, repo, session, fill_db):
         # Setup
-        limit = 1
+        filter_params = schemas.FindItemReviews(limit=1)
 
         # Call
-        result = repo.fetch_all(order_field='item_rating',
-                                order_direction='desc',
-                                limit=limit,
-                                offset=None)
+        result = repo.fetch_all(filter_params)
 
         # Assert
-        assert len(result) == limit
+        assert len(result) == filter_params.limit
 
     def test__with_offset(self, repo, session, fill_db):
         # Setup
-        offset = 1
+        filter_params = schemas.FindItemReviews(offset=1)
 
         # Call
-        result = repo.fetch_all(order_field='item_rating',
-                                order_direction='desc',
-                                limit=None,
-                                offset=offset)
+        result = repo.fetch_all(filter_params)
 
         # Assert
-        assert len(result) == len(test_data.REVIEWS_DATA) - offset
+        assert len(result) == len(test_data.REVIEWS_DATA) - filter_params.offset
 
 
-class TestFetchAllByItemId:
+class TestFetchByItems:
 
-    def test__fetch_all_by_item(self, repo, session, fill_db):
+    def test__fetch_by_item(self, repo, session, fill_db):
         # Setup
         item_id: int = (
             session.query(entities.TreatmentItem)
@@ -160,17 +157,14 @@ class TestFetchAllByItemId:
             .first()
             .id
         )
+        filter_params = schemas.FindItemReviews(item_ids=[item_id])
         review_count_by_item: int = session.execute(
             select(func.count(entities.ItemReview.id.distinct()))
             .where(entities.ItemReview.item_id == item_id)
         ).scalar()
 
         # Call
-        result = repo.fetch_all_by_item(item_id=item_id,
-                                        order_field='item_rating',
-                                        order_direction='desc',
-                                        limit=None,
-                                        offset=None)
+        result = repo.fetch_by_items(filter_params)
 
         # Assert
         assert len(result) == review_count_by_item
@@ -183,22 +177,22 @@ class TestFetchAllByItemId:
             .first()
             .id
         )
-
+        filter_params = schemas.FindItemReviews(
+            item_ids=[item_id],
+            sort_field='usage_period',
+            sort_direction='desc'
+        )
         # Call
-        result = repo.fetch_all_by_item(item_id=item_id,
-                                        order_field='usage_period',
-                                        order_direction='asc',
-                                        limit=None,
-                                        offset=None)
+        result = repo.fetch_by_items(filter_params)
 
         # Assert
         assert result[0].usage_period is not None
         assert result[-1].usage_period is None
 
-    @pytest.mark.parametrize('order_field', [
+    @pytest.mark.parametrize('sort_field', [
         'id', 'item_id', 'is_helped', 'item_rating', 'item_count', 'usage_period',
     ])
-    def test__order_is_asc(self, order_field, repo, session, fill_db):
+    def test__order_is_asc(self, sort_field, repo, session, fill_db):
         # Setup
         item_id: int = (
             session.query(entities.TreatmentItem)
@@ -206,28 +200,29 @@ class TestFetchAllByItemId:
             .first()
             .id
         )
+        filter_params = schemas.FindItemReviews(
+            item_ids=[item_id],
+            sort_field=sort_field,
+            sort_direction='asc'
+        )
 
         # Call
-        result = repo.fetch_all_by_item(item_id=item_id,
-                                        order_field=order_field,
-                                        order_direction='asc',
-                                        limit=None,
-                                        offset=None)
+        result = repo.fetch_by_items(filter_params)
 
         # Assert
         assert result == sorted(
             result,
             key=lambda review: (
-                float('-inf') if getattr(review, order_field) is None
-                else getattr(review, order_field)
+                float('-inf') if getattr(review, sort_field) is None
+                else getattr(review, sort_field)
             ),
             reverse=False
         )
 
-    @pytest.mark.parametrize('order_field', [
+    @pytest.mark.parametrize('sort_field', [
         'id', 'item_id', 'is_helped', 'item_rating', 'item_count', 'usage_period',
     ])
-    def test__order_is_desc(self, order_field, repo, session, fill_db):
+    def test__order_is_desc(self, sort_field, repo, session, fill_db):
         # Setup
         item_id: int = (
             session.query(entities.TreatmentItem)
@@ -235,20 +230,21 @@ class TestFetchAllByItemId:
             .first()
             .id
         )
+        filter_params = schemas.FindItemReviews(
+            item_ids=[item_id],
+            sort_field=sort_field,
+            sort_direction='desc'
+        )
 
         # Call
-        result = repo.fetch_all_by_item(item_id=item_id,
-                                        order_field=order_field,
-                                        order_direction='desc',
-                                        limit=None,
-                                        offset=None)
+        result = repo.fetch_by_items(filter_params)
 
         # Assert
         assert result == sorted(
             result,
             key=lambda review: (
-                float('-inf') if getattr(review, order_field) is None
-                else getattr(review, order_field)
+                float('-inf') if getattr(review, sort_field) is None
+                else getattr(review, sort_field)
             ),
             reverse=True
         )
@@ -261,21 +257,19 @@ class TestFetchAllByItemId:
             .first()
             .id
         )
-        limit = 1
+        filter_params = schemas.FindItemReviews(
+            item_ids=[item_id],
+            limit=1
+        )
 
         # Call
-        result = repo.fetch_all_by_item(item_id=item_id,
-                                        order_field='item_rating',
-                                        order_direction='desc',
-                                        limit=limit,
-                                        offset=None)
+        result = repo.fetch_by_items(filter_params)
 
         # Assert
-        assert len(result) == limit
+        assert len(result) == filter_params.limit
 
     def test__with_offset(self, repo, session, fill_db):
         # Setup
-        offset = 1
         item_id: int = (
             session.query(entities.TreatmentItem)
             .filter_by(title=test_data.ITEMS_DATA[0]['title'])
@@ -286,20 +280,20 @@ class TestFetchAllByItemId:
             select(func.count(entities.ItemReview.id.distinct()))
             .where(entities.ItemReview.item_id == item_id)
         ).scalar()
+        filter_params = schemas.FindItemReviews(
+            item_ids=[item_id],
+            offset=1
+        )
 
         # Call
-        result = repo.fetch_all_by_item(item_id=item_id,
-                                        order_field='item_rating',
-                                        order_direction='desc',
-                                        limit=None,
-                                        offset=offset)
+        result = repo.fetch_by_items(filter_params)
 
         # Assert
-        assert len(result) == review_count_by_item - offset
+        assert len(result) == review_count_by_item - filter_params.offset
 
 
 class TestFetchReviewsByPatient:
-    def test__fetch_reviews_by_patient(self, repo, session, fill_db):
+    def test__fetch_by_patient(self, repo, session, fill_db):
         # Setup
         patient_id: int = (
             session.query(entities.Patient)
@@ -312,13 +306,10 @@ class TestFetchReviewsByPatient:
             .join(entities.MedicalBook.item_reviews)
             .where(entities.MedicalBook.patient_id == patient_id)
         ).scalar()
+        filter_params = schemas.FindItemReviews(patient_id=patient_id)
 
         # Call
-        result = repo.fetch_reviews_by_patient(patient_id=patient_id,
-                                               order_field='item_rating',
-                                               order_direction='desc',
-                                               limit=None,
-                                               offset=None)
+        result = repo.fetch_by_patient(filter_params)
 
         # Assert
         assert len(result) == review_count_by_patient
@@ -333,22 +324,21 @@ class TestFetchReviewsByPatient:
             .first()
             .id
         )
+        filter_params = schemas.FindItemReviews(patient_id=patient_id,
+                                                sort_field='usage_period',
+                                                sort_direction='asc')
 
         # Call
-        result = repo.fetch_reviews_by_patient(patient_id=patient_id,
-                                               order_field='usage_period',
-                                               order_direction='asc',
-                                               limit=None,
-                                               offset=None)
+        result = repo.fetch_by_patient(filter_params)
 
         # Assert
         assert result[0].usage_period is not None
         assert result[-1].usage_period is None
 
-    @pytest.mark.parametrize('order_field', [
+    @pytest.mark.parametrize('sort_field', [
         'id', 'item_id', 'is_helped', 'item_rating', 'item_count', 'usage_period',
     ])
-    def test__order_is_asc(self, order_field, repo, session, fill_db):
+    def test__order_is_asc(self, sort_field, repo, session, fill_db):
         # Setup
         patient_id: int = (
             session.query(entities.Patient)
@@ -356,28 +346,27 @@ class TestFetchReviewsByPatient:
             .first()
             .id
         )
+        filter_params = schemas.FindItemReviews(patient_id=patient_id,
+                                                sort_field=sort_field,
+                                                sort_direction='asc')
 
         # Call
-        result = repo.fetch_reviews_by_patient(patient_id=patient_id,
-                                               order_field=order_field,
-                                               order_direction='asc',
-                                               limit=None,
-                                               offset=None)
+        result = repo.fetch_by_patient(filter_params)
 
         # Assert
         assert result == sorted(
             result,
             key=lambda review: (
-                float('inf') if getattr(review, order_field) is None
-                else getattr(review, order_field)
+                float('inf') if getattr(review, sort_field) is None
+                else getattr(review, sort_field)
             ),
             reverse=False
         )
 
-    @pytest.mark.parametrize('order_field', [
+    @pytest.mark.parametrize('sort_field', [
         'id', 'item_id', 'is_helped', 'item_rating', 'item_count', 'usage_period',
     ])
-    def test__order_is_desc(self, order_field, repo, session, fill_db):
+    def test__order_is_desc(self, sort_field, repo, session, fill_db):
         # Setup
         patient_id: int = (
             session.query(entities.Patient)
@@ -385,20 +374,19 @@ class TestFetchReviewsByPatient:
             .first()
             .id
         )
+        filter_params = schemas.FindItemReviews(patient_id=patient_id,
+                                                sort_field=sort_field,
+                                                sort_direction='desc')
 
         # Call
-        result = repo.fetch_reviews_by_patient(patient_id=patient_id,
-                                               order_field=order_field,
-                                               order_direction='desc',
-                                               limit=None,
-                                               offset=None)
+        result = repo.fetch_by_patient(filter_params)
 
         # Assert
         assert result == sorted(
             result,
             key=lambda review: (
-                float('-inf') if getattr(review, order_field) is None
-                else getattr(review, order_field)
+                float('-inf') if getattr(review, sort_field) is None
+                else getattr(review, sort_field)
             ),
             reverse=True
         )
@@ -411,21 +399,17 @@ class TestFetchReviewsByPatient:
             .first()
             .id
         )
-        limit = 1
+        filter_params = schemas.FindItemReviews(patient_id=patient_id,
+                                                limit=1)
 
         # Call
-        result = repo.fetch_reviews_by_patient(patient_id=patient_id,
-                                               order_field='item_rating',
-                                               order_direction='desc',
-                                               limit=limit,
-                                               offset=None)
+        result = repo.fetch_by_patient(filter_params)
 
         # Assert
-        assert len(result) == limit
+        assert len(result) == filter_params.limit
 
     def test__with_offset(self, repo, session, fill_db):
         # Setup
-        offset = 1
         patient_id: int = (
             session.query(entities.Patient)
             .filter_by(nickname=test_data.PATIENTS_DATA[0]['nickname'])
@@ -437,16 +421,14 @@ class TestFetchReviewsByPatient:
             .join(entities.MedicalBook.item_reviews)
             .where(entities.MedicalBook.patient_id == patient_id)
         ).scalar()
+        filter_params = schemas.FindItemReviews(patient_id=patient_id,
+                                                offset=1)
 
         # Call
-        result = repo.fetch_reviews_by_patient(patient_id=patient_id,
-                                               order_field='item_rating',
-                                               order_direction='desc',
-                                               limit=None,
-                                               offset=offset)
+        result = repo.fetch_by_patient(filter_params)
 
         # Assert
-        assert len(result) == review_count_by_patient - offset
+        assert len(result) == review_count_by_patient - filter_params.offset
 
 
 class TestFetchPatientReviewsByItem:
@@ -470,14 +452,11 @@ class TestFetchPatientReviewsByItem:
             .where(entities.MedicalBook.patient_id == patient_id,
                    entities.ItemReview.item_id == item_id)
         ).scalar()
+        filter_params = schemas.FindItemReviews(patient_id=patient_id,
+                                                item_ids=[item_id])
 
         # Call
-        result = repo.fetch_patient_reviews_by_item(patient_id=patient_id,
-                                                    item_id=item_id,
-                                                    order_field='item_rating',
-                                                    order_direction='desc',
-                                                    limit=None,
-                                                    offset=None)
+        result = repo.fetch_patient_reviews_by_item(filter_params)
 
         # Assert
         assert len(result) == review_count_by_patient_and_item
@@ -498,22 +477,21 @@ class TestFetchPatientReviewsByItem:
             .first()
             .id
         )
+        filter_params = schemas.FindItemReviews(patient_id=patient_id,
+                                                item_ids=[item_id],
+                                                sort_field='usage_period',
+                                                sort_direction='desc')
 
         # Call
-        result = repo.fetch_patient_reviews_by_item(patient_id=patient_id,
-                                                    item_id=item_id,
-                                                    order_field='usage_period',
-                                                    order_direction='asc',
-                                                    limit=None,
-                                                    offset=None)
+        result = repo.fetch_patient_reviews_by_item(filter_params)
 
         # Assert
         assert result[-1].usage_period is None
 
-    @pytest.mark.parametrize('order_field', [
+    @pytest.mark.parametrize('sort_field', [
         'id', 'item_id', 'is_helped', 'item_rating', 'item_count', 'usage_period',
     ])
-    def test__order_is_asc(self, order_field, repo, session, fill_db):
+    def test__order_is_asc(self, sort_field, repo, session, fill_db):
         # Setup
         item_id: int = (
             session.query(entities.TreatmentItem)
@@ -527,28 +505,27 @@ class TestFetchPatientReviewsByItem:
             .first()
             .id
         )
+        filter_params = schemas.FindItemReviews(patient_id=patient_id,
+                                                item_ids=[item_id],
+                                                sort_field=sort_field,
+                                                sort_direction='asc')
 
         # Call
-        result = repo.fetch_patient_reviews_by_item(patient_id=patient_id,
-                                                    item_id=item_id,
-                                                    order_field=order_field,
-                                                    order_direction='asc',
-                                                    limit=None,
-                                                    offset=None)
+        result = repo.fetch_patient_reviews_by_item(filter_params)
 
         # Assert
         assert result == sorted(
             result,
             key=lambda review: (
-                float('inf') if getattr(review, order_field) is None
-                else getattr(review, order_field)
+                float('inf') if getattr(review, sort_field) is None
+                else getattr(review, sort_field)
             ),
         )
 
-    @pytest.mark.parametrize('order_field', [
+    @pytest.mark.parametrize('sort_field', [
         'id', 'item_id', 'is_helped', 'item_rating', 'item_count', 'usage_period',
     ])
-    def test__order_is_desc(self, order_field, repo, session, fill_db):
+    def test__order_is_desc(self, sort_field, repo, session, fill_db):
         # Setup
         item_id: int = (
             session.query(entities.TreatmentItem)
@@ -562,21 +539,20 @@ class TestFetchPatientReviewsByItem:
             .first()
             .id
         )
+        filter_params = schemas.FindItemReviews(patient_id=patient_id,
+                                                item_ids=[item_id],
+                                                sort_field=sort_field,
+                                                sort_direction='desc')
 
         # Call
-        result = repo.fetch_patient_reviews_by_item(patient_id=patient_id,
-                                                    item_id=item_id,
-                                                    order_field=order_field,
-                                                    order_direction='desc',
-                                                    limit=None,
-                                                    offset=None)
+        result = repo.fetch_patient_reviews_by_item(filter_params)
 
         # Assert
         assert result == sorted(
             result,
             key=lambda review: (
-                float('-inf') if getattr(review, order_field) is None
-                else getattr(review, order_field)
+                float('-inf') if getattr(review, sort_field) is None
+                else getattr(review, sort_field)
             ),
             reverse=True
         )
@@ -595,22 +571,18 @@ class TestFetchPatientReviewsByItem:
             .first()
             .id
         )
-        limit = 0
+        filter_params = schemas.FindItemReviews(patient_id=patient_id,
+                                                item_ids=[item_id],
+                                                limit=1)
 
         # Call
-        result = repo.fetch_patient_reviews_by_item(patient_id=patient_id,
-                                                    item_id=item_id,
-                                                    order_field='item_rating',
-                                                    order_direction='desc',
-                                                    limit=limit,
-                                                    offset=None)
+        result = repo.fetch_patient_reviews_by_item(filter_params)
 
         # Assert
-        assert len(result) == limit
+        assert len(result) == filter_params.limit
 
     def test__with_offset(self, repo, session, fill_db):
         # Setup
-        offset = 1
         item_id: int = (
             session.query(entities.TreatmentItem)
             .filter_by(title=test_data.ITEMS_DATA[0]['title'])
@@ -631,148 +603,136 @@ class TestFetchPatientReviewsByItem:
                 entities.ItemReview.item_id == item_id
             )
         ).scalar()
+        filter_params = schemas.FindItemReviews(patient_id=patient_id,
+                                                item_ids=[item_id],
+                                                offset=1)
 
         # Call
-        result = repo.fetch_patient_reviews_by_item(patient_id=patient_id,
-                                                    item_id=item_id,
-                                                    order_field='item_rating',
-                                                    order_direction='desc',
-                                                    limit=None,
-                                                    offset=offset)
+        result = repo.fetch_patient_reviews_by_item(filter_params)
 
         # Assert
-        assert len(result) == patient_reviews_count_by_item - offset
+        assert len(result) == patient_reviews_count_by_item - filter_params.offset
 
 
 class TestFetchByRating:
     def test__fetch_by_rating(self, repo, session, fill_db):
         # Setup
-        min_rating = 2.0
-        max_rating = 10.0
+        filter_params = schemas.FindItemReviews(
+            min_rating=2.0,
+            max_rating=10.0,
+        )
 
         # Call
-        result = repo.fetch_by_rating(min_rating=min_rating,
-                                      max_rating=max_rating,
-                                      order_field='item_rating',
-                                      order_direction='desc',
-                                      limit=None,
-                                      offset=None)
+        result = repo.fetch_by_rating(filter_params)
 
         # Assert
         assert len(result) == len(test_data.REVIEWS_DATA)
         for review in result:
             assert isinstance(review, entities.ItemReview)
-            assert review.item_rating >= min_rating
-            assert review.item_rating <= max_rating
+            assert review.item_rating >= filter_params.min_rating
+            assert review.item_rating <= filter_params.max_rating
 
     def test__nulls_last(self, repo, session, fill_db):
         # Setup
-        min_rating = 2.0
-        max_rating = 10.0
+        filter_params = schemas.FindItemReviews(
+            min_rating=2.0,
+            max_rating=10.0,
+            sort_field='usage_period',
+            sort_direction='desc',
+        )
 
         # Call
-        result = repo.fetch_by_rating(min_rating=min_rating,
-                                      max_rating=max_rating,
-                                      order_field='usage_period',
-                                      order_direction='desc',
-                                      limit=None,
-                                      offset=None)
+        result = repo.fetch_by_rating(filter_params)
 
         # Assert
         assert result[0].usage_period is not None
         assert result[-1].usage_period is None
 
-    @pytest.mark.parametrize('order_field', [
+    @pytest.mark.parametrize('sort_field', [
         'id', 'item_id', 'is_helped', 'item_rating', 'item_count', 'usage_period',
     ])
-    def test__order_is_asc(self, order_field, repo, session, fill_db):
+    def test__order_is_asc(self, sort_field, repo, session, fill_db):
         # Setup
-        min_rating = 2.0
-        max_rating = 10.0
+        filter_params = schemas.FindItemReviews(
+            min_rating=2.0,
+            max_rating=10.0,
+            sort_field=sort_field,
+            sort_direction='asc'
+        )
 
         # Call
-        result = repo.fetch_by_rating(min_rating=min_rating,
-                                      max_rating=max_rating,
-                                      order_field=order_field,
-                                      order_direction='asc',
-                                      limit=None,
-                                      offset=None)
+        result = repo.fetch_by_rating(filter_params)
 
         # Assert
         assert result == sorted(
             result,
             key=lambda review: (
-                float('inf') if getattr(review, order_field) is None
-                else getattr(review, order_field)
+                float('inf') if getattr(review, sort_field) is None
+                else getattr(review, sort_field)
             ),
             reverse=False
         )
 
-    @pytest.mark.parametrize('order_field', [
+    @pytest.mark.parametrize('sort_field', [
         'id', 'item_id', 'is_helped', 'item_rating', 'item_count', 'usage_period',
     ])
-    def test__order_is_desc(self, order_field, repo, session, fill_db):
+    def test__order_is_desc(self, sort_field, repo, session, fill_db):
         # Setup
-        min_rating = 2.0
-        max_rating = 10.0
+        filter_params = schemas.FindItemReviews(
+            min_rating=2.0,
+            max_rating=10.0,
+            sort_field=sort_field,
+            sort_direction='desc'
+        )
 
         # Call
-        result = repo.fetch_by_rating(min_rating=min_rating,
-                                      max_rating=max_rating,
-                                      order_field=order_field,
-                                      order_direction='desc',
-                                      limit=None,
-                                      offset=None)
+        result = repo.fetch_by_rating(filter_params)
 
         # Assert
         assert result == sorted(
             result,
             key=lambda review: (
-                float('-inf') if getattr(review, order_field) is None
-                else getattr(review, order_field)
+                float('-inf') if getattr(review, sort_field) is None
+                else getattr(review, sort_field)
             ),
             reverse=True
         )
 
     def test__with_limit(self, repo, session, fill_db):
         # Setup
-        min_rating = 2.0
-        max_rating = 10.0
-        limit = 1
+        filter_params = schemas.FindItemReviews(
+            min_rating=2.0,
+            max_rating=10.0,
+            limit=1
+        )
 
         # Call
-        result = repo.fetch_by_rating(min_rating=min_rating,
-                                      max_rating=max_rating,
-                                      order_field='item_rating',
-                                      order_direction='desc',
-                                      limit=limit,
-                                      offset=None)
+        result = repo.fetch_by_rating(filter_params)
 
         # Assert
-        assert len(result) == limit
+        assert len(result) == filter_params.limit
 
     def test__with_offset(self, repo, session, fill_db):
         # Setup
-        min_rating = 2.0
-        max_rating = 10.0
-        offset = 1
+        filter_params = schemas.FindItemReviews(
+            min_rating=2.0,
+            max_rating=10.0,
+            offset=1
+        )
 
         # Call
-        result = repo.fetch_by_rating(min_rating=min_rating,
-                                      max_rating=max_rating,
-                                      order_field='item_rating',
-                                      order_direction='desc',
-                                      limit=None,
-                                      offset=offset)
+        result = repo.fetch_by_rating(filter_params)
 
         # Assert
-        assert len(result) == len(test_data.REVIEWS_DATA) - offset
+        assert len(result) == len(test_data.REVIEWS_DATA) - filter_params.offset
 
 
 class TestFetchByHelpedStatus:
-    def test__fetch_by_helped_status(self, repo, session, fill_db):
+
+    @pytest.mark.parametrize('helped_status', [True, False])
+    def test__fetch_by_helped_status(self, helped_status, repo, session, fill_db):
         # Setup
-        helped_status = True
+        filter_params = schemas.FindItemReviews(is_helped=helped_status)
         review_count_by_helped_status: int = session.execute(
             select(func.count())
             .select_from(entities.ItemReview)
@@ -780,11 +740,7 @@ class TestFetchByHelpedStatus:
         ).scalar()
 
         # Call
-        result = repo.fetch_by_helped_status(is_helped=helped_status,
-                                             order_field='item_rating',
-                                             order_direction='desc',
-                                             limit=None,
-                                             offset=None)
+        result = repo.fetch_by_helped_status(filter_params)
 
         # Assert
         assert len(result) == review_count_by_helped_status
@@ -794,101 +750,87 @@ class TestFetchByHelpedStatus:
 
     def test__nulls_last(self, repo, session, fill_db):
         # Setup
-        helped_status = True
+        filter_params = schemas.FindItemReviews(is_helped=True,
+                                                sort_field='usage_period',
+                                                sort_direction='desc',)
 
         # Call
-        result = repo.fetch_by_helped_status(is_helped=helped_status,
-                                             order_field='usage_period',
-                                             order_direction='desc',
-                                             limit=None,
-                                             offset=None)
+        result = repo.fetch_by_helped_status(filter_params)
 
         # Assert
         assert result[0].usage_period is not None
         assert result[-1].usage_period is None
 
-    @pytest.mark.parametrize('order_field', [
+    @pytest.mark.parametrize('sort_field', [
         'id', 'item_id', 'is_helped', 'item_rating', 'item_count', 'usage_period',
     ])
-    def test__order_is_asc(self, order_field, repo, session, fill_db):
+    def test__order_is_asc(self, sort_field, repo, session, fill_db):
         # Setup
-        helped_status = True
+        filter_params = schemas.FindItemReviews(is_helped=True,
+                                                sort_field=sort_field,
+                                                sort_direction='asc', )
 
         # Call
-        result = repo.fetch_by_helped_status(is_helped=helped_status,
-                                             order_field=order_field,
-                                             order_direction='asc',
-                                             limit=None,
-                                             offset=None)
+        result = repo.fetch_by_helped_status(filter_params)
 
         # Assert
         assert result == sorted(
             result,
             key=lambda review: (
-                float('inf') if getattr(review, order_field) is None
-                else getattr(review, order_field)
+                float('inf') if getattr(review, sort_field) is None
+                else getattr(review, sort_field)
             ),
             reverse=False
         )
 
-    @pytest.mark.parametrize('order_field', [
+    @pytest.mark.parametrize('sort_field', [
         'id', 'item_id', 'is_helped', 'item_rating', 'item_count', 'usage_period',
     ])
-    def test__order_is_desc(self, order_field, repo, session, fill_db):
+    def test__order_is_desc(self, sort_field, repo, session, fill_db):
         # Setup
-        helped_status = True
+        filter_params = schemas.FindItemReviews(is_helped=True,
+                                                sort_field=sort_field,
+                                                sort_direction='desc', )
 
         # Call
-        result = repo.fetch_by_helped_status(is_helped=helped_status,
-                                             order_field=order_field,
-                                             order_direction='desc',
-                                             limit=None,
-                                             offset=None)
+        result = repo.fetch_by_helped_status(filter_params)
 
         # Assert
         assert result == sorted(
             result,
             key=lambda review: (
-                float('-inf') if getattr(review, order_field) is None
-                else getattr(review, order_field)
+                float('-inf') if getattr(review, sort_field) is None
+                else getattr(review, sort_field)
             ),
             reverse=True
         )
 
     def test__with_limit(self, repo, session, fill_db):
         # Setup
-        helped_status = True
-        limit = 1
+        filter_params = schemas.FindItemReviews(is_helped=True,
+                                                limit=1)
 
         # Call
-        result = repo.fetch_by_helped_status(is_helped=helped_status,
-                                             order_field='item_rating',
-                                             order_direction='desc',
-                                             limit=limit,
-                                             offset=None)
+        result = repo.fetch_by_helped_status(filter_params)
 
         # Assert
-        assert len(result) == limit
+        assert len(result) == filter_params.limit
 
     def test__with_offset(self, repo, session, fill_db):
         # Setup
-        helped_status = True
-        offset = 1
+        filter_params = schemas.FindItemReviews(is_helped=True,
+                                                offset=1)
         review_count_by_helped_status: int = session.execute(
             select(func.count())
             .select_from(entities.ItemReview)
-            .where(entities.ItemReview.is_helped == helped_status)
+            .where(entities.ItemReview.is_helped == filter_params.is_helped)
         ).scalar()
 
         # Call
-        result = repo.fetch_by_helped_status(is_helped=helped_status,
-                                             order_field='item_rating',
-                                             order_direction='desc',
-                                             limit=None,
-                                             offset=offset)
+        result = repo.fetch_by_helped_status(filter_params)
 
         # Assert
-        assert len(result) == review_count_by_helped_status - offset
+        assert len(result) == review_count_by_helped_status - filter_params.offset
 
 
 class TestAdd:
@@ -1005,64 +947,54 @@ class TestRemove:
         assert before_count - 1 == after_count
         assert isinstance(result, entities.ItemReview)
 
-    def test__cascade_delete_effect_for_item(self, repo, session, fill_db):
+    def test__cascade_delete_review_from_item(self, repo, session, fill_db):
         # Setup
         review_to_remove: entities.ItemReview = session.query(entities.ItemReview).first()
-
-        items_before_remove: list[entities.TreatmentItem] = session.execute(
+        review_id_to_remove: int = review_to_remove.id
+        item: entities.TreatmentItem = session.execute(
             select(entities.TreatmentItem)
+            .distinct()
             .join(entities.TreatmentItem.reviews)
             .where(entities.TreatmentItem.reviews.any(
-                entities.ItemReview.id == review_to_remove.id)
+                entities.ItemReview.id == review_id_to_remove)
             )
-            .distinct()
-        ).scalars().all()
+        ).scalars().one_or_none()
+
+        # Assert
+        assert any(review_id_to_remove == review.id for review in item.reviews)
 
         # Call
         repo.remove(review_to_remove)
 
         # Setup
-        items_after_remove: list[entities.TreatmentItem] = session.execute(
-            select(entities.TreatmentItem)
-            .join(entities.TreatmentItem.reviews)
-            .where(entities.TreatmentItem.reviews.any(
-                entities.ItemReview.id == review_to_remove.id)
-            )
-            .distinct()
-        ).scalars().all()
+        session.refresh(item)
 
         # Assert
-        for item in items_before_remove:
-            assert review_to_remove in item.reviews
-        assert items_after_remove == []
+        assert all(review_id_to_remove != review.id for review in item.reviews)
 
-    def test__cascade_delete_effect_for_med_book(self, repo, session, fill_db):
+    def test__cascade_delete_review_from_med_book(self, repo, session, fill_db):
         # Setup
         review_to_remove: entities.ItemReview = session.query(entities.ItemReview).first()
-
-        med_books_before_remove: list[entities.MedicalBook] = session.execute(
+        med_books: list[entities.MedicalBook] = session.execute(
             select(entities.MedicalBook)
-            .join(entities.MedicalBook.item_reviews)
+            .distinct()
             .where(entities.MedicalBook.item_reviews.any(
                 entities.ItemReview.id == review_to_remove.id)
             )
-            .distinct()
-        ).scalars().all()
+            .options(joinedload(entities.MedicalBook.item_reviews))
+        ).scalars().unique().all()
+
+        # Assert
+        assert any(review_to_remove in med_book.item_reviews for med_book in med_books)
 
         # Call
         repo.remove(review_to_remove)
 
         # Setup
-        med_books_after_remove: list[entities.MedicalBook] = session.execute(
-            select(entities.MedicalBook)
-            .join(entities.MedicalBook.item_reviews)
-            .where(entities.MedicalBook.item_reviews.any(
-                entities.ItemReview.id == review_to_remove.id)
-            )
-            .distinct()
-        ).scalars().all()
+        for med_book in med_books:
+            session.refresh(med_book)
 
         # Assert
-        for med_book in med_books_before_remove:
-            assert review_to_remove in med_book.item_reviews
-        assert med_books_after_remove == []
+        assert len(med_books) > 0
+        assert all(review_to_remove not in med_book.item_reviews for med_book in
+                   med_books)

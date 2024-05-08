@@ -1,9 +1,13 @@
-from .base import AppError
+from .base import Error
 
 
-class PatientNotFound(AppError):
-    msg_template = 'Patient with id {id} not found'
+class PatientNotFound(Error):
+    message_template = 'Patient with id {id} not found'
 
 
-class PatientAlreadyExists(AppError):
-    msg_template = 'Patient with nickname {nickname} already exists'
+class PatientAlreadyExists(Error):
+    message_template = 'Patient with nickname `{nickname}` already exists'
+
+
+class PatientCannotBeDeleted(Error):
+    message_template = 'Patient with nickname {nickname} cannot be deleted'

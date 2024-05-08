@@ -1,13 +1,12 @@
-import pytest
+from itertools import product
 
+import pytest
 from sqlalchemy import select, func
 
-from simple_medication_selection.adapters.database import (
-    tables,
-    repositories
-)
-from simple_medication_selection.application import entities, dtos
+from simple_medication_selection.adapters.database import repositories
+from simple_medication_selection.application import entities, schemas
 from .. import test_data
+from ..conftest import session
 
 
 # ---------------------------------------------------------------------------------------
@@ -22,7 +21,8 @@ def fill_db(session) -> dict[str, list[int]]:
     type_ids: list[int] = test_data.insert_types(session)
     item_ids: list[int] = test_data.insert_items(type_ids, category_ids, session)
     review_ids: list[int] = test_data.insert_reviews(item_ids, session)
-    med_book_ids: list[int] = test_data.insert_medical_books(patient_ids, diagnosis_ids, session)
+    med_book_ids: list[int] = test_data.insert_medical_books(patient_ids, diagnosis_ids,
+                                                             session)
     test_data.insert_avg_rating(session)
     test_data.insert_medical_book_reviews(med_book_ids, review_ids, session)
     test_data.insert_medical_book_symptoms(med_book_ids, symptom_ids, session)
@@ -43,873 +43,304 @@ def repo(transaction_context):
     return repositories.TreatmentItemsRepo(context=transaction_context)
 
 
+@pytest.fixture
+def kwargs_factory(request, fill_db) -> dict[str, bool | schemas.FindTreatmentItems]:
+    """
+    Fixture для обновления аргументов теста с корректными идентификаторами (id) при
+    необходимости.
+
+    Область работы сессии настроена на функцию, и после `rollback` идентификаторы
+    сохраняют инкрементированное значение из-за `autoincrement=True`. Эта фикстура
+    гарантирует, что аргументы теста всегда будут содержать корректные идентификаторы.
+
+    :param request: Объект _pytest.fixtures.SubRequest, содержащий параметры теста.
+    :param fill_db: Словарь с заполненными данными, используемыми для обновления
+        аргументов.
+    :return: Обновленный словарь с аргументами теста.
+    """
+    filter_params = request.param['filter_params']
+
+    params_to_change = {
+        'symptom_ids': fill_db['symptom_ids'],
+        'diagnosis_id': fill_db['diagnosis_ids'][0],
+    }
+
+    for param, value in filter_params:
+        if value is None:
+            continue
+        setattr(filter_params, param, params_to_change.get(param, value))
+
+    request.param['filter_params'] = filter_params
+
+    return request.param
+
+
+def _combine_data(main: list[dict], mixin: list[dict]) -> list[dict]:
+    """
+    Комбинирует данные main и mixin
+    """
+    combined_data: list[dict[str, bool | schemas.FindTreatmentItems]] = []
+    for main_data, mixin_data in product(main, mixin):
+
+        if 'filter_params' not in main_data or 'filter_params' not in mixin_data:
+            raise KeyError(f"`filter_params` not found in `{main_data=}`. "
+                           f"Check your test and parametrize data.")
+
+        main_filter_params_class = main_data['filter_params'].__class__
+        if not (isinstance(main_data['filter_params'], schemas.FindTreatmentItems)):
+            raise TypeError(f"Expected `filter_params` to be an instance of "
+                            f"`{schemas.FindTreatmentItems.__name__}`, "
+                            f"got `{main_filter_params_class.__name__}`.")
+
+        main_filter_params: dict = main_data['filter_params'].__dict__
+        mixin_filter_params: dict = mixin_data['filter_params'].__dict__
+
+        # Миксует данные из `main_filter_params` и `mixin_filter_params`,
+        # создавая новый экземпляр `new_main_filter_params`.
+        new_main_filter_params = main_filter_params_class(**main_filter_params)
+        for key, value in mixin_filter_params.items():
+            if value is not None:
+                setattr(new_main_filter_params, key, value)
+
+        combined_data.append({
+            'include_reviews': main_data['include_reviews'],
+            'filter_params': new_main_filter_params
+        })
+
+    return combined_data
+
+
+def pytest_generate_tests(metafunc):
+    """
+    Динамически генерирует параметры для тестов,
+        только для тех которые имеют суффикс `Mixin`.
+    """
+    mixin_classes: tuple = (_TestOrderMixin,
+                            _TestNullsLastMixin,
+                            _TestPaginationMixin,
+                            _TestUniquenessMixin)
+
+    for mixin_class in mixin_classes:
+        func_name: str = metafunc.function.__name__
+        if hasattr(mixin_class, func_name):
+            method_kwargs: list[dict] = metafunc.cls.TEST_KWARGS
+            mixin_kwargs: list[dict] = metafunc.cls.MIXIN_KWARGS[func_name]
+            combined_kwargs: list[dict] = _combine_data(main=method_kwargs,
+                                                        mixin=mixin_kwargs)
+            metafunc.parametrize('kwargs_factory', combined_kwargs, indirect=True)
+
+
 # ---------------------------------------------------------------------------------------
 # TESTS
 # ---------------------------------------------------------------------------------------
-class TestFetchById:
-    def test__fetch_by_id(self, repo, session):
+class _BaseMixin:
+    TEST_METHOD: str
+    TEST_KWARGS: list[dict]
+    MIXIN_KWARGS: dict[str, list[dict]] = dict(
+        test__order_is_asc=[
+            dict(filter_params=schemas.FindTreatmentItems(sort_field='title',
+                                                             sort_direction='asc')),
+            dict(filter_params=schemas.FindTreatmentItems(sort_field='price',
+                                                             sort_direction='asc')),
+            dict(filter_params=schemas.FindTreatmentItems(sort_field='avg_rating',
+                                                             sort_direction='asc'))
+        ],
+        test__order_is_desc=[
+            dict(filter_params=schemas.FindTreatmentItems(sort_field='title',
+                                                             sort_direction='desc')),
+            dict(filter_params=schemas.FindTreatmentItems(sort_field='price',
+                                                             sort_direction='desc')),
+            dict(filter_params=schemas.FindTreatmentItems(sort_field='avg_rating',
+                                                             sort_direction='desc'))
+        ],
+        test__with_limit=[dict(filter_params=schemas.FindTreatmentItems(limit=1))],
+        test__with_offset=[dict(filter_params=schemas.FindTreatmentItems(offset=1))],
+        test__unique_check=[dict(filter_params=schemas.FindTreatmentItems())],
+        test__null_last=[dict(filter_params=schemas.FindTreatmentItems())],
+    )
+
+
+class _TestOrderMixin(_BaseMixin):
+
+    def test__order_is_asc(self, kwargs_factory, repo):
         # Setup
-        item = session.query(entities.TreatmentItem).first()
+        filter_params = kwargs_factory['filter_params']
 
         # Call
-        result = repo.fetch_by_id(item.id)
+        result = getattr(repo, self.TEST_METHOD)(**kwargs_factory)
 
         # Assert
-        assert isinstance(result, entities.TreatmentItem)
-
-
-class TestFetchAll:
-    def test__fetch_all(self, repo, session, fill_db):
-        # Call
-        result = repo.fetch_all(order_field='avg_rating',
-                                order_direction='desc',
-                                limit=None,
-                                offset=None)
-        # Assert
-        assert len(result) == len(test_data.ITEMS_DATA)
-        for item in result:
-            assert isinstance(item, dtos.ItemGetSchema)
-
-    def test__null_last(self, repo, session, fill_db):
-        # Call
-        result = repo.fetch_all(order_field='avg_rating',
-                                order_direction='desc',
-                                limit=None,
-                                offset=None)
-
-        # Assert
-        assert result[0].avg_rating is not None
-        assert result[-1].avg_rating is None
-
-    @pytest.mark.parametrize('order_field, order_direction', [
-        ('id', 'asc'),
-        ('title', 'asc'),
-        ('price', 'asc'),
-        ('category_id', 'asc'),
-        ('type_id', 'asc'),
-        ('avg_rating', 'asc'),
-
-    ])
-    def test__order_is_asc(self, order_field, order_direction, repo, session, fill_db):
-        # Call
-        result = repo.fetch_all(order_field=order_field,
-                                order_direction=order_direction,
-                                limit=None,
-                                offset=None)
-
-        # Assert
+        assert len(result) > 0
         assert result == sorted(
             result,
-            key=lambda treatment_item: (
-                float('inf') if getattr(treatment_item, order_field) is None
-                else getattr(treatment_item, order_field)
+            key=lambda med_book: (
+                float('inf')
+                if getattr(med_book, filter_params.sort_field) is None
+                else getattr(med_book, filter_params.sort_field)
             ),
             reverse=False
         )
 
-    @pytest.mark.parametrize('order_field, order_direction', [
-        ('id', 'desc'),
-        ('title', 'desc'),
-        ('price', 'desc'),
-        ('category_id', 'desc'),
-        ('type_id', 'desc'),
-        ('avg_rating', 'desc'),
-    ])
-    def test__order_is_desc(self, order_field, order_direction, repo, session, fill_db):
+    def test__order_is_desc(self, kwargs_factory, repo):
+        # Setup
+        filter_params = kwargs_factory['filter_params']
+
         # Call
-        result = repo.fetch_all(order_field=order_field,
-                                order_direction=order_direction,
-                                limit=None,
-                                offset=None)
+        result = getattr(repo, self.TEST_METHOD)(**kwargs_factory)
 
         # Assert
+        assert len(result) > 0
         assert result == sorted(
             result,
-            key=lambda treatment_item: (
-                float('-inf') if getattr(treatment_item, order_field) is None
-                else getattr(treatment_item, order_field)
+            key=lambda med_book: (
+                float('-inf')
+                if getattr(med_book, filter_params.sort_field) is None
+                else getattr(med_book, filter_params.sort_field)
             ),
             reverse=True
         )
 
-    def test__with_limit(self, repo, session, fill_db):
+
+class _TestPaginationMixin(_BaseMixin):
+
+    def test__with_limit(self, kwargs_factory, repo):
+        # Call
+        result = getattr(repo, self.TEST_METHOD)(**kwargs_factory)
+
+        # Assert
+        assert len(result) == kwargs_factory['filter_params'].limit
+
+    def test__with_offset(self, kwargs_factory, repo):
         # Setup
-        limit = 1
+        offset = kwargs_factory['filter_params'].offset
+        filter_params = kwargs_factory['filter_params']
 
         # Call
-        result = repo.fetch_all(order_field='avg_rating',
-                                order_direction='desc',
-                                limit=limit,
-                                offset=None)
+        result_with_offset = getattr(repo, self.TEST_METHOD)(**kwargs_factory)
 
-        # Assert
-        assert len(result) == limit
-
-    def test__with_offset(self, repo, session, fill_db):
         # Setup
-        offset = 1
+        new_filter_params = filter_params.__class__(**filter_params.__dict__)
+        new_filter_params.offset = 0
 
-        # Call
-        result = repo.fetch_all(order_field='avg_rating',
-                                order_direction='desc',
-                                limit=None,
-                                offset=offset)
+        kwargs_factory['filter_params'] = new_filter_params
+        result_without_offset = getattr(repo, self.TEST_METHOD)(**kwargs_factory)
 
         # Assert
-        assert len(result) == len(test_data.ITEMS_DATA) - offset
+        assert len(result_without_offset) > len(result_with_offset)
+        assert len(result_with_offset) == len(result_without_offset) - offset
 
 
-class TestFetchAllWithReviews:
-    def test__fetch_all_with_reviews(self, repo, session, fill_db):
+class _TestUniquenessMixin(_BaseMixin):
+
+    def test__unique_check(self, kwargs_factory, repo):
         # Call
-        result = repo.fetch_all_with_reviews(order_field='avg_rating',
-                                             order_direction='desc',
-                                             limit=None,
-                                             offset=None)
+        result = getattr(repo, self.TEST_METHOD)(**kwargs_factory)
 
         # Assert
+        assert len(result) > 0
+        assert len(result) == len(set(result))
+
+
+class _TestNullsLastMixin(_BaseMixin):
+
+    def test__null_last(self, kwargs_factory, repo):
+        # Call
+        result = getattr(repo, self.TEST_METHOD)(**kwargs_factory)
+
+        # Assert
+        assert len(result) > 0
+        assert result[0].avg_rating is not None
+        assert result[-1].avg_rating is None
+
+
+class TestFetchById:
+    def test__fetch_by_id(self, repo, session, fill_db):
+        # Setup
+        expected_item_id: int = fill_db['item_ids'][0]
+
+        # Call
+        result = repo.fetch_by_id(expected_item_id, False)
+
+        # Assert
+        assert isinstance(result, entities.TreatmentItem)
+        assert result.id == expected_item_id
+
+    def test__item_not_found(self, repo, session, fill_db):
+        # Setup
+        expected_item_id: int = max(fill_db['item_ids']) + 1
+
+        # Call
+        result = repo.fetch_by_id(expected_item_id, False)
+
+        # Assert
+        assert result is None
+
+
+class TestFetchByIdWithReviews:
+    def test__fetch_by_id(self, repo, session, fill_db):
+        # Setup
+        expected_item_id: int = fill_db['item_ids'][0]
+
+        # Call
+        result = repo.fetch_by_id(expected_item_id, True)
+
+        # Assert
+        assert isinstance(result, entities.TreatmentItem)
+        assert result.id == expected_item_id
+        assert len(result.reviews) > 0
+
+    def test__item_not_found(self, repo, session, fill_db):
+        # Setup
+        expected_item_id: int = max(fill_db['item_ids']) + 1
+
+        # Call
+        result = repo.fetch_by_id(expected_item_id, True)
+
+        # Assert
+        assert result is None
+
+
+class TestFetchAll(_TestOrderMixin,
+                   _TestPaginationMixin,
+                   _TestUniquenessMixin,
+                   _TestNullsLastMixin):
+    TEST_METHOD = 'fetch_all'
+    TEST_KWARGS = [
+        dict(include_reviews=False, filter_params=schemas.FindTreatmentItems()),
+        dict(include_reviews=True, filter_params=schemas.FindTreatmentItems())
+    ]
+
+    @pytest.mark.parametrize('kwargs', [*TEST_KWARGS])
+    def test__fetch_all(self, kwargs, repo, session, fill_db):
+        # Call
+        result = repo.fetch_all(**kwargs)
+
+        # Assert
+        assert len(result) > 0
         assert len(result) == len(test_data.ITEMS_DATA)
-        for item in result:
-            assert isinstance(item, entities.TreatmentItem)
+        assert all(isinstance(item, entities.TreatmentItem) for item in result)
 
-    def test__null_last(self, repo, session, fill_db):
-        # Call
-        result = repo.fetch_all_with_reviews(order_field='avg_rating',
-                                             order_direction='desc',
-                                             limit=None,
-                                             offset=None)
 
-        # Assert
-        assert result[0].avg_rating is not None
-        assert result[-1].avg_rating is None
+class TestFetchByHelpedStatus(_TestOrderMixin,
+                              _TestPaginationMixin,
+                              _TestUniquenessMixin):
+    TEST_METHOD = 'fetch_all'
+    TEST_KWARGS = [
+        dict(include_reviews=False,
+             filter_params=schemas.FindTreatmentItems(is_helped=True)),
+        dict(include_reviews=False,
+             filter_params=schemas.FindTreatmentItems(is_helped=False)),
+        dict(include_reviews=True,
+             filter_params=schemas.FindTreatmentItems(is_helped=True)),
+        dict(include_reviews=True,
+             filter_params=schemas.FindTreatmentItems(is_helped=False))
+    ]
 
-    @pytest.mark.parametrize('order_field, order_direction', [
-        ('id', 'asc'),
-        ('title', 'asc'),
-        ('price', 'asc'),
-        ('category_id', 'asc'),
-        ('type_id', 'asc'),
-        ('avg_rating', 'asc'),
-
-    ])
-    def test__order_is_asc(self, order_field, order_direction, repo, session, fill_db):
-        # Call
-        result = repo.fetch_all_with_reviews(order_field=order_field,
-                                             order_direction=order_direction,
-                                             limit=None,
-                                             offset=None)
-
-        # Assert
-        assert result == sorted(
-            result,
-            key=lambda treatment_item: (
-                float('inf') if getattr(treatment_item, order_field) is None
-                else getattr(treatment_item, order_field)
-            ),
-            reverse=True if order_direction == 'desc' else False
-        )
-
-    @pytest.mark.parametrize('order_field, order_direction', [
-        ('id', 'desc'),
-        ('title', 'desc'),
-        ('price', 'desc'),
-        ('category_id', 'desc'),
-        ('type_id', 'desc'),
-        ('avg_rating', 'desc'),
-    ])
-    def test__order_is_desc(self, order_field, order_direction, repo, session, fill_db):
-        # Call
-        result = repo.fetch_all_with_reviews(order_field=order_field,
-                                             order_direction=order_direction,
-                                             limit=None,
-                                             offset=None)
-
-        # Assert
-        assert result == sorted(
-            result,
-            key=lambda treatment_item: (
-                float('-inf') if getattr(treatment_item, order_field) is None
-                else getattr(treatment_item, order_field)
-            ),
-            reverse=True if order_direction == 'desc' else False
-        )
-
-    def test__with_limit(self, repo, session, fill_db):
+    @pytest.mark.parametrize('kwargs', [*TEST_KWARGS])
+    def test__fetch_by_helped_status(self, kwargs, repo, session, fill_db):
         # Setup
-        limit = 1
-
-        # Call
-        result = repo.fetch_all_with_reviews(order_field='avg_rating',
-                                             order_direction='desc',
-                                             limit=limit,
-                                             offset=None)
-
-        # Assert
-        assert len(result) == limit
-
-    def test__with_offset(self, repo, session, fill_db):
-        # Setup
-        offset = 1
-
-        # Call
-        result = repo.fetch_all_with_reviews(order_field='avg_rating',
-                                             order_direction='desc',
-                                             limit=None,
-                                             offset=offset)
-
-        # Assert
-        assert len(result) == len(test_data.ITEMS_DATA) - offset
-
-
-class TestFetchByKeywords:
-    @pytest.mark.parametrize('keywords, output_item_count', [
-        ('продукт', len(test_data.ITEMS_DATA) - 2),
-        ('процедура', len(test_data.ITEMS_DATA) - 4),
-        ('про', len(test_data.ITEMS_DATA)),
-        ('описание', len(test_data.ITEMS_DATA) - 2),
-        ('продукты', 0),
-        ('', len(test_data.ITEMS_DATA))
-    ])
-    def test__fetch_by_keywords(self, keywords, output_item_count, repo, session,
-                                fill_db):
-        # Call
-        result = repo.fetch_by_keywords(keywords=keywords,
-                                        order_field='avg_rating',
-                                        order_direction='desc',
-                                        limit=None,
-                                        offset=None)
-
-        # Assert
-        assert isinstance(result, list)
-        assert len(result) == output_item_count
-        for item in result:
-            assert isinstance(item, dtos.ItemGetSchema)
-
-    def test__null_last(self, repo, session, fill_db):
-        # Call
-        result = repo.fetch_by_keywords(keywords='',
-                                        order_field='avg_rating',
-                                        order_direction='desc',
-                                        limit=None,
-                                        offset=None)
-
-        # Assert
-        assert result[0].avg_rating is not None
-        assert result[-1].avg_rating is None
-
-    @pytest.mark.parametrize('order_field, order_direction', [
-        ('id', 'asc'),
-        ('title', 'asc'),
-        ('price', 'asc'),
-        ('category_id', 'asc'),
-        ('type_id', 'asc'),
-        ('avg_rating', 'asc'),
-
-    ])
-    def test__order_is_asc(self, order_field, order_direction, repo, session, fill_db):
-        # Call
-        result = repo.fetch_by_keywords(keywords='',
-                                        order_field=order_field,
-                                        order_direction=order_direction,
-                                        limit=None,
-                                        offset=None)
-
-        # Assert
-        assert result == sorted(
-            result,
-            key=lambda treatment_item: (
-                float('inf') if getattr(treatment_item, order_field) is None
-                else getattr(treatment_item, order_field)
-            ),
-            reverse=True if order_direction == 'desc' else False
-        )
-
-    @pytest.mark.parametrize('order_field, order_direction', [
-        ('id', 'desc'),
-        ('title', 'desc'),
-        ('price', 'desc'),
-        ('category_id', 'desc'),
-        ('type_id', 'desc'),
-        ('avg_rating', 'desc'),
-    ])
-    def test__order_is_desc(self, order_field, order_direction, repo, session, fill_db):
-        # Call
-        result = repo.fetch_by_keywords(keywords='',
-                                        order_field=order_field,
-                                        order_direction=order_direction,
-                                        limit=None,
-                                        offset=None)
-
-        # Assert
-        assert result == sorted(
-            result,
-            key=lambda treatment_item: (
-                float('-inf') if getattr(treatment_item, order_field) is None
-                else getattr(treatment_item, order_field)
-            ),
-            reverse=True if order_direction == 'desc' else False
-        )
-
-    def test__with_limit(self, repo, session, fill_db):
-        # Setup
-        limit = 1
-
-        # Call
-        result = repo.fetch_by_keywords(keywords='',
-                                        order_field='avg_rating',
-                                        order_direction='desc',
-                                        limit=limit,
-                                        offset=None)
-
-        # Assert
-        assert len(result) == limit
-
-    def test__with_offset(self, repo, session, fill_db):
-        # Setup
-        offset = 1
-
-        # Call
-        result = repo.fetch_by_keywords(keywords='',
-                                        order_field='avg_rating',
-                                        order_direction='desc',
-                                        limit=None,
-                                        offset=offset)
-
-        # Assert
-        assert len(result) == len(test_data.ITEMS_DATA) - offset
-
-
-class TestFetchByKeywordsWithReviews:
-    @pytest.mark.parametrize('keywords, output_item_count', [
-        ('продукт', len(test_data.ITEMS_DATA) - 2),
-        ('процедура', len(test_data.ITEMS_DATA) - 4),
-        ('про', len(test_data.ITEMS_DATA)),
-        ('описание', len(test_data.ITEMS_DATA) - 2),
-        ('продукты', 0),
-        ('', len(test_data.ITEMS_DATA))
-    ])
-    def test__fetch_by_keywords(self, keywords, output_item_count, repo, session,
-                                fill_db):
-        # Call
-        result = repo.fetch_by_keywords_with_reviews(keywords=keywords,
-                                                     order_field='avg_rating',
-                                                     order_direction='desc',
-                                                     limit=None,
-                                                     offset=None)
-
-        # Assert
-        assert len(result) == output_item_count
-        for item in result:
-            assert isinstance(item, entities.TreatmentItem)
-
-    def test__null_last(self, repo, session, fill_db):
-        # Call
-        result = repo.fetch_by_keywords_with_reviews(keywords='',
-                                                     order_field='avg_rating',
-                                                     order_direction='desc',
-                                                     limit=None,
-                                                     offset=None)
-
-        # Assert
-        assert result[0].avg_rating is not None
-        assert result[-1].avg_rating is None
-
-    @pytest.mark.parametrize('order_field, order_direction', [
-        ('id', 'asc'),
-        ('title', 'asc'),
-        ('price', 'asc'),
-        ('category_id', 'asc'),
-        ('type_id', 'asc'),
-        ('avg_rating', 'asc'),
-
-    ])
-    def test__order_is_asc(self, order_field, order_direction, repo, session, fill_db):
-        # Call
-        result = repo.fetch_by_keywords_with_reviews(keywords='',
-                                                     order_field=order_field,
-                                                     order_direction=order_direction,
-                                                     limit=None,
-                                                     offset=None)
-
-        # Assert
-        assert result == sorted(
-            result,
-            key=lambda treatment_item: (
-                float('inf') if getattr(treatment_item, order_field) is None
-                else getattr(treatment_item, order_field)
-            ),
-            reverse=True if order_direction == 'desc' else False
-        )
-
-    @pytest.mark.parametrize('order_field, order_direction', [
-        ('id', 'desc'),
-        ('title', 'desc'),
-        ('price', 'desc'),
-        ('category_id', 'desc'),
-        ('type_id', 'desc'),
-        ('avg_rating', 'desc'),
-    ])
-    def test__order_is_desc(self, order_field, order_direction, repo, session, fill_db):
-        # Call
-        result = repo.fetch_by_keywords_with_reviews(keywords='',
-                                                     order_field=order_field,
-                                                     order_direction=order_direction,
-                                                     limit=None,
-                                                     offset=None)
-
-        # Assert
-        assert result == sorted(
-            result,
-            key=lambda treatment_item: (
-                float('-inf') if getattr(treatment_item, order_field) is None
-                else getattr(treatment_item, order_field)
-            ),
-            reverse=True if order_direction == 'desc' else False
-        )
-
-    def test__with_limit(self, repo, session, fill_db):
-        # Setup
-        limit = 1
-
-        # Call
-        result = repo.fetch_by_keywords_with_reviews(keywords='',
-                                                     order_field='avg_rating',
-                                                     order_direction='desc',
-                                                     limit=limit,
-                                                     offset=None)
-
-        # Assert
-        assert len(result) == limit
-
-    def test__with_offset(self, repo, session, fill_db):
-        # Setup
-        offset = 1
-
-        # Call
-        result = repo.fetch_by_keywords_with_reviews(keywords='',
-                                                     order_field='avg_rating',
-                                                     order_direction='desc',
-                                                     limit=None,
-                                                     offset=offset)
-
-        # Assert
-        assert len(result) == len(test_data.ITEMS_DATA) - offset
-
-
-class TestFetchByCategory:
-    def test__fetch_by_category(self, repo, session, fill_db):
-        # Setup
-        category_id = (
-            session.query(entities.ItemCategory).filter_by(name='Категория 3').first().id
-        )
-        item_count_by_category: int = session.execute(
-            select(func.count(entities.TreatmentItem.id.distinct()))
-            .where(entities.TreatmentItem.category_id == category_id)
-        ).scalar()
-
-        # Call
-        result = repo.fetch_by_category(category_id=category_id,
-                                        order_field='avg_rating',
-                                        order_direction='desc',
-                                        limit=None,
-                                        offset=None)
-
-        # Assert
-        assert isinstance(result, list)
-        assert len(result) == item_count_by_category
-        for item in result:
-            assert isinstance(item, dtos.ItemGetSchema)
-            assert item.category_id == category_id
-
-    def test__null_last(self, repo, session, fill_db):
-        # Setup
-        category_id = (
-            session.query(entities.ItemCategory).filter_by(name='Категория 3').first().id
-        )
-
-        # Call
-        result = repo.fetch_by_category(category_id=category_id,
-                                        order_field='avg_rating',
-                                        order_direction='desc',
-                                        limit=None,
-                                        offset=None)
-
-        # Assert
-        assert result[0].avg_rating is not None
-        assert result[-1].avg_rating is None
-
-    @pytest.mark.parametrize('order_field, order_direction', [
-        ('id', 'asc'),
-        ('title', 'asc'),
-        ('price', 'asc'),
-        ('category_id', 'asc'),
-        ('type_id', 'asc'),
-        ('avg_rating', 'asc'),
-
-    ])
-    def test__order_is_asc(self, order_field, order_direction, repo, session, fill_db):
-        # Setup
-        category_id = (
-            session.query(entities.ItemCategory).filter_by(name='Категория 3').first().id
-        )
-
-        # Call
-        result = repo.fetch_by_category(category_id=category_id,
-                                        order_field=order_field,
-                                        order_direction=order_direction,
-                                        limit=None,
-                                        offset=None)
-
-        # Assert
-        assert result == sorted(
-            result,
-            key=lambda treatment_item: (
-                float('inf') if getattr(treatment_item, order_field) is None
-                else getattr(treatment_item, order_field)
-            ),
-            reverse=True if order_direction == 'desc' else False
-        )
-
-    @pytest.mark.parametrize('order_field, order_direction', [
-        ('id', 'desc'),
-        ('title', 'desc'),
-        ('price', 'desc'),
-        ('category_id', 'desc'),
-        ('type_id', 'desc'),
-        ('avg_rating', 'desc'),
-    ])
-    def test__order_is_desc(self, order_field, order_direction, repo, session, fill_db):
-        # Setup
-        category_id = (
-            session.query(entities.ItemCategory).filter_by(name='Категория 3').first().id
-        )
-
-        # Call
-        result = repo.fetch_by_category(category_id=category_id,
-                                        order_field=order_field,
-                                        order_direction=order_direction,
-                                        limit=None,
-                                        offset=None)
-
-        # Assert
-        assert result == sorted(
-            result,
-            key=lambda treatment_item: (
-                float('-inf') if getattr(treatment_item, order_field) is None
-                else getattr(treatment_item, order_field)
-            ),
-            reverse=True if order_direction == 'desc' else False
-        )
-
-    def test__with_limit(self, repo, session, fill_db):
-        # Setup
-        limit = 1
-        category_id = (
-            session.query(entities.ItemCategory).filter_by(name='Категория 3').first().id
-        )
-
-        # Call
-        result = repo.fetch_by_category(category_id=category_id,
-                                        order_field='avg_rating',
-                                        order_direction='desc',
-                                        limit=limit,
-                                        offset=None)
-        # Assert
-        assert len(result) == limit
-
-    def test__with_offset(self, repo, session, fill_db):
-        # Setup
-        offset = 1
-        category_id = (
-            session.query(entities.ItemCategory).filter_by(name='Категория 3').first().id
-        )
-        item_count_by_category: int = session.execute(
-            select(func.count(entities.TreatmentItem.id.distinct()))
-            .where(entities.TreatmentItem.category_id == category_id)
-        ).scalar()
-
-        # Call
-        result = repo.fetch_by_category(category_id=category_id,
-                                        order_field='avg_rating',
-                                        order_direction='desc',
-                                        limit=None,
-                                        offset=offset)
-
-        # Assert
-        assert len(result) == item_count_by_category - offset
-
-
-class TestFetchByType:
-    def test__fetch_by_type(self, repo, session, fill_db):
-        # Setup
-        type_id = session.query(entities.ItemType).filter_by(name='Тип 3').first().id
-        item_count_by_type: int = session.execute(
-            select(func.count(entities.TreatmentItem.id.distinct()))
-            .where(entities.TreatmentItem.type_id == type_id)
-        ).scalar()
-
-        # Call
-        result = repo.fetch_by_type(type_id=type_id,
-                                    order_field='avg_rating',
-                                    order_direction='desc',
-                                    limit=None,
-                                    offset=None)
-
-        # Assert
-        assert isinstance(result, list)
-        assert len(result) == item_count_by_type
-        for item in result:
-            assert isinstance(item, dtos.ItemGetSchema)
-            assert item.type_id == type_id
-
-    def test__null_last(self, repo, session, fill_db):
-        # Setup
-        type_id = session.query(entities.ItemType).filter_by(name='Тип 3').first().id
-
-        # Call
-        result = repo.fetch_by_type(type_id=type_id,
-                                    order_field='avg_rating',
-                                    order_direction='desc',
-                                    limit=None,
-                                    offset=None)
-        # Assert
-        assert result[0].avg_rating is not None
-        assert result[-1].avg_rating is None
-
-    @pytest.mark.parametrize('order_field, order_direction', [
-        ('id', 'asc'),
-        ('title', 'asc'),
-        ('price', 'asc'),
-        ('category_id', 'asc'),
-        ('type_id', 'asc'),
-        ('avg_rating', 'asc'),
-
-    ])
-    def test__order_is_asc(self, order_field, order_direction, repo, session, fill_db):
-        # Setup
-        type_id = session.query(entities.ItemType).filter_by(name='Тип 3').first().id
-
-        # Call
-        result = repo.fetch_by_type(type_id=type_id,
-                                    order_field=order_field,
-                                    order_direction=order_direction,
-                                    limit=None,
-                                    offset=None)
-
-        # Assert
-        assert result == sorted(
-            result,
-            key=lambda treatment_item: (
-                float('inf') if getattr(treatment_item, order_field) is None
-                else getattr(treatment_item, order_field)
-            ),
-            reverse=True if order_direction == 'desc' else False
-        )
-
-    @pytest.mark.parametrize('order_field, order_direction', [
-        ('id', 'desc'),
-        ('title', 'desc'),
-        ('price', 'desc'),
-        ('category_id', 'desc'),
-        ('type_id', 'desc'),
-        ('avg_rating', 'desc'),
-    ])
-    def test__order_is_desc(self, order_field, order_direction, repo, session, fill_db):
-        # Setup
-        type_id = session.query(entities.ItemType).filter_by(name='Тип 3').first().id
-
-        # Call
-        result = repo.fetch_by_type(type_id=type_id,
-                                    order_field=order_field,
-                                    order_direction=order_direction,
-                                    limit=None,
-                                    offset=None)
-
-        # Assert
-        assert result == sorted(
-            result,
-            key=lambda treatment_item: (
-                float('-inf') if getattr(treatment_item, order_field) is None
-                else getattr(treatment_item, order_field)
-            ),
-            reverse=True if order_direction == 'desc' else False
-        )
-
-    def test__with_limit(self, repo, session, fill_db):
-        # Setup
-        limit = 1
-        type_id = session.query(entities.ItemType).filter_by(name='Тип 3').first().id
-
-        # Call
-        result = repo.fetch_by_type(type_id=type_id,
-                                    order_field='avg_rating',
-                                    order_direction='desc',
-                                    limit=limit,
-                                    offset=None)
-
-        # Assert
-        assert len(result) == limit
-
-    def test__with_offset(self, repo, session, fill_db):
-        # Setup
-        offset = 1
-        type_id = session.query(entities.ItemType).filter_by(name='Тип 3').first().id
-        item_count_by_type: int = session.execute(
-            select(func.count(entities.TreatmentItem.id.distinct()))
-            .where(entities.TreatmentItem.type_id == type_id)
-        ).scalar()
-
-        # Call
-        result = repo.fetch_by_type(type_id=type_id,
-                                    order_field='avg_rating',
-                                    order_direction='desc',
-                                    limit=None,
-                                    offset=offset)
-
-        # Assert
-        assert len(result) == item_count_by_type - offset
-
-
-class TestFetchByRating:
-    def test__fetch_by_rating(self, repo, session, fill_db):
-        # Setup
-        min_rating = 2.5
-        max_rating = 9.5
-
-        # Call
-        result = repo.fetch_by_rating(
-            min_rating=min_rating,
-            max_rating=max_rating,
-            order_field='avg_rating',
-            order_direction='desc',
-            limit=None,
-            offset=None
-        )
-        # Assert
-        assert isinstance(result, list)
-        # Используется `ITEMS_DATA[:5]` т.к. `Продукту 6` не присвоен рейтинг,
-        # потому что он не имеет `entities.ItemReview`
-        assert len(result) == len(test_data.ITEMS_DATA[:5])
-        for item in result:
-            assert isinstance(item, dtos.ItemGetSchema)
-            assert item.avg_rating >= min_rating
-            assert item.avg_rating <= max_rating
-
-    def test__null_last(self, repo, session, fill_db):
-        # Setup
-        min_rating = 1.0
-        max_rating = 10.0
-
-        # Call
-        result = repo.fetch_by_rating(min_rating=min_rating,
-                                      max_rating=max_rating,
-                                      order_field='price',
-                                      order_direction='desc',
-                                      limit=None,
-                                      offset=None)
-        # Assert
-        assert result[0].price is not None
-        assert result[-1].price is None
-
-    @pytest.mark.parametrize('order_field, order_direction', [
-        ('id', 'asc'),
-        ('title', 'asc'),
-        ('price', 'asc'),
-        ('category_id', 'asc'),
-        ('type_id', 'asc'),
-        ('avg_rating', 'asc'),
-
-    ])
-    def test__order_is_asc(self, order_field, order_direction, repo, session, fill_db):
-        # Setup
-        min_rating = 2.5
-        max_rating = 10.0
-
-        # Call
-        result = repo.fetch_by_rating(min_rating=min_rating,
-                                      max_rating=max_rating,
-                                      order_field=order_field,
-                                      order_direction=order_direction,
-                                      limit=None,
-                                      offset=None)
-
-        # Assert
-        assert result == sorted(
-            result,
-            key=lambda treatment_item: (
-                float('inf') if getattr(treatment_item, order_field) is None
-                else getattr(treatment_item, order_field)
-            ),
-            reverse=True if order_direction == 'desc' else False
-        )
-
-    @pytest.mark.parametrize('order_field, order_direction', [
-        ('id', 'desc'),
-        ('title', 'desc'),
-        ('price', 'desc'),
-        ('category_id', 'desc'),
-        ('type_id', 'desc'),
-        ('avg_rating', 'desc'),
-    ])
-    def test__order_is_desc(self, order_field, order_direction, repo, session, fill_db):
-        # Setup
-        min_rating = 2.5
-        max_rating = 10.0
-
-        # Call
-        result = repo.fetch_by_rating(min_rating=min_rating,
-                                      max_rating=max_rating,
-                                      order_field=order_field,
-                                      order_direction=order_direction,
-                                      limit=None,
-                                      offset=None)
-
-        # Assert
-        assert result == sorted(
-            result,
-            key=lambda treatment_item: (
-                float('-inf') if getattr(treatment_item, order_field) is None
-                else getattr(treatment_item, order_field)
-            ),
-            reverse=True if order_direction == 'desc' else False
-        )
-
-    def test__with_limit(self, repo, session, fill_db):
-        # Setup
-        limit = 1
-
-        # Call
-        result = repo.fetch_by_rating(min_rating=1,
-                                      max_rating=10,
-                                      order_field='avg_rating',
-                                      order_direction='desc',
-                                      limit=limit,
-                                      offset=None)
-        # Assert
-        assert len(result) == limit
-
-    def test__with_offset(self, repo, session, fill_db):
-        # Setup
-        offset = 1
-
-        # Call
-        result = repo.fetch_by_rating(min_rating=1,
-                                      max_rating=10,
-                                      order_field='avg_rating',
-                                      order_direction='desc',
-                                      limit=None,
-                                      offset=offset)
-        # Assert
-        # Используется `ITEMS_DATA[:5]` т.к. `Продукту 6` не присвоен рейтинг,
-        # потому что он не имеет `entities.ItemReview`
-        assert len(result) == len(test_data.ITEMS_DATA[:5]) - offset
-
-
-class TestFetchByHelpedStatus:
-    @pytest.mark.parametrize('helped_status', [True, False])
-    def test__fetch_by_helped_status(self, helped_status, repo, session, fill_db):
-        # Setup
-        helped_item_ids: list[int] = (
+        helped_status = kwargs['filter_params'].is_helped
+        expected_item_ids: list[int] = (
             session.execute(
                 select(entities.TreatmentItem.id)
                 .join(entities.TreatmentItem.reviews)
@@ -919,419 +350,434 @@ class TestFetchByHelpedStatus:
         )
 
         # Call
-        result = repo.fetch_by_helped_status(
-            is_helped=helped_status,
-            order_field='avg_rating',
-            order_direction='desc',
-            limit=None,
-            offset=None
-        )
+        result = repo.fetch_all(**kwargs)
 
         # Assert
-        assert isinstance(result, list)
+        assert len(result) > 0
+        assert len(result) == len(expected_item_ids)
         for item in result:
-            assert isinstance(item, dtos.ItemWithHelpedStatusGetSchema)
-            assert item.id in helped_item_ids
-            assert item.is_helped == helped_status
+            assert isinstance(item, entities.TreatmentItem)
+            assert item.id in expected_item_ids
 
-    @pytest.mark.parametrize('order_field, order_direction', [
-        ('id', 'asc'),
-        ('title', 'asc'),
-        ('price', 'asc'),
-        ('category_id', 'asc'),
-        ('type_id', 'asc'),
-        ('avg_rating', 'asc'),
 
-    ])
-    def test__order_is_asc(self, order_field, order_direction, repo, session, fill_db):
-        # Call
-        result = repo.fetch_by_helped_status(
-            is_helped=True,
-            order_field=order_field,
-            order_direction=order_direction,
-            limit=None,
-            offset=None
-        )
+class TestFetchBySymptoms(_TestOrderMixin, _TestPaginationMixin, _TestUniquenessMixin):
+    TEST_METHOD = 'fetch_all'
+    TEST_KWARGS = [
+        dict(include_reviews=False,
+             filter_params=schemas.FindTreatmentItems(
+                 symptom_ids=[3, 4], match_all_symptoms=True)
+             ),
+        dict(include_reviews=False,
+             filter_params=schemas.FindTreatmentItems(
+                 symptom_ids=[3, 4], match_all_symptoms=False)
+             ),
+        dict(include_reviews=True,
+             filter_params=schemas.FindTreatmentItems(
+                 symptom_ids=[3, 4], match_all_symptoms=True)
+             ),
+        dict(include_reviews=True,
+             filter_params=schemas.FindTreatmentItems(
+                 symptom_ids=[3, 4], match_all_symptoms=False)
+             ),
+    ]
 
-        # Assert
-        assert result == sorted(
-            result,
-            key=lambda treatment_item: (
-                float('inf') if getattr(treatment_item, order_field) is None
-                else getattr(treatment_item, order_field)
-            ),
-            reverse=True if order_direction == 'desc' else False
-        )
-
-    @pytest.mark.parametrize('order_field, order_direction', [
-        ('id', 'desc'),
-        ('title', 'desc'),
-        ('price', 'desc'),
-        ('category_id', 'desc'),
-        ('type_id', 'desc'),
-        ('avg_rating', 'desc'),
-    ])
-    def test__order_is_desc(self, order_field, order_direction, repo, session, fill_db):
-        # Call
-        result = repo.fetch_by_helped_status(
-            is_helped=True,
-            order_field=order_field,
-            order_direction=order_direction,
-            limit=None,
-            offset=None
-        )
-
-        # Assert
-        assert result == sorted(
-            result,
-            key=lambda treatment_item: (
-                float('-inf') if getattr(treatment_item, order_field) is None
-                else getattr(treatment_item, order_field)
-            ),
-            reverse=True if order_direction == 'desc' else False
-        )
-
-    def test__with_limit(self, repo, session, fill_db):
+    @pytest.mark.parametrize('kwargs', [*TEST_KWARGS])
+    def test__fetch_by_symptoms(self, kwargs, repo, session, fill_db):
         # Setup
-        limit = 1
-
-        # Call
-        result = repo.fetch_by_helped_status(
-            is_helped=True,
-            order_field='avg_rating',
-            order_direction='desc',
-            limit=limit,
-            offset=None
-        )
-        # Assert
-        assert len(result) == limit
-
-    def test__with_offset(self, repo, session, fill_db):
-        # Setup
-        offset = 1
-        helped_status = True
-        helped_items_count: int = (
-            session.execute(
-                select(func.count(entities.TreatmentItem.id.distinct()))
-                .join(entities.TreatmentItem.reviews)
-                .where(entities.ItemReview.is_helped == helped_status)
-            ).scalar()
-        )
-
-        # Call
-        result = repo.fetch_by_helped_status(
-            is_helped=True,
-            order_field='avg_rating',
-            order_direction='desc',
-            limit=None,
-            offset=offset
-        )
-        # Assert
-        assert len(result) == helped_items_count - offset
-
-
-class TestFetchBySymptomsAndHelpedStatus:
-    @pytest.mark.parametrize('helped_status', [True, False])
-    def test__fetch_by_symptoms_and_helped_status(self, helped_status, repo, session,
-                                                  fill_db):
-        # Setup
-        symptom_ids: list[int] = fill_db['symptom_ids'][2:]
-        helped_item_ids: list[int] = (
-            session.execute(
-                select(entities.ItemReview.item_id)
-                .join(entities.MedicalBook.item_reviews)
-                .join(entities.MedicalBook.symptoms)
-                .where(
-                    entities.ItemReview.is_helped == helped_status,
-                    entities.Symptom.id.in_(symptom_ids)
-                )
-                .distinct(entities.ItemReview.item_id)
-            ).scalars().all()
-        )
-
-        # Call
-        result = repo.fetch_by_symptoms_and_helped_status(
-            symptom_ids=symptom_ids,
-            is_helped=helped_status,
-            order_field='avg_rating',
-            order_direction='desc',
-            limit=None,
-            offset=None
-        )
-
-        # Assert
-        assert isinstance(result, list)
-        for item in result:
-            assert isinstance(item, dtos.ItemWithHelpedStatusSymptomsGetSchema)
-            assert item.id in helped_item_ids
-            assert item.is_helped == helped_status
-            assert all(
-                symptom_id in symptom_ids for symptom_id in item.overlapping_symptom_ids
-            )
-
-    @pytest.mark.parametrize('order_field, order_direction', [
-        ('id', 'asc'),
-        ('title', 'asc'),
-        ('price', 'asc'),
-        ('category_id', 'asc'),
-        ('type_id', 'asc'),
-        ('avg_rating', 'asc'),
-
-    ])
-    def test__order_is_asc(self, order_field, order_direction, repo, session, fill_db):
-        # Setup
-        symptom_ids: list[int] = fill_db['symptom_ids'][2:]
-
-        # Call
-        result = repo.fetch_by_symptoms_and_helped_status(
-            symptom_ids=symptom_ids,
-            is_helped=True,
-            order_field=order_field,
-            order_direction=order_direction,
-            limit=None,
-            offset=None
-        )
-
-        # Assert
-        assert result == sorted(
-            result,
-            key=lambda treatment_item: (
-                float('inf') if getattr(treatment_item, order_field) is None
-                else getattr(treatment_item, order_field)
-            ),
-            reverse=True if order_direction == 'desc' else False
-        )
-
-    @pytest.mark.parametrize('order_field, order_direction', [
-        ('id', 'desc'),
-        ('title', 'desc'),
-        ('price', 'desc'),
-        ('category_id', 'desc'),
-        ('type_id', 'desc'),
-        ('avg_rating', 'desc'),
-    ])
-    def test__order_is_desc(self, order_field, order_direction, repo, session, fill_db):
-        # Setup
-        symptom_ids: list[int] = fill_db['symptom_ids'][2:]
-
-        # Call
-        result = repo.fetch_by_symptoms_and_helped_status(
-            symptom_ids=symptom_ids,
-            is_helped=True,
-            order_field=order_field,
-            order_direction=order_direction,
-            limit=None,
-            offset=None
-        )
-
-        # Assert
-        assert result == sorted(
-            result,
-            key=lambda treatment_item: (
-                float('-inf') if getattr(treatment_item, order_field) is None
-                else getattr(treatment_item, order_field)
-            ),
-            reverse=True if order_direction == 'desc' else False
-        )
-
-    def test__with_limit(self, repo, session, fill_db):
-        # Setup
-        limit = 1
-
-        # Call
-        result = repo.fetch_by_symptoms_and_helped_status(
-            symptom_ids=fill_db['symptom_ids'],
-            is_helped=True,
-            order_field='avg_rating',
-            order_direction='desc',
-            limit=limit,
-            offset=None
-        )
-
-        # Assert
-        assert len(result) == limit
-
-    def test__with_offset(self, repo, session, fill_db):
-        # Setup
-        offset = 1
         symptom_ids: list[int] = fill_db['symptom_ids'][:2]
-        helped_status = True
-        helped_item_count: int = (
-            session.execute(
-                select(func.count(entities.ItemReview.item_id.distinct()))
-                .join(entities.MedicalBook.item_reviews)
-                .join(entities.MedicalBook.symptoms)
-                .where(
-                    entities.ItemReview.is_helped == helped_status,
-                    entities.Symptom.id.in_(symptom_ids)
-                )
-            ).scalar()
+        match_all_symptoms: bool = kwargs['filter_params'].match_all_symptoms
+        kwargs['filter_params'].symptom_ids = symptom_ids
+
+        query = (
+            select(entities.ItemReview.item_id)
+            .join(entities.MedicalBook.item_reviews)
+            .join(entities.MedicalBook.symptoms)
+            .where(entities.Symptom.id.in_(symptom_ids))
+            .group_by(entities.ItemReview.item_id)
         )
+        if match_all_symptoms:
+            query = (query
+                     .having(func.count(entities.Symptom.id.distinct()) ==
+                             len(symptom_ids))
+                     )
+
+        expected_item_ids: list[int] = session.execute(query).scalars().all()
+
         # Call
-        result = repo.fetch_by_symptoms_and_helped_status(
-            symptom_ids=symptom_ids,
-            is_helped=True,
-            order_field='avg_rating',
-            order_direction='desc',
-            limit=None,
-            offset=offset
-        )
+        result = repo.fetch_all(**kwargs)
+
         # Assert
-        assert len(result) == helped_item_count - offset
+        assert len(result) > 0
+        assert len(result) == len(expected_item_ids)
+        for item in result:
+            assert isinstance(item, entities.TreatmentItem)
+            assert item.id in expected_item_ids
 
 
-class TestFetchByDiagnosisAndHelpedStatus:
-    @pytest.mark.parametrize('helped_status', [True, False])
-    def test__fetch_by_diagnosis_and_helped_status(self, helped_status, repo, session,
-                                                   fill_db):
+class TestFetchByDiagnosis(_TestOrderMixin, _TestPaginationMixin, _TestUniquenessMixin):
+    TEST_METHOD = 'fetch_all'
+    TEST_KWARGS = [
+        dict(include_reviews=False,
+             filter_params=schemas.FindTreatmentItems(diagnosis_id=1)),
+        dict(include_reviews=True,
+             filter_params=schemas.FindTreatmentItems(diagnosis_id=1))
+    ]
+
+    @pytest.mark.parametrize('kwargs', [*TEST_KWARGS])
+    def test__fetch_by_diagnosis(self, kwargs, repo, session, fill_db):
         # Setup
-        diagnosis_id: int = fill_db['diagnosis_ids'][0]
-        helped_item_ids: list[int] = (
+        diagnosis_id = fill_db['diagnosis_ids'][0]
+        kwargs['filter_params'].diagnosis_id = diagnosis_id
+
+        expected_item_ids: list[int] = (
             session.execute(
                 select(entities.ItemReview.item_id)
                 .join(entities.MedicalBook.item_reviews)
-                .where(
-                    entities.ItemReview.is_helped == helped_status,
-                    entities.MedicalBook.diagnosis_id == diagnosis_id
-                )
+                .where(entities.MedicalBook.diagnosis_id == diagnosis_id)
                 .distinct(entities.ItemReview.item_id)
             ).scalars().all()
         )
 
         # Call
-        result = repo.fetch_by_diagnosis_and_helped_status(
-            diagnosis_id=diagnosis_id,
-            is_helped=helped_status,
-            order_field='avg_rating',
-            order_direction='desc',
-            limit=None,
-            offset=None
-        )
+        result = repo.fetch_all(**kwargs)
 
         # Assert
-        assert isinstance(result, list)
+        assert len(result) > 0
+        assert len(result) == len(expected_item_ids)
         for item in result:
-            assert isinstance(item, dtos.ItemWithHelpedStatusDiagnosisGetSchema)
-            assert item.id in helped_item_ids
-            assert item.is_helped == helped_status
-            assert item.diagnosis_id == diagnosis_id
+            assert isinstance(item, entities.TreatmentItem)
+            assert item.id in expected_item_ids
 
-    @pytest.mark.parametrize('order_field, order_direction', [
-        ('id', 'asc'),
-        ('title', 'asc'),
-        ('price', 'asc'),
-        ('category_id', 'asc'),
-        ('type_id', 'asc'),
-        ('avg_rating', 'asc'),
 
-    ])
-    def test__order_is_asc(self, order_field, order_direction, repo, session, fill_db):
+class TestFetchBySymptomsAndHelpedStatus(_TestOrderMixin, _TestPaginationMixin,
+                                         _TestUniquenessMixin):
+    TEST_METHOD = 'fetch_all'
+    TEST_KWARGS = [
+        dict(include_reviews=False,
+             filter_params=schemas.FindTreatmentItems(
+                 symptom_ids=[3, 4], match_all_symptoms=True, is_helped=True)
+             ),
+        dict(include_reviews=False,
+             filter_params=schemas.FindTreatmentItems(
+                 symptom_ids=[3, 4], match_all_symptoms=True, is_helped=False)
+             ),
+        dict(include_reviews=False,
+             filter_params=schemas.FindTreatmentItems(
+                 symptom_ids=[3, 4], match_all_symptoms=False, is_helped=True)
+             ),
+        dict(include_reviews=False,
+             filter_params=schemas.FindTreatmentItems(
+                 symptom_ids=[3, 4], match_all_symptoms=False, is_helped=False)
+             ),
+        dict(include_reviews=True,
+             filter_params=schemas.FindTreatmentItems(
+                 symptom_ids=[3, 4], match_all_symptoms=True, is_helped=True)
+             ),
+        dict(include_reviews=True,
+             filter_params=schemas.FindTreatmentItems(
+                 symptom_ids=[3, 4], match_all_symptoms=True, is_helped=False)
+             ),
+        dict(include_reviews=True,
+             filter_params=schemas.FindTreatmentItems(
+                 symptom_ids=[3, 4], match_all_symptoms=False, is_helped=True)
+             ),
+        dict(include_reviews=True,
+             filter_params=schemas.FindTreatmentItems(
+                 symptom_ids=[3, 4], match_all_symptoms=False, is_helped=False)
+             ),
+    ]
+
+    @pytest.mark.parametrize('kwargs', [*TEST_KWARGS])
+    def test__fetch_by_symptoms_and_helped_status(self, kwargs, repo, session, fill_db):
+        # Setup
+        symptom_ids = fill_db['symptom_ids'][:2]
+        helped_status = kwargs['filter_params'].is_helped
+        match_all_symptoms = kwargs['filter_params'].match_all_symptoms
+        kwargs['filter_params'].symptom_ids = symptom_ids
+
+        query = (
+            select(entities.ItemReview.item_id)
+            .join(entities.MedicalBook.item_reviews)
+            .join(entities.MedicalBook.symptoms)
+            .where(entities.ItemReview.is_helped == helped_status,
+                   entities.Symptom.id.in_(symptom_ids))
+            .group_by(entities.ItemReview.item_id)
+        )
+        if match_all_symptoms:
+            query = (query
+                     .having(func.count(entities.Symptom.id.distinct()) ==
+                             len(symptom_ids))
+                     )
+
+        expected_item_ids: list[int] = session.execute(query).scalars().all()
+
+        # Call
+        result = repo.fetch_all(**kwargs)
+
+        # Assert
+        assert len(result) > 0
+        assert len(result) == len(expected_item_ids)
+        for item in result:
+            assert isinstance(item, entities.TreatmentItem)
+            assert item.id in expected_item_ids
+
+
+class TestFetchByDiagnosisAndHelpedStatus(_TestOrderMixin, _TestPaginationMixin,
+                                          _TestUniquenessMixin):
+    TEST_METHOD = 'fetch_all'
+    TEST_KWARGS = [
+        dict(include_reviews=False,
+             filter_params=schemas.FindTreatmentItems(
+                 diagnosis_id=1, is_helped=True)
+             ),
+        dict(include_reviews=False,
+             filter_params=schemas.FindTreatmentItems(
+                 diagnosis_id=1, is_helped=False)
+             ),
+        dict(include_reviews=True,
+             filter_params=schemas.FindTreatmentItems(
+                 diagnosis_id=1, is_helped=True)
+             ),
+        dict(include_reviews=True,
+             filter_params=schemas.FindTreatmentItems(
+                 diagnosis_id=1, is_helped=False)
+             ),
+    ]
+
+    @pytest.mark.parametrize('kwargs', [*TEST_KWARGS])
+    def test__fetch_by_diagnosis_and_helped_status(self, kwargs, repo, session, fill_db):
         # Setup
         diagnosis_id: int = fill_db['diagnosis_ids'][0]
+        helped_status = kwargs['filter_params'].is_helped
+        kwargs['filter_params'].diagnosis_id = diagnosis_id
+
+        query = (
+            select(entities.ItemReview.item_id)
+            .join(entities.MedicalBook.item_reviews)
+            .where(entities.ItemReview.is_helped == helped_status,
+                   entities.MedicalBook.diagnosis_id == diagnosis_id)
+            .group_by(entities.ItemReview.item_id)
+        )
+
+        expected_item_ids: list[int] = session.execute(query).scalars().all()
 
         # Call
-        result = repo.fetch_by_diagnosis_and_helped_status(
-            diagnosis_id=diagnosis_id,
-            is_helped=True,
-            order_field=order_field,
-            order_direction=order_direction,
-            limit=None,
-            offset=None
-        )
+        result = repo.fetch_all(**kwargs)
 
         # Assert
-        assert result == sorted(
-            result,
-            key=lambda treatment_item: (
-                float('inf') if getattr(treatment_item, order_field) is None
-                else getattr(treatment_item, order_field)
-            ),
-            reverse=True if order_direction == 'desc' else False
-        )
+        assert len(result) > 0
+        assert len(result) == len(expected_item_ids)
+        for item in result:
+            assert isinstance(item, entities.TreatmentItem)
+            assert item.id in expected_item_ids
 
-    @pytest.mark.parametrize('order_field, order_direction', [
-        ('id', 'desc'),
-        ('title', 'desc'),
-        ('price', 'desc'),
-        ('category_id', 'desc'),
-        ('type_id', 'desc'),
-        ('avg_rating', 'desc'),
-    ])
-    def test__order_is_desc(self, order_field, order_direction, repo, session, fill_db):
+
+class TestFetchByDiagnosisSymptoms(_TestOrderMixin,
+                                   _TestPaginationMixin,
+                                   _TestUniquenessMixin):
+    TEST_METHOD = 'fetch_all'
+    TEST_KWARGS = [
+        dict(include_reviews=False,
+             filter_params=schemas.FindTreatmentItems(
+                 diagnosis_id=1, symptom_ids=[3, 4], match_all_symptoms=True)
+             ),
+        dict(include_reviews=False,
+             filter_params=schemas.FindTreatmentItems(
+                 diagnosis_id=1, symptom_ids=[3, 4], match_all_symptoms=False)
+             ),
+        dict(include_reviews=True,
+             filter_params=schemas.FindTreatmentItems(
+                 diagnosis_id=1, symptom_ids=[3, 4], match_all_symptoms=True)
+             ),
+        dict(include_reviews=True,
+             filter_params=schemas.FindTreatmentItems(
+                 diagnosis_id=1, symptom_ids=[3, 4], match_all_symptoms=False)
+             ),
+    ]
+
+    @pytest.mark.parametrize('kwargs', [*TEST_KWARGS])
+    def test__fetch_by_diagnosis_and_symptoms(self, kwargs, repo, session, fill_db):
         # Setup
-        diagnosis_id: int = fill_db['diagnosis_ids'][0]
+        diagnosis_id = fill_db['diagnosis_ids'][1]
+        symptom_ids = fill_db['symptom_ids'][:2]
+        match_all_symptoms = kwargs['filter_params'].match_all_symptoms
+        kwargs['filter_params'].diagnosis_id = diagnosis_id
+        kwargs['filter_params'].symptom_ids = symptom_ids
+
+        query = (
+            select(entities.ItemReview.item_id)
+            .join(entities.MedicalBook.item_reviews)
+            .join(entities.MedicalBook.symptoms)
+            .where(entities.MedicalBook.diagnosis_id == diagnosis_id,
+                   entities.Symptom.id.in_(symptom_ids))
+            .group_by(entities.ItemReview.item_id)
+        )
+        if match_all_symptoms:
+            query = (query
+                     .having(func.count(entities.Symptom.id.distinct()) ==
+                             len(symptom_ids))
+                     )
+
+        expected_item_ids: list[int] = session.execute(query).scalars().all()
 
         # Call
-        result = repo.fetch_by_diagnosis_and_helped_status(
-            diagnosis_id=diagnosis_id,
-            is_helped=True,
-            order_field=order_field,
-            order_direction=order_direction,
-            limit=None,
-            offset=None
-        )
+        result = repo.fetch_all(**kwargs)
 
         # Assert
-        assert result == sorted(
-            result,
-            key=lambda treatment_item: (
-                float('-inf') if getattr(treatment_item, order_field) is None
-                else getattr(treatment_item, order_field)
-            ),
-            reverse=True if order_direction == 'desc' else False
-        )
+        assert len(result) > 0
+        assert len(result) == len(expected_item_ids)
+        for item in result:
+            assert isinstance(item, entities.TreatmentItem)
+            assert item.id in expected_item_ids
 
-    def test__with_limit(self, repo, session, fill_db):
+
+class TestFetchByHelpedStatusDiagnosisSymptoms(_TestOrderMixin,
+                                               _TestPaginationMixin,
+                                               _TestUniquenessMixin):
+    TEST_METHOD = 'fetch_all'
+    TEST_KWARGS = [
+        dict(include_reviews=False,
+             filter_params=schemas.FindTreatmentItems(
+                 symptom_ids=[3, 4], match_all_symptoms=True, is_helped=True,
+                 diagnosis_id=1)
+             ),
+        dict(include_reviews=False,
+             filter_params=schemas.FindTreatmentItems(
+                 symptom_ids=[3, 4], match_all_symptoms=True, is_helped=False,
+                 diagnosis_id=1)
+             ),
+        dict(include_reviews=False,
+             filter_params=schemas.FindTreatmentItems(
+                 symptom_ids=[3, 4], match_all_symptoms=False, is_helped=True,
+                 diagnosis_id=1)
+             ),
+        dict(include_reviews=False,
+             filter_params=schemas.FindTreatmentItems(
+                 symptom_ids=[3, 4], match_all_symptoms=False, is_helped=False,
+                 diagnosis_id=1)
+             ),
+        dict(include_reviews=True,
+             filter_params=schemas.FindTreatmentItems(
+                 symptom_ids=[3, 4], match_all_symptoms=True, is_helped=True,
+                 diagnosis_id=1)
+             ),
+        dict(include_reviews=True,
+             filter_params=schemas.FindTreatmentItems(
+                 symptom_ids=[3, 4], match_all_symptoms=True, is_helped=False,
+                 diagnosis_id=1)
+             ),
+        dict(include_reviews=True,
+             filter_params=schemas.FindTreatmentItems(
+                 symptom_ids=[3, 4], match_all_symptoms=False, is_helped=True,
+                 diagnosis_id=1)
+             ),
+        dict(include_reviews=True,
+             filter_params=schemas.FindTreatmentItems(
+                 symptom_ids=[3, 4], match_all_symptoms=False, is_helped=False,
+                 diagnosis_id=1)
+             ),
+    ]
+
+    @pytest.mark.parametrize('kwargs', [*TEST_KWARGS])
+    def test__fetch_by_helped_status_diagnosis_symptoms(self, kwargs, repo, session,
+                                                        fill_db):
         # Setup
-        limit = 1
+        diagnosis_id = fill_db['diagnosis_ids'][0]
+        symptom_ids = fill_db['symptom_ids'][2:4]
+        helped_status = kwargs['filter_params'].is_helped
+        match_all_symptoms = kwargs['filter_params'].match_all_symptoms
+        kwargs['filter_params'].diagnosis_id = diagnosis_id
+        kwargs['filter_params'].symptom_ids = symptom_ids
+
+        query = (
+            select(entities.ItemReview.item_id)
+            .join(entities.MedicalBook.item_reviews)
+            .join(entities.MedicalBook.symptoms)
+            .where(entities.ItemReview.is_helped == helped_status,
+                   entities.MedicalBook.diagnosis_id == diagnosis_id,
+                   entities.Symptom.id.in_(symptom_ids))
+            .group_by(entities.ItemReview.item_id)
+        )
+        if match_all_symptoms:
+            query = (query
+                     .having(func.count(entities.Symptom.id.distinct()) ==
+                             len(symptom_ids))
+                     )
+
+        expected_item_ids: list[int] = session.execute(query).scalars().all()
 
         # Call
-        result = repo.fetch_by_diagnosis_and_helped_status(
-            diagnosis_id=fill_db['diagnosis_ids'][0],
-            is_helped=True,
-            order_field='avg_rating',
-            order_direction='desc',
-            limit=limit,
-            offset=None
-        )
+        result = repo.fetch_all(**kwargs)
 
         # Assert
-        assert len(result) == limit
+        assert len(result) > 0
+        assert len(result) == len(expected_item_ids)
+        for item in result:
+            assert isinstance(item, entities.TreatmentItem)
+            assert item.id in expected_item_ids
 
-    def test__with_offset(self, repo, session, fill_db):
+
+class TestUpdateAvgRating:
+    def test__update_avg_rating(self, repo, session, fill_db):
         # Setup
-        offset = 1
-        diagnosis_id: int = fill_db['diagnosis_ids'][0]
-        helped_status = True
-        helped_item_count: int = (
-            session.execute(
-                select(func.count(entities.ItemReview.item_id.distinct()))
-                .join(entities.MedicalBook.item_reviews)
-                .where(
-                    entities.ItemReview.is_helped == helped_status,
-                    entities.MedicalBook.diagnosis_id == diagnosis_id
-                )
-            ).scalar()
+        item_id: int = fill_db['item_ids'][0]
+        item: entities.TreatmentItem = (
+            session.query(entities.TreatmentItem)
+            .filter(entities.TreatmentItem.id == item_id)
+            .scalar()
         )
+        before_avg_rating: float = item.avg_rating
+
+        new_item_review = entities.ItemReview(
+            item_id=item_id, is_helped=True, item_rating=10, item_count=1
+        )
+        session.add(new_item_review)
+        session.flush()
 
         # Call
-        result = repo.fetch_by_diagnosis_and_helped_status(
-            diagnosis_id=fill_db['diagnosis_ids'][0],
-            is_helped=True,
-            order_field='avg_rating',
-            order_direction='desc',
-            limit=None,
-            offset=offset
+        repo.update_avg_rating(item)
+
+        # Setup
+        after_avg_rating = (
+            session.query(func.avg(entities.TreatmentItem.avg_rating))
+            .filter(entities.TreatmentItem.id == item_id)
+            .scalar()
         )
 
         # Assert
-        assert len(result) == helped_item_count - offset
+        assert after_avg_rating != before_avg_rating
 
 
 class TestAdd:
     def test__add(self, repo, session, fill_db):
         # Setup
-        before_count = len(session.execute(tables.treatment_items.select()).all())
+        before_count = len(
+            session.execute(select(entities.TreatmentItem)).scalars().all()
+        )
+
+        # Call
+        result = repo.add(
+            entities.TreatmentItem(
+                title='Title 1',
+                price=1000.50,
+                description='Description 1',
+                category_id=fill_db['category_ids'][0],
+                type_id=fill_db['type_ids'][0],
+            )
+        )
+        after_count = len(
+            session.execute(select(entities.TreatmentItem)).scalars().all()
+        )
+
+        # Assert
+        assert before_count + 1 == after_count
+        assert isinstance(result, entities.TreatmentItem)
+
+    def test__add_with_reviews(self, repo, session, fill_db):
+        # Setup
+        before_count = len(
+            session.execute(select(entities.TreatmentItem)).scalars().all()
+        )
         reviews_to_add: list[entities.ItemReview] = (
             session.query(entities.ItemReview)
             .filter(
@@ -1353,43 +799,89 @@ class TestAdd:
                 reviews=reviews_to_add
             )
         )
-        after_count = len(session.execute(tables.treatment_items.select()).all())
+        after_count = len(
+            session.execute(select(entities.TreatmentItem)).scalars().all()
+        )
 
         # Assert
         assert before_count + 1 == after_count
         assert isinstance(result, entities.TreatmentItem)
 
-    def test__add_with_no_reviews(self, repo, session, fill_db):
+    def test__cascade_update_reviews(self, repo, session, fill_db):
         # Setup
-        before_count = len(session.execute(tables.treatment_items.select()).all())
+        existing_item: entities.TreatmentItem = session.execute(
+            select(entities.TreatmentItem)
+            .join(entities.TreatmentItem.reviews)
+            .where(entities.TreatmentItem.reviews is not None)
+        ).scalar()
+
+        # Assert
+        assert len(existing_item.reviews) > 0
+        for review in existing_item.reviews:
+            review.item_id = existing_item.id
 
         # Call
-        result = repo.add(
-            entities.TreatmentItem(
-                title='Title 1',
-                price=1000.50,
-                description='Description 1',
-                category_id=fill_db['category_ids'][0],
-                type_id=fill_db['type_ids'][0],
-            )
+        existing_item.id = (
+            session.execute(func.max(entities.TreatmentItem.id)).scalar() + 1
         )
-        after_count = len(session.execute(tables.treatment_items.select()).all())
+
+        # Setup
+        updated_item: entities.TreatmentItem = session.execute(
+            select(entities.TreatmentItem)
+            .where(entities.TreatmentItem.id == existing_item.id)
+        ).scalar()
 
         # Assert
-        assert before_count + 1 == after_count
-        assert isinstance(result, entities.TreatmentItem)
+        assert len(updated_item.reviews) > 0
+        for updated_review in updated_item.reviews:
+            assert updated_review.item_id == updated_item.id
 
 
 class TestRemove:
     def test__remove(self, repo, session, fill_db):
         # Setup
-        before_count = len(session.execute(tables.treatment_items.select()).all())
-        treatment_item: entities.TreatmentItem = session.query(entities.TreatmentItem).first()
+        before_count: int = len(
+            session.execute(select(entities.TreatmentItem)).scalars().all()
+        )
+        item_to_remove: entities.TreatmentItem = (
+            session.query(entities.TreatmentItem).first()
+        )
 
         # Call
-        result = repo.remove(treatment_item)
-        after_count = len(session.execute(tables.treatment_items.select()).all())
+        result = repo.remove(item_to_remove)
+
+        # Setup
+        after_count: int = len(
+            session.execute(select(entities.TreatmentItem)).scalars().all()
+        )
 
         # Assert
         assert before_count - 1 == after_count
         assert isinstance(result, entities.TreatmentItem)
+
+    def test__cascade_delete_orphaned_reviews(self, repo, session, fill_db):
+        # Setup
+        item_to_remove: entities.TreatmentItem = (
+            session.execute(
+                select(entities.TreatmentItem)
+                .join(entities.TreatmentItem.reviews)
+                .where(entities.TreatmentItem.reviews is not None)
+            ).scalar()
+        )
+        orphaned_review_ids: list[int] = [review.id for review in item_to_remove.reviews]
+
+        # Assert
+        assert len(orphaned_review_ids) > 0
+
+        # Call
+        repo.remove(item_to_remove)
+
+        # Setup
+        reviews_after_remove: list[entities.ItemReview] = (
+            session.execute(select(entities.ItemReview.id)).scalars().all()
+        )
+
+        # Assert
+        assert len(reviews_after_remove) > 0
+        for review_id in orphaned_review_ids:
+            assert review_id not in reviews_after_remove

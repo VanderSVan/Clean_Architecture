@@ -1,9 +1,14 @@
-from .base import AppError
+from .base import Error
 
 
-class ItemReviewNotFound(AppError):
-    msg_template = 'Item review with id {id} not found'
+class ItemReviewNotFound(Error):
+    message_template = 'Item review with id {id} not found'
 
 
-class ItemReviewAlreadyExists(AppError):
-    msg_template = 'Item review with id {id} already exists'
+class ItemReviewAlreadyExists(Error):
+    message_template = 'Item review with id {id} already exists'
+
+
+class ItemReviewExcludeAllFields(Error):
+    message_template = "You can't exclude all columns."
+    context = {'excluded_columns': list}

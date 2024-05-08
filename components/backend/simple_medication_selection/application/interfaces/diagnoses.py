@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
+from typing import Sequence
 
-from .. import entities
+from simple_medication_selection.application import entities, schemas
 
 
 class DiagnosesRepo(ABC):
@@ -11,6 +12,18 @@ class DiagnosesRepo(ABC):
 
     @abstractmethod
     def fetch_by_name(self, name: str) -> entities.Diagnosis | None:
+        ...
+
+    @abstractmethod
+    def fetch_all(self,
+                  filter_params: schemas.FindDiagnoses
+                  ) -> Sequence[entities.Diagnosis | None]:
+        ...
+
+    @abstractmethod
+    def search_by_name(self,
+                       filter_params: schemas.FindDiagnoses
+                       ) -> Sequence[entities.Diagnosis | None]:
         ...
 
     @abstractmethod

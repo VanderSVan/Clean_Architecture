@@ -1,6 +1,10 @@
+from typing import Sequence
+
 from pydantic import validate_arguments
 
-from simple_medication_selection.application import dtos, entities, interfaces, errors
+from simple_medication_selection.application import (
+    dtos, entities, interfaces, errors, schemas
+)
 from ..utils import DecoratedFunctionRegistry
 
 decorated_function_registry = DecoratedFunctionRegistry()
@@ -13,18 +17,35 @@ class ItemType:
 
     @register_method
     @validate_arguments
-    def get(self, type_id: int) -> entities.ItemType:
+    def get(self, type_id: int) -> dtos.ItemType:
 
-        item_type = self.types_repo.fetch_by_id(type_id)
+        item_type: entities.ItemType | None = self.types_repo.fetch_by_id(type_id)
 
         if not item_type:
             raise errors.ItemTypeNotFound(id=type_id)
 
-        return item_type
+        return dtos.ItemType.from_orm(item_type)
+    
+    @register_method
+    @validate_arguments
+    def find(self,
+             filter_params: schemas.FindItemTypes
+             ) -> list[dtos.ItemType | None]:
+
+        if filter_params.keywords:
+            types: Sequence[entities.ItemType | None] = (
+                self.types_repo.search_by_name(filter_params)
+            )
+            return [dtos.ItemType.from_orm(item_type) for item_type in types]
+
+        types: Sequence[entities.ItemType | None] = (
+            self.types_repo.fetch_all(filter_params)
+        )
+        return [dtos.ItemType.from_orm(item_type) for item_type in types]
 
     @register_method
     @validate_arguments
-    def create(self, new_type_info: dtos.ItemTypeCreateSchema) -> entities.ItemType:
+    def add(self, new_type_info: dtos.NewItemTypeInfo) -> dtos.ItemType:
 
         item_type: entities.ItemType = (
             self.types_repo.fetch_by_name(new_type_info.name)
@@ -33,28 +54,32 @@ class ItemType:
             raise errors.ItemTypeAlreadyExists(name=new_type_info.name)
 
         new_type: entities.ItemType = new_type_info.create_obj(entities.ItemType)
-        return self.types_repo.add(new_type)
+        added_type: entities.ItemType = self.types_repo.add(new_type)
+        return dtos.ItemType.from_orm(added_type)
 
     @register_method
     @validate_arguments
-    def change(self, new_type_info: dtos.ItemTypeUpdateSchema) -> entities.ItemType:
+    def change(self, new_type_info: dtos.ItemType) -> dtos.ItemType:
 
         item_type: entities.ItemType = self.types_repo.fetch_by_id(new_type_info.id)
         if not item_type:
             raise errors.ItemTypeNotFound(id=new_type_info.id)
 
-        if new_type_info.name == item_type.name:
+        item_type_with_same_name = self.types_repo.fetch_by_name(new_type_info.name)
+        if item_type_with_same_name and item_type_with_same_name.id != new_type_info.id:
             raise errors.ItemTypeAlreadyExists(name=new_type_info.name)
 
-        return new_type_info.populate_obj(item_type)
+        updated_type: entities.ItemType = new_type_info.populate_obj(item_type)
+        return dtos.ItemType.from_orm(updated_type)
 
     @register_method
     @validate_arguments
-    def delete(self, type_id: int) -> entities.ItemType:
+    def delete(self, type_id: int) -> dtos.ItemType:
 
         item_type = self.types_repo.fetch_by_id(type_id)
 
         if not item_type:
             raise errors.ItemTypeNotFound(id=type_id)
 
-        return self.types_repo.remove(item_type)
+        removed_type: entities.ItemType = self.types_repo.remove(item_type)
+        return dtos.ItemType.from_orm(removed_type)

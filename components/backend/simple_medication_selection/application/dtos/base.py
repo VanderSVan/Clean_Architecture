@@ -7,10 +7,6 @@ class_: TypeAlias = type(entities.Entity)
 
 
 class DTO(BaseSchema):
-    """
-    Базовый класс для DTO.
-    """
-
     def populate_obj(self, obj, **kwargs) -> entities.Entity:
         """
         Заполняет или обновляет объект данными из DTO.

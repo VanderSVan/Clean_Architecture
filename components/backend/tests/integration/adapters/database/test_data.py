@@ -52,7 +52,7 @@ REVIEWS_DATA = [
     {'is_helped': True, 'item_rating': 9.5, 'item_count': 5, 'usage_period': 7776000},
     {'is_helped': False, 'item_rating': 2.0, 'item_count': 3, 'usage_period': 5184000},
     {'is_helped': True, 'item_rating': 8.0, 'item_count': 4, 'usage_period': 2592000},
-    {'is_helped': True, 'item_rating': 7.5, 'item_count': 2, 'usage_period': 2592000},
+    {'is_helped': False, 'item_rating': 7.5, 'item_count': 2, 'usage_period': 2592000},
     {'is_helped': False, 'item_rating': 3.5, 'item_count': 1, 'usage_period': 5184000},
     {'is_helped': True, 'item_rating': 6.0, 'item_count': 3, 'usage_period': 2592000},
     {'is_helped': True, 'item_rating': 8.0, 'item_count': 4, 'usage_period': 2592000},
@@ -205,7 +205,7 @@ def insert_medical_book_reviews(medical_book_ids: list[int],
                                 ) -> None:
     """Вставляет данные в таблицу `medical_books_item_reviews`."""
     updated_medical_book_reviews_data: list[dict] = [
-        {'medical_book_id': medical_book_review, 'item_review_id': review_id}
+        {'med_book_id': medical_book_review, 'item_review_id': review_id}
         for medical_book_review, review_id
         in zip(cycle(medical_book_ids), review_ids)
     ]
@@ -222,11 +222,11 @@ def insert_medical_book_symptoms(medical_book_ids: list[int],
                                  ) -> None:
     """Вставляет данные в таблицу `medical_books_symptoms`."""
     updated_medical_book_symptoms_data: list[dict] = []
-    for symptom_count, medical_book_id in enumerate(medical_book_ids, start=1):
+    for symptom_count, med_book_id in enumerate(medical_book_ids, start=1):
         symptoms_to_add = symptom_ids[:symptom_count]
         updated_medical_book_symptoms_data.extend(
             [
-                {'medical_book_id': medical_book_id, 'symptom_id': symptom_id}
+                {'med_book_id': med_book_id, 'symptom_id': symptom_id}
                 for symptom_id in symptoms_to_add
             ]
         )

@@ -1,10 +1,9 @@
 import logging.config
-from typing import Dict
 
 from .settings import Settings
 
 
-def configure(*configs: Dict):
+def configure(*configs: dict) -> None:
     result_config = Settings().LOGGING_CONFIG
 
     for config in configs:

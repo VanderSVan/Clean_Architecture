@@ -1,7 +1,6 @@
 from sqlalchemy.orm import registry, relationship
 
 from simple_medication_selection.application import entities
-
 from . import tables
 
 mapper = registry()
@@ -16,7 +15,10 @@ mapper.map_imperatively(
     tables.treatment_items,
     properties={
         'reviews': relationship(
-            entities.ItemReview, lazy='subquery', cascade='save-update, merge'
+            entities.ItemReview,
+            lazy='select',
+            cascade='all, delete-orphan',
+            order_by=tables.item_reviews.c.item_rating.desc()
         )
     }
 )
@@ -28,37 +30,30 @@ mapper.map_imperatively(
         'symptoms': relationship(
             entities.Symptom,
             secondary=tables.medical_books_symptoms,
-            lazy='subquery',
-            cascade='save-update, merge'
+            lazy='select',
+            cascade='save-update, merge',
+            order_by=tables.symptoms.c.name.asc()
         ),
         'item_reviews': relationship(
             entities.ItemReview,
             secondary=tables.medical_books_item_reviews,
-            lazy='subquery',
-            cascade='save-update, merge'
+            lazy='select',
+            cascade='save-update, merge',
+            order_by=tables.item_reviews.c.item_rating.desc()
         ),
         'diagnosis': relationship(
-            entities.Diagnosis, uselist=False, lazy='joined', backref='medical_books'
+            entities.Diagnosis,
+            uselist=False,
+            lazy='select',
+            backref='medical_books',
+            order_by=tables.diagnoses.c.name.asc()
         ),
         'patient': relationship(
-            entities.Patient, uselist=False, lazy='joined', backref='medical_books'
+            entities.Patient,
+            uselist=False,
+            lazy='select',
+            cascade='save-update, merge',
+            order_by=tables.patients.c.nickname.asc()
         ),
     }
 )
-
-# mapper.map_imperatively(
-#     entities.TreatmentItem,
-#     tables.treatment_items,
-#     properties={
-#         'reviews': relationship(entities.ItemReview, lazy='joined', back_populates='item')
-#     }
-# )
-# mapper.map_imperatively(
-#     entities.ItemReview,
-#     tables.item_reviews,
-#     properties={
-#         'item': relationship(
-#             entities.TreatmentItem, lazy='joined', back_populates='reviews'
-#         )
-#     }
-# )
