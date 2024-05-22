@@ -1,19 +1,18 @@
-from dataclasses import asdict
 from unittest.mock import call
 
-from simple_medication_selection.application import entities, dtos, schemas
+from simple_medication_selection.application import dtos, schemas
 
 # ---------------------------------------------------------------------------------------
 # SETUP
 # ---------------------------------------------------------------------------------------
-REVIEW_1 = entities.ItemReview(id=1, item_id=1, is_helped=True, item_rating=9.5,
-                               item_count=5, usage_period=7776000)
-REVIEW_2 = entities.ItemReview(id=2, item_id=1, is_helped=False, item_rating=3.5,
-                               item_count=3, usage_period=2592000)
-REVIEW_3 = entities.ItemReview(id=3, item_id=2, is_helped=True, item_rating=7.5,
-                               item_count=2, usage_period=7776000)
+REVIEW_1 = dict(id=1, item_id=1, is_helped=True, item_rating=9.5, item_count=5,
+                usage_period=7776000)
+REVIEW_2 = dict(id=2, item_id=1, is_helped=False, item_rating=3.5, item_count=3,
+                usage_period=2592000)
+REVIEW_3 = dict(id=3, item_id=2, is_helped=True, item_rating=7.5, item_count=2,
+                usage_period=7776000)
 
-REVIEW_LIST: list[entities.ItemReview] = [REVIEW_1, REVIEW_2, REVIEW_3]
+REVIEW_LIST: list[dict] = [REVIEW_1, REVIEW_2, REVIEW_3]
 
 
 # ---------------------------------------------------------------------------------------
@@ -23,7 +22,7 @@ class TestOnGetById:
     def test__on_get_by_id(self, item_review_service, client):
         # Setup
 
-        returned_review = dtos.ItemReview(**asdict(REVIEW_1))
+        returned_review = dtos.ItemReview(**REVIEW_1)
         review_id: int = returned_review.id
         item_review_service.get_review.return_value = returned_review
 
@@ -40,7 +39,7 @@ class TestOnGetById:
 class TestOnGet:
     def test__on_get(self, item_review_service, client):
         # Setup
-        returned_reviews = [dtos.ItemReview(**asdict(review)) for review in REVIEW_LIST]
+        returned_reviews = [dtos.ItemReview(**review) for review in REVIEW_LIST]
         item_review_service.find_reviews.return_value = returned_reviews
         filter_params = schemas.FindItemReviews(
             item_ids=[1, 2],
@@ -83,7 +82,7 @@ class TestOnGet:
 
     def test_on_get_default(self, item_review_service, client):
         # Setup
-        returned_reviews = [dtos.ItemReview(**asdict(review)) for review in REVIEW_LIST]
+        returned_reviews = [dtos.ItemReview(**review) for review in REVIEW_LIST]
         item_review_service.find_reviews.return_value = returned_reviews
         filter_params = schemas.FindItemReviews(exclude_review_fields=[])
 
@@ -125,8 +124,8 @@ class TestOnPostNew:
 class TestOnPutById:
     def test__on_put_by_id(self, item_review_service, client):
         # Setup
-        updated_review_info = dtos.UpdatedItemReviewInfo(**asdict(REVIEW_1))
-        returned_review = dtos.ItemReview(**asdict(REVIEW_1))
+        updated_review_info = dtos.UpdatedItemReviewInfo(**REVIEW_1)
+        returned_review = dtos.ItemReview(**REVIEW_1)
         item_review_service.change.return_value = returned_review
 
         # Call
@@ -146,7 +145,7 @@ class TestOnPutById:
 class TestDeleteById:
     def test__on_delete_by_id(self, item_review_service, client):
         # Setup
-        returned_review = dtos.ItemReview(**asdict(REVIEW_1))
+        returned_review = dtos.ItemReview(**REVIEW_1)
         item_review_service.delete.return_value = returned_review
 
         # Call

@@ -1,15 +1,14 @@
-from dataclasses import asdict
 from unittest.mock import call
 
-from simple_medication_selection.application import entities, dtos, schemas
+from simple_medication_selection.application import dtos, schemas
 
 # ---------------------------------------------------------------------------------------
 # SETUP
 # ---------------------------------------------------------------------------------------
-CATEGORY_1 = entities.ItemCategory(id=1, name='Категория 1')
-CATEGORY_2 = entities.ItemCategory(id=2, name='Категория 2')
-CATEGORY_3 = entities.ItemCategory(id=3, name='Категория 3')
-CATEGORY_LIST: list[entities.ItemCategory] = [CATEGORY_1, CATEGORY_2, CATEGORY_3]
+CATEGORY_1 = dict(id=1, name='Категория 1')
+CATEGORY_2 = dict(id=2, name='Категория 2')
+CATEGORY_3 = dict(id=3, name='Категория 3')
+CATEGORY_LIST: list[dict] = [CATEGORY_1, CATEGORY_2, CATEGORY_3]
 
 
 # ---------------------------------------------------------------------------------------
@@ -18,8 +17,9 @@ CATEGORY_LIST: list[entities.ItemCategory] = [CATEGORY_1, CATEGORY_2, CATEGORY_3
 class TestOnGet:
     def test__on_get(self, item_category_service, client):
         # Setup
-        service_output = [dtos.ItemCategory(**asdict(category))
-                          for category in CATEGORY_LIST]
+        service_output = [
+            dtos.ItemCategory(**category) for category in CATEGORY_LIST
+        ]
         item_category_service.find.return_value = service_output
         filter_params = schemas.FindItemCategories(
             keywords='Категория',
@@ -47,7 +47,7 @@ class TestOnGet:
 
     def test__on_get_default(self, item_category_service, client):
         # Setup
-        service_output = [dtos.ItemCategory(**asdict(category))
+        service_output = [dtos.ItemCategory(**category)
                           for category in CATEGORY_LIST]
         item_category_service.find.return_value = service_output
         filter_params = schemas.FindItemCategories()
@@ -67,9 +67,9 @@ class TestOnGet:
 class TestOnGetById:
     def test__on_get_by_id(self, item_category_service, client):
         # Setup
-        service_output = dtos.ItemCategory(**asdict(CATEGORY_1))
+        service_output = dtos.ItemCategory(**CATEGORY_1)
         item_category_service.get.return_value = service_output
-        url: str = f'/item_categories/{CATEGORY_1.id}'
+        url: str = f'/item_categories/{CATEGORY_1["id"]}'
 
         # Call
         response = client.simulate_get(url)
@@ -77,14 +77,14 @@ class TestOnGetById:
         # Assert
         assert response.status_code == 200
         assert response.json == service_output
-        assert item_category_service.method_calls == [call.get(str(CATEGORY_1.id))]
+        assert item_category_service.method_calls == [call.get(str(CATEGORY_1["id"]))]
 
 
 class TestOnPostNew:
     def test__on_post_new(self, item_category_service, client):
         # Setup
         service_input = dtos.NewItemCategoryInfo(name='Новая категория')
-        service_output = dtos.ItemCategory(**asdict(CATEGORY_1))
+        service_output = dtos.ItemCategory(**CATEGORY_1)
         item_category_service.add.return_value = service_output
 
         # Call
@@ -100,7 +100,7 @@ class TestOnPutById:
     def test__on_put_by_id(self, item_category_service, client):
         # Setup
         service_input = dtos.ItemCategory(id=1, name='Новая категория')
-        service_output = dtos.ItemCategory(**asdict(CATEGORY_1))
+        service_output = dtos.ItemCategory(**CATEGORY_1)
         item_category_service.change.return_value = service_output
 
         # Call
@@ -116,7 +116,7 @@ class TestOnPutById:
 class TestOnDeleteById:
     def test__on_delete_by_id(self, item_category_service, client):
         # Setup
-        service_output = dtos.ItemCategory(**asdict(CATEGORY_1))
+        service_output = dtos.ItemCategory(**CATEGORY_1)
         item_category_service.delete.return_value = service_output
 
         # Call

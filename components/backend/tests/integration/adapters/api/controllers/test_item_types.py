@@ -1,15 +1,14 @@
-from dataclasses import asdict
 from unittest.mock import call
 
-from simple_medication_selection.application import entities, dtos, schemas
+from simple_medication_selection.application import dtos, schemas
 
 # ---------------------------------------------------------------------------------------
 # SETUP
 # ---------------------------------------------------------------------------------------
-ITEM_TYPE_1 = entities.ItemType(id=1, name='Тип 1')
-ITEM_TYPE_2 = entities.ItemType(id=2, name='Тип 2')
-ITEM_TYPE_3 = entities.ItemType(id=3, name='Тип 3')
-ITEM_TYPE_LIST: list[entities.ItemType] = [ITEM_TYPE_1, ITEM_TYPE_2, ITEM_TYPE_3]
+ITEM_TYPE_1 = dict(id=1, name='Тип 1')
+ITEM_TYPE_2 = dict(id=2, name='Тип 2')
+ITEM_TYPE_3 = dict(id=3, name='Тип 3')
+ITEM_TYPE_LIST: list[dict] = [ITEM_TYPE_1, ITEM_TYPE_2, ITEM_TYPE_3]
 
 
 # ---------------------------------------------------------------------------------------
@@ -18,8 +17,9 @@ ITEM_TYPE_LIST: list[entities.ItemType] = [ITEM_TYPE_1, ITEM_TYPE_2, ITEM_TYPE_3
 class TestOnGet:
     def test__on_get(self, item_type_service, client):
         # Setup
-        service_output = [dtos.ItemType(**asdict(item_type))
-                          for item_type in ITEM_TYPE_LIST]
+        service_output = [
+            dtos.ItemType(**item_type) for item_type in ITEM_TYPE_LIST
+        ]
         item_type_service.find.return_value = service_output
         filter_params = schemas.FindItemTypes(
             keywords='Тип',
@@ -47,8 +47,9 @@ class TestOnGet:
 
     def test__on_get_default(self, item_type_service, client):
         # Setup
-        service_output = [dtos.ItemType(**asdict(item_type))
-                          for item_type in ITEM_TYPE_LIST]
+        service_output = [
+            dtos.ItemType(**item_type) for item_type in ITEM_TYPE_LIST
+        ]
         item_type_service.find.return_value = service_output
         filter_params = schemas.FindItemTypes()
 
@@ -67,9 +68,9 @@ class TestOnGet:
 class TestOnGetById:
     def test__on_get_by_id(self, item_type_service, client):
         # Setup
-        service_output = dtos.ItemType(**asdict(ITEM_TYPE_1))
+        service_output = dtos.ItemType(**ITEM_TYPE_1)
         item_type_service.get.return_value = service_output
-        url: str = f'/item_types/{ITEM_TYPE_1.id}'
+        url: str = f'/item_types/{service_output.id}'
 
         # Call
         response = client.simulate_get(url)
@@ -77,14 +78,14 @@ class TestOnGetById:
         # Assert
         assert response.status_code == 200
         assert response.json == service_output
-        assert item_type_service.method_calls == [call.get(str(ITEM_TYPE_1.id))]
+        assert item_type_service.method_calls == [call.get(str(service_output.id))]
 
 
 class TestOnPostNew:
     def test__on_post_new(self, item_type_service, client):
         # Setup
         service_input = dtos.NewItemTypeInfo(name='Новый тип')
-        service_output = dtos.ItemType(**asdict(ITEM_TYPE_1))
+        service_output = dtos.ItemType(**ITEM_TYPE_1)
         item_type_service.add.return_value = service_output
 
         # Call
@@ -100,7 +101,7 @@ class TestOnPutById:
     def test__on_put_by_id(self, item_type_service, client):
         # Setup
         service_input = dtos.ItemType(id=1, name='Новый тип')
-        service_output = dtos.ItemType(**asdict(ITEM_TYPE_1))
+        service_output = dtos.ItemType(**ITEM_TYPE_1)
         item_type_service.change.return_value = service_output
 
         # Call
@@ -116,7 +117,7 @@ class TestOnPutById:
 class TestOnDeleteById:
     def test__on_delete_by_id(self, item_type_service, client):
         # Setup
-        service_output = dtos.ItemType(**asdict(ITEM_TYPE_1))
+        service_output = dtos.ItemType(**ITEM_TYPE_1)
         item_type_service.delete.return_value = service_output
 
         # Call

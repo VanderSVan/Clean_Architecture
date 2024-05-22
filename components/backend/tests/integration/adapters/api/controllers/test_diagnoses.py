@@ -1,15 +1,14 @@
-from dataclasses import asdict
 from unittest.mock import call
 
-from simple_medication_selection.application import entities, dtos, schemas
+from simple_medication_selection.application import dtos, schemas
 
 # ---------------------------------------------------------------------------------------
 # SETUP
 # ---------------------------------------------------------------------------------------
-DIAGNOSIS_1 = entities.Diagnosis(id=1, name='Диагноз 1')
-DIAGNOSIS_2 = entities.Diagnosis(id=2, name='Диагноз 2')
-DIAGNOSIS_3 = entities.Diagnosis(id=3, name='Диагноз 3')
-DIAGNOSIS_LIST: list[entities.Diagnosis] = [DIAGNOSIS_1, DIAGNOSIS_2, DIAGNOSIS_3]
+DIAGNOSIS_1 = dict(id=1, name='Диагноз 1')
+DIAGNOSIS_2 = dict(id=2, name='Диагноз 2')
+DIAGNOSIS_3 = dict(id=3, name='Диагноз 3')
+DIAGNOSIS_LIST: list[dict] = [DIAGNOSIS_1, DIAGNOSIS_2, DIAGNOSIS_3]
 
 
 # ---------------------------------------------------------------------------------------
@@ -18,8 +17,9 @@ DIAGNOSIS_LIST: list[entities.Diagnosis] = [DIAGNOSIS_1, DIAGNOSIS_2, DIAGNOSIS_
 class TestOnGet:
     def test__on_get(self, diagnosis_service, client):
         # Setup
-        service_output: list[dtos.Diagnosis] = [dtos.Diagnosis(**asdict(diagnosis))
-                                                for diagnosis in DIAGNOSIS_LIST]
+        service_output: list[dtos.Diagnosis] = [
+            dtos.Diagnosis(**diagnosis_info) for diagnosis_info in DIAGNOSIS_LIST
+        ]
         diagnosis_service.find.return_value = service_output
         filter_params = schemas.FindDiagnoses(
             keywords='Диагноз',
@@ -47,8 +47,9 @@ class TestOnGet:
 
     def test__on_get_default(self, diagnosis_service, client):
         # Setup
-        service_output = [dtos.Diagnosis(**asdict(diagnosis))
-                          for diagnosis in DIAGNOSIS_LIST]
+        service_output: list[dtos.Diagnosis] = [
+            dtos.Diagnosis(**diagnosis_info) for diagnosis_info in DIAGNOSIS_LIST
+        ]
         diagnosis_service.find.return_value = service_output
         filter_params = schemas.FindDiagnoses()
 
@@ -67,7 +68,7 @@ class TestOnGet:
 class TestOnGetById:
     def test__on_get_by_id(self, diagnosis_service, client):
         # Setup
-        service_output = dtos.Diagnosis(**asdict(DIAGNOSIS_1))
+        service_output = dtos.Diagnosis(**DIAGNOSIS_1)
         diagnosis_service.get.return_value = service_output
 
         # Call
@@ -83,7 +84,7 @@ class TestOnPostNew:
     def test__on_post_new(self, diagnosis_service, client):
         # Setup
         service_input = dtos.NewDiagnosisInfo(name='Новый диагноз')
-        service_output = dtos.Diagnosis(**asdict(DIAGNOSIS_1))
+        service_output = dtos.Diagnosis(**DIAGNOSIS_1)
         diagnosis_service.add.return_value = service_output
 
         # Call
@@ -99,7 +100,7 @@ class TestOnPutById:
     def test__on_put_by_id(self, diagnosis_service, client):
         # Setup
         service_input = dtos.Diagnosis(id=1, name='Новый диагноз')
-        service_output = dtos.Diagnosis(**asdict(DIAGNOSIS_1))
+        service_output = dtos.Diagnosis(**DIAGNOSIS_1)
         diagnosis_service.change.return_value = service_output
 
         # Call
@@ -116,7 +117,7 @@ class TestOnPutById:
 class TestOnDeleteById:
     def test__on_delete_by_id(self, diagnosis_service, client):
         # Setup
-        service_output = dtos.Diagnosis(**asdict(DIAGNOSIS_1))
+        service_output = dtos.Diagnosis(**DIAGNOSIS_1)
         diagnosis_service.delete.return_value = service_output
 
         # Call

@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     TEST_DATABASE_HOST: str = Field(None, env='TEST_DATABASE_HOST')
     TEST_DATABASE_PORT: int = Field(None, env='TEST_DATABASE_PORT')
     TEST_DATABASE_USER: str = Field(None, env='TEST_DATABASE_USER')
-    TEST_DATABASE_PASS: str = Field(None, env='TEST_DATABASE_PASS')
+    TEST_DATABASE_PASSWORD: str = Field(None, env='TEST_DATABASE_PASSWORD')
 
     # Python путь к директории, в которой находится исполняемый файл alembic
     # (пример: <project_name>.entrypoints:alembic)
@@ -58,7 +58,7 @@ class Settings(BaseSettings):
         return (
             'postgresql+psycopg2://'
             f'{self.TEST_DATABASE_USER}:'
-            f'{self.TEST_DATABASE_PASS}@'
+            f'{self.TEST_DATABASE_PASSWORD}@'
             f'{self.TEST_DATABASE_HOST}:'
             f'{self.TEST_DATABASE_PORT}/'
             f'{self.TEST_DATABASE_NAME}'
