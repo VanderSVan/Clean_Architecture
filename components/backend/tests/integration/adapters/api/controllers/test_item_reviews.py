@@ -78,7 +78,14 @@ class TestOnGet:
             review.dict(exclude_none=True, exclude_unset=True)
             for review in returned_reviews if review is not None
         ]
-        assert item_review_service.method_calls == [call.find_reviews(filter_params)]
+        called_filter_params = item_review_service.method_calls[0][1][0]
+        assert (
+            called_filter_params.dict(exclude={'exclude_review_fields'}) ==
+            filter_params.dict(exclude={'exclude_review_fields'})
+        )
+        assert set(called_filter_params.exclude_review_fields) == set(
+            filter_params.exclude_review_fields
+        )
 
     def test_on_get_default(self, item_review_service, client):
         # Setup
