@@ -77,8 +77,9 @@ RUN poetry build
 # ====================================================
 FROM base as tests
 
+USER root
 # Скопировать и сделать исполняемыми скрипты проекта
-COPY ./deployment/backend/entrypoint_*.sh /usr/bin/
+COPY ./deployment/backend/entrypoints/entrypoint_*.sh /usr/bin/
 RUN chmod +x /usr/bin/entrypoint_*.sh
 
 # Установка рабочего каталога и копирование файлов проекта
@@ -103,7 +104,7 @@ ENV API_ENV=development
 WORKDIR $PYSETUP_PATH
 
 # Скопировать и сделать исполняемыми скрипты проекта
-COPY ./deployment/backend/entrypoint_*.sh /usr/bin/
+COPY ./deployment/backend/entrypoints/entrypoint_*.sh /usr/bin/
 RUN chmod +x /usr/bin/entrypoint_*.sh
 
 # Копирование установленного Poetry и зависимостей из dependency-installer стадии
@@ -126,7 +127,7 @@ ENV API_ENV=production
 USER $USERNAME
 
 # Скопировать и сделать исполняемыми скрипты проекта
-COPY ./deployment/backend/entrypoint_*.sh /usr/bin/
+COPY ./deployment/backend/entrypoints/entrypoint_*.sh /usr/bin/
 RUN chmod +x /usr/bin/entrypoint_*.sh
 
 # Копирование собранного пакета проекта из builder стадии
