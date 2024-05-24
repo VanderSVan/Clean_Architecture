@@ -1,6 +1,10 @@
-from pydantic import validate_call
+from typing import Sequence
 
-from simple_medication_selection.application import dtos, entities, interfaces, errors
+from pydantic import validate_arguments
+
+from simple_medication_selection.application import (
+    dtos, entities, interfaces, errors, schemas
+)
 from ..utils import DecoratedFunctionRegistry
 
 decorated_function_registry = DecoratedFunctionRegistry()
@@ -8,48 +12,81 @@ register_method = decorated_function_registry.register_function
 
 
 class ItemCategory:
-    def __init__(self, item_categories_repo: interfaces.ItemCategoriesRepo):
-        self.item_categories_repo = item_categories_repo
+    def __init__(self, categories_repo: interfaces.ItemCategoriesRepo):
+        self.categories_repo = categories_repo
 
     @register_method
-    @validate_call
-    def get(self, item_category_id: int) -> entities.ItemCategory:
-        item_category = self.item_categories_repo.get_by_id(item_category_id)
+    @validate_arguments
+    def get(self, category_id: int) -> dtos.ItemCategory:
+        category = self.categories_repo.fetch_by_id(category_id)
 
-        if not item_category:
-            raise errors.ItemCategoryNotFound(id=item_category_id)
+        if not category:
+            raise errors.ItemCategoryNotFound(id=category_id)
 
-        return item_category
-
-    @register_method
-    @validate_call
-    def create(self, new_item_category_info: dtos.ItemCategoryCreateSchema) -> None:
-        item_category: entities.ItemCategory = self.item_categories_repo.get_by_name(new_item_category_info.name)
-
-        if item_category:
-            raise errors.ItemCategoryAlreadyExists(name=new_item_category_info.name)
-
-        new_item_category: entities.ItemCategory = new_item_category_info.create_obj(entities.ItemCategory)
-        self.item_categories_repo.add(new_item_category)
+        return dtos.ItemCategory.from_orm(category)
 
     @register_method
-    @validate_call
-    def update(self, new_item_category_info: dtos.ItemCategoryUpdateSchema) -> None:
-        item_category: entities.ItemCategory = self.item_categories_repo.get_by_id(new_item_category_info.id)
-        if not item_category:
-            raise errors.ItemCategoryNotFound(id=new_item_category_info.id)
+    @validate_arguments
+    def find(self,
+             filter_params: schemas.FindItemCategories
+             ) -> list[dtos.Diagnosis | None]:
 
-        if new_item_category_info.name == item_category.name:
-            raise errors.ItemCategoryAlreadyExists(name=new_item_category_info.name)
+        if filter_params.keywords:
+            categories: Sequence[entities.Diagnosis | None] = (
+                self.categories_repo.search_by_name(filter_params)
+            )
+            return [dtos.Diagnosis.from_orm(diagnosis) for diagnosis in categories]
 
-        new_item_category_info.populate_obj(item_category)
+        categories: Sequence[entities.Diagnosis | None] = (
+            self.categories_repo.fetch_all(filter_params)
+        )
+        return [dtos.Diagnosis.from_orm(diagnosis) for diagnosis in categories]
 
     @register_method
-    @validate_call
-    def delete(self, item_category_info: dtos.ItemCategoryDeleteSchema) -> None:
-        item_category = self.item_categories_repo.get_by_id(item_category_info.id)
+    @validate_arguments
+    def add(self, new_category_info: dtos.NewItemCategoryInfo) -> dtos.ItemCategory:
 
-        if not item_category:
-            raise errors.ItemCategoryNotFound(id=item_category_info.id)
+        category: entities.ItemCategory = (
+            self.categories_repo.fetch_by_name(new_category_info.name)
+        )
+        if category:
+            raise errors.ItemCategoryAlreadyExists(name=new_category_info.name)
 
-        self.item_categories_repo.remove(item_category)
+        new_item_category: entities.ItemCategory = (
+            new_category_info.create_obj(entities.ItemCategory)
+        )
+        added_category: entities.ItemCategory = (
+            self.categories_repo.add(new_item_category)
+        )
+        return dtos.ItemCategory.from_orm(added_category)
+
+    @register_method
+    @validate_arguments
+    def change(self, new_category_info: dtos.ItemCategory) -> dtos.ItemCategory:
+
+        category: entities.ItemCategory = (
+            self.categories_repo.fetch_by_id(new_category_info.id)
+        )
+        if not category:
+            raise errors.ItemCategoryNotFound(id=new_category_info.id)
+
+        category_with_same_name: entities.ItemCategory | None = (
+            self.categories_repo.fetch_by_name(new_category_info.name)
+        )
+        if category_with_same_name and category_with_same_name.id != category.id:
+            raise errors.ItemCategoryAlreadyExists(name=new_category_info.name)
+
+        updated_category: entities.ItemCategory = new_category_info.populate_obj(category)
+        return dtos.ItemCategory.from_orm(updated_category)
+
+    @register_method
+    @validate_arguments
+    def delete(self, category_id: int) -> dtos.ItemCategory:
+
+        category = self.categories_repo.fetch_by_id(category_id)
+
+        if not category:
+            raise errors.ItemCategoryNotFound(id=category_id)
+
+        removed_category: entities.ItemCategory = self.categories_repo.remove(category)
+        return dtos.ItemCategory.from_orm(removed_category)

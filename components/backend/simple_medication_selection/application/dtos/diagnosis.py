@@ -1,21 +1,15 @@
-from .base import DTO
-
 from pydantic import Field
 
-
-class DiagnosisCreateSchema(DTO):
-    name: str = Field(..., min_length=1, max_length=100)
+from .base import DTO
 
 
-class DiagnosisGetSchema(DTO):
-    id: int = Field(..., ge=1)
-    name: str = Field(..., min_length=1, max_length=100)
+class Diagnosis(DTO):
+    id: int = Field(ge=1)
+    name: str = Field(min_length=1, max_length=100)
+
+    class Config:
+        orm_mode = True
 
 
-class DiagnosisUpdateSchema(DTO):
-    id: int = Field(..., ge=1)
-    name: str = Field(..., min_length=1, max_length=100)
-
-
-class DiagnosisDeleteSchema(DTO):
-    id: int = Field(..., ge=1)
+class NewDiagnosisInfo(DTO):
+    name: str = Field(min_length=1, max_length=100)

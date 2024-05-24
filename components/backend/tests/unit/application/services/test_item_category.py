@@ -1,8 +1,9 @@
 from unittest.mock import Mock, call
 
 import pytest
-from simple_medication_selection.application import (dtos, entities, errors,
-                                                     interfaces, services)
+from simple_medication_selection.application import (
+    dtos, entities, errors, interfaces, services, schemas
+)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -15,150 +16,216 @@ def repo() -> Mock:
 
 @pytest.fixture(scope='function')
 def service(repo) -> services.ItemCategory:
-    return services.ItemCategory(item_categories_repo=repo)
+    return services.ItemCategory(categories_repo=repo)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
 # TESTS
 # ----------------------------------------------------------------------------------------------------------------------
-@pytest.mark.parametrize("entity", [
-    entities.ItemCategory(id=1, name='Аптечные продукты'),
-])
-def test__get_existing_item_category(entity, service, repo):
-    # Setup
-    repo.get_by_id.return_value = entity
 
-    # Call
-    service.get(item_category_id=entity.id)
-
-    # Assert
-    expected_calls_for_repo = [call.get_by_id(entity.id)]
-    assert repo.method_calls == expected_calls_for_repo
-
-
-@pytest.mark.parametrize("entity", [
-    entities.ItemCategory(id=2, name='Уходовая косметика'),
-])
-def test_get_non_existing_item_category(entity, service, repo):
-    # Setup
-    repo.get_by_id.return_value = None
-
-    # Call and Assert
-    with pytest.raises(errors.ItemCategoryNotFound):
-        service.get(item_category_id=entity.id)
-
-    expected_calls_for_repo = [call.get_by_id(entity.id)]
-    assert repo.method_calls == expected_calls_for_repo
-
-
-@pytest.mark.parametrize("entity, dto", [
-    (entities.ItemCategory(name='Аптечные продукты'), dtos.ItemCategoryCreateSchema(name='Аптечные продукты'))
-])
-def test__create_new_item_category(entity, dto, service, repo):
-    # Setup
-    repo.get_by_name.return_value = None
-    repo.add.return_value = None
-
-    # Call
-    service.create(new_item_category_info=dto)
-
-    # Assert
-    expected_calls_for_repo = [call.get_by_name(dto.name), call.add(entity)]
-    assert repo.method_calls == expected_calls_for_repo
-
-
-@pytest.mark.parametrize("entity, dto", [
-    (entities.ItemCategory(id=1, name='Аптечные продукты'), dtos.ItemCategoryCreateSchema(name='Аптечные продукты')),
-])
-def test__create_existing_item_category(entity, dto, service, repo):
-    # Setup
-    repo.get_by_name.return_value = entity
-
-    # Call and Assert
-    with pytest.raises(errors.ItemCategoryAlreadyExists):
-        service.create(new_item_category_info=dto)
-
-    expected_calls_for_repo = [call.get_by_name(dto.name)]
-    assert repo.method_calls == expected_calls_for_repo
-
-
-@pytest.mark.parametrize("entity, dto", [
-    (
+class TestGet:
+    @pytest.mark.parametrize("repo_output, service_output", [
+        (
             entities.ItemCategory(id=1, name='Аптечные продукты'),
-            dtos.ItemCategoryUpdateSchema(id=1, name='Уходовая косметика')
-    ),
-])
-def test__update_existing_item_category(entity, dto, service, repo):
-    # Setup
-    repo.get_by_id.return_value = entity
+            dtos.ItemCategory(id=1, name='Аптечные продукты')
+        )
+    ])
+    def test__get(self, repo_output, service_output, service, repo):
+        # Setup
+        repo.fetch_by_id.return_value = repo_output
 
-    # Call
-    service.update(new_item_category_info=dto)
+        # Call
+        result = service.get(category_id=repo_output.id)
 
-    # Assert
-    expected_calls_for_repo = [call.get_by_id(dto.id)]
-    assert repo.method_calls == expected_calls_for_repo
+        # Assert
+        assert repo.method_calls == [call.fetch_by_id(repo_output.id)]
+        assert result == service_output
 
+    @pytest.mark.parametrize("repo_output", [
+        entities.ItemCategory(id=1, name='Аптечные продукты')
+    ])
+    def test_get_non_existing_category(self, repo_output, service, repo):
+        # Setup
+        repo.fetch_by_id.return_value = None
 
-@pytest.mark.parametrize("entity, dto", [
-    (None, dtos.ItemCategoryUpdateSchema(id=1, name='Псориаз'))
-])
-def test__update_non_existing_item_category(entity, dto, service, repo):
-    # Setup
-    repo.get_by_id.return_value = entity
+        # Call and Assert
+        with pytest.raises(errors.ItemCategoryNotFound):
+            service.get(category_id=repo_output.id)
 
-    # Call and Assert
-    with pytest.raises(errors.ItemCategoryNotFound):
-        service.update(new_item_category_info=dto)
-
-    expected_calls_for_repo = [call.get_by_id(dto.id)]
-    assert repo.method_calls == expected_calls_for_repo
+        assert repo.method_calls == [call.fetch_by_id(repo_output.id)]
 
 
-@pytest.mark.parametrize("entity, dto", [
-    (
+class TestFind:
+    @pytest.mark.parametrize("repo_output, filter_params, service_output", [
+        (
+            [entities.ItemCategory(id=1, name='Аптечные продукты')],
+            schemas.FindItemCategories(keywords='аптеч'),
+            [dtos.ItemCategory(id=1, name='Аптечные продукты')]
+        )
+    ])
+    def test__find_by_keywords(self, repo_output, filter_params, service_output, service,
+                               repo):
+        # Setup
+        repo.search_by_name.return_value = repo_output
+
+        # Call
+        result = service.find(filter_params=filter_params)
+
+        # Assert
+        assert repo.method_calls == [call.search_by_name(filter_params)]
+        assert result == service_output
+
+    @pytest.mark.parametrize("repo_output, filter_params, service_output", [
+        (
+            [entities.ItemCategory(id=1, name='Аптечные продукты')],
+            schemas.FindItemCategories(),
+            [dtos.ItemCategory(id=1, name='Аптечные продукты')]
+        )
+    ])
+    def test__find_without_keywords(self, repo_output, filter_params, service_output,
+                                    service, repo):
+        # Setup
+        repo.fetch_all.return_value = repo_output
+
+        # Call
+        result = service.find(filter_params=filter_params)
+
+        # Assert
+        assert repo.method_calls == [call.fetch_all(filter_params)]
+        assert result == service_output
+
+
+class TestAdd:
+    @pytest.mark.parametrize("new_entity, input_dto, repo_output, service_output", [
+        (
+            entities.ItemCategory(name='Аптечные продукты'),
+            dtos.NewItemCategoryInfo(name='Аптечные продукты'),
             entities.ItemCategory(id=1, name='Аптечные продукты'),
-            dtos.ItemCategoryUpdateSchema(id=1, name='Аптечные продукты')
-    ),
-])
-def test__update_existing_item_category_with_same_name(entity, dto, service, repo):
-    # Setup
-    repo.get_by_id.return_value = entity
+            dtos.ItemCategory(id=1, name='Аптечные продукты')
+        )
+    ])
+    def test__add_new_category(self, new_entity, input_dto, repo_output, service_output,
+                               service, repo):
+        # Setup
+        repo.fetch_by_name.return_value = None
+        repo.add.return_value = repo_output
 
-    # Call and Assert
-    with pytest.raises(errors.ItemCategoryAlreadyExists):
-        service.update(new_item_category_info=dto)
+        # Call
+        result = service.add(new_category_info=input_dto)
 
-    expected_calls_for_repo = [call.get_by_id(dto.id)]
-    assert repo.method_calls == expected_calls_for_repo
+        # Assert
+        assert repo.method_calls == [
+            call.fetch_by_name(input_dto.name),
+            call.add(new_entity)
+        ]
+        assert result == service_output
+
+    @pytest.mark.parametrize("existing_entity, dto", [
+        (
+            entities.ItemCategory(id=1, name='Аптечные продукты'),
+            dtos.NewItemCategoryInfo(name='Аптечные продукты')
+        ),
+    ])
+    def test__add_existing_category(self, existing_entity, dto, service, repo):
+        # Setup
+        repo.fetch_by_name.return_value = existing_entity
+
+        # Call and Assert
+        with pytest.raises(errors.ItemCategoryAlreadyExists):
+            service.add(new_category_info=dto)
+
+        assert repo.method_calls == [call.fetch_by_name(dto.name)]
 
 
-@pytest.mark.parametrize("entity, dto", [
-    (entities.ItemCategory(id=1, name='Аптечные продукты'), dtos.ItemCategoryDeleteSchema(id=1))
-])
-def test__delete_existing_item_category(entity, dto, service, repo):
-    # Setup
-    repo.get_by_id.return_value = entity
-    repo.remove.return_value = None
+class TestChange:
+    @pytest.mark.parametrize("repo_output, new_info, service_output", [
+        (
+            entities.ItemCategory(id=1, name='Аптечные продукты'),
+            dtos.ItemCategory(id=1, name='Уходовая косметика'),
+            dtos.ItemCategory(id=1, name='Уходовая косметика')
+        ),
+    ])
+    def test__change_category(self, repo_output, new_info, service_output,
+                              service, repo):
+        # Setup
+        repo.fetch_by_id.return_value = repo_output
+        repo.fetch_by_name.return_value = None
 
-    # Call
-    service.delete(item_category_info=dto)
+        # Call
+        result = service.change(new_category_info=new_info)
 
-    # Assert
-    expected_calls_for_repo = [call.get_by_id(dto.id), call.remove(entity)]
-    assert repo.method_calls == expected_calls_for_repo
+        # Assert
+        assert repo.method_calls == [
+            call.fetch_by_id(new_info.id),
+            call.fetch_by_name(new_info.name)
+        ]
+        assert result == service_output
+
+    @pytest.mark.parametrize("dto", [
+        dtos.ItemCategory(id=1, name='Псориаз')
+    ])
+    def test__category_not_found(self, dto, service, repo):
+        # Setup
+        repo.fetch_by_id.return_value = None
+
+        # Call and Assert
+        with pytest.raises(errors.ItemCategoryNotFound):
+            service.change(new_category_info=dto)
+
+        assert repo.method_calls == [call.fetch_by_id(dto.id)]
+
+    @pytest.mark.parametrize("repo_fetch_by_id_output, repo_fetch_by_name_output, dto", [
+        (
+            entities.ItemCategory(id=1, name='Аптечные продукты'),
+            dtos.ItemCategory(id=2, name='Аптечные продукты'),
+            dtos.ItemCategory(id=1, name='Аптечные продукты')
+        ),
+    ])
+    def test__change_category_with_same_name(
+        self, repo_fetch_by_id_output, repo_fetch_by_name_output, dto, service, repo
+    ):
+        # Setup
+        repo.fetch_by_id.return_value = repo_fetch_by_id_output
+        repo.fetch_by_name.return_value = repo_fetch_by_name_output
+
+        # Call and Assert
+        with pytest.raises(errors.ItemCategoryAlreadyExists):
+            service.change(new_category_info=dto)
+
+        assert repo.method_calls == [
+            call.fetch_by_id(dto.id),
+            call.fetch_by_name(dto.name)
+        ]
 
 
-@pytest.mark.parametrize("entity, dto", [
-    (None, dtos.ItemCategoryDeleteSchema(id=1))
-])
-def test__delete_non_existing_item_category(entity, dto, service, repo):
-    # Setup
-    repo.get_by_id.return_value = entity
+class TestDelete:
+    @pytest.mark.parametrize("repo_output, service_output", [
+        (
+            entities.ItemCategory(id=1, name='Аптечные продукты'),
+            dtos.ItemCategory(id=1, name='Аптечные продукты')
+        )
+    ])
+    def test__delete_category(self, repo_output, service_output, service, repo):
+        # Setup
+        category_id = 1
+        repo.fetch_by_id.return_value = repo_output
+        repo.remove.return_value = repo_output
 
-    # Call and Assert
-    with pytest.raises(errors.ItemCategoryNotFound):
-        service.delete(item_category_info=dto)
+        # Call
+        result = service.delete(category_id=category_id)
 
-    expected_calls_for_repo = [call.get_by_id(dto.id)]
-    assert repo.method_calls == expected_calls_for_repo
+        # Assert
+        assert repo.method_calls == [call.fetch_by_id(category_id),
+                                     call.remove(repo_output)]
+        assert result == service_output
+
+    def test__category_not_found(self, service, repo):
+        # Setup
+        category_id = 1
+        repo.fetch_by_id.return_value = None
+
+        # Call and Assert
+        with pytest.raises(errors.ItemCategoryNotFound):
+            service.delete(category_id=category_id)
+
+        assert repo.method_calls == [call.fetch_by_id(category_id)]

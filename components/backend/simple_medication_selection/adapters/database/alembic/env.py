@@ -1,7 +1,7 @@
 from alembic import context
 from sqlalchemy import create_engine, pool
 
-from adapters.database.tables import metadata
+from simple_medication_selection.adapters.database.tables import metadata
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

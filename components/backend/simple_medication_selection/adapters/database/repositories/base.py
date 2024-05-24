@@ -1,9 +1,8 @@
 from sqlalchemy.orm import Session
 
-from simple_medication_selection.adapters.database.transactions import TransactionContext
+from simple_medication_selection.adapters.database.utils import TransactionContext
 
 
-# yapf: disable
 class BaseRepository:
     """
     Base class for Repositories, using SQLAlchemy
@@ -14,5 +13,3 @@ class BaseRepository:
     @property
     def session(self) -> Session:
         return self.context.current_session
-
-# yapf: enable

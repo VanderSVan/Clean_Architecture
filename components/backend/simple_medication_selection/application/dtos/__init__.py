@@ -1,30 +1,44 @@
-from .symptom import (
-    SymptomCreateSchema,
-    SymptomGetSchema,
-    SymptomUpdateSchema,
-    SymptomDeleteSchema,
-)
+from .base import DTO
 from .diagnosis import (
-    DiagnosisCreateSchema,
-    DiagnosisGetSchema,
-    DiagnosisUpdateSchema,
-    DiagnosisDeleteSchema,
+    NewDiagnosisInfo,
+    Diagnosis,
+)
+from .item import (
+    NewTreatmentItemInfo,
+    TreatmentItem,
+    TreatmentItemWithReviews,
+    UpdatedTreatmentItemInfo,
 )
 from .item_category import (
-    ItemCategoryCreateSchema,
-    ItemCategoryGetSchema,
-    ItemCategoryUpdateSchema,
-    ItemCategoryDeleteSchema,
+    NewItemCategoryInfo,
+    ItemCategory,
+)
+from .item_review import (
+    NewItemReviewInfo,
+    ItemReview,
+    UpdatedItemReviewInfo,
 )
 from .item_type import (
-    ItemTypeCreateSchema,
-    ItemTypeGetSchema,
-    ItemTypeUpdateSchema,
-    ItemTypeDeleteSchema,
+    NewItemTypeInfo,
+    ItemType,
 )
-from .treatment_item import (
-    TreatmentItemCreateSchema,
-    TreatmentItemGetSchema,
-    TreatmentItemUpdateSchema,
-    TreatmentItemDeleteSchema,
+from .medical_book import (
+    NewMedicalBookInfo,
+    MedicalBook,
+    MedicalBookWithSymptoms,
+    MedicalBookWithItemReviews,
+    MedicalBookWithSymptomsAndItemReviews,
+    UpdatedMedicalBookInfo,
+    MedicalBookInfoToUpdate,
+)
+from .patient import (
+    NewPatientInfo,
+    Patient,
+    UpdatedPatientInfo,
+    GenderEnum,
+    SkinTypeEnum
+)
+from .symptom import (
+    NewSymptomInfo,
+    Symptom,
 )

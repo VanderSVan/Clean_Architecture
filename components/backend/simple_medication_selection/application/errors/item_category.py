@@ -1,9 +1,9 @@
-from .base import AppError
+from .base import Error
 
 
-class ItemCategoryNotFound(AppError):
-    msg_template = 'Item category with id {id} not found'
+class ItemCategoryNotFound(Error):
+    message_template = 'Item category with id {id} not found'
 
 
-class ItemCategoryAlreadyExists(AppError):
-    msg_template = 'Item category with name {name} already exists'
+class ItemCategoryAlreadyExists(Error):
+    message_template = 'Item category with name {name} already exists'
