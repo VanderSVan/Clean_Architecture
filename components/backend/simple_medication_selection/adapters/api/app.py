@@ -19,7 +19,8 @@ def create_app(swagger_settings: SwaggerSettings,
                item_type: services.ItemType,
                medical_book: services.MedicalBook,
                patient: services.Patient,
-               symptom: services.Symptom
+               symptom: services.Symptom,
+               patient_matching: services.PatientMatching | None = None,
                ) -> falcon.App:
     cors_middleware = falcon.CORSMiddleware(allow_origins=allow_origins)
     middleware = [cors_middleware]
@@ -49,6 +50,11 @@ def create_app(swagger_settings: SwaggerSettings,
     app.add_route(f'{api_prefix}/patients/{{patient_id}}',
                   controllers.Patients(patient=patient),
                   suffix='by_id')
+
+    # Patient Matching
+    if patient_matching is not None:
+        app.add_route(f'{api_prefix}/patients/match',
+                      controllers.PatientMatching(patient_matching=patient_matching))
 
     # Symptoms
     app.add_route(f'{api_prefix}/symptoms',
