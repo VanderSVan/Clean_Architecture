@@ -57,9 +57,9 @@ GUNICORN_CMD_ARGS="--bind=0.0.0.0:${API_PORT} --log-level=${API_LOG_LEVEL} --wor
 export GUNICORN_CMD_ARGS
 
 if [[ $API_ASYNC_MODE == 'TRUE' && $API_PRELOAD_MODE == 'TRUE' ]]; then
-  gunicorn --preload -k 'gevent' -w ${API_WORKER_COUNT} simple_medication_selection.launchers.api:app --config "simple_medication_selection/launchers/gevent_settings/api_gevent_config.py"
+  gunicorn --preload -k 'gevent' -w "${API_WORKER_COUNT}" simple_medication_selection.launchers.api_with_rabbitmq:app --config "simple_medication_selection/launchers/gevent_settings/api_gevent_config.py"
 elif [[ $API_ASYNC_MODE == 'TRUE' ]]; then
-  gunicorn -k 'gevent' -w ${API_WORKER_COUNT} simple_medication_selection.launchers.api:app --config "simple_medication_selection/launchers/gevent_settings/api_gevent_config.py"
+  gunicorn -k 'gevent' -w "${API_WORKER_COUNT}" simple_medication_selection.launchers.api_with_rabbitmq:app --config "simple_medication_selection/launchers/gevent_settings/api_gevent_config.py"
 else
   gunicorn simple_medication_selection.launchers.api:app
 fi

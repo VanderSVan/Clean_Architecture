@@ -16,6 +16,7 @@ services:
     environment:
       DATABASE_HOST: "db"
       DATABASE_PORT: ${DATABASE_PORT}
+      RABBITMQ_HOST: "rabbitmq"
     entrypoint: ["entrypoint_api.sh"]
     ports:
       - ${API_PORT}:${API_PORT}
@@ -102,6 +103,23 @@ services:
       db:
         condition: service_healthy
 
+  rabbitmq:
+    container_name: "dev-rabbitmq"
+    image: rabbitmq:management
+    hostname: rabbitmq-dev
+    restart: unless-stopped
+    ports:
+      - "5672:5672"   # Порт для AMQP
+      - "15672:15672" # Порт для веб-интерфейса управления RabbitMQ
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: -rabbit log_levels [{connection,info},{default,error}] disk_free_limit 2147483648 # Ограничение свободного места на диске до 2 гигабит
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - backend_dev_network
+
   nginx:
     container_name: "dev-nginx"
     restart: always
@@ -119,6 +137,7 @@ services:
 volumes:
   db-dev:
   dev-pgadmin-data:
+  rabbitmq_data:
 
 networks:
   backend_dev_network:
