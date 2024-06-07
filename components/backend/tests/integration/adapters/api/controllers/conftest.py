@@ -3,9 +3,9 @@ from unittest.mock import Mock
 import pytest
 from falcon import testing
 
-from simple_medication_selection.adapters.api import SwaggerSettings
-from simple_medication_selection.adapters.api.app import create_app
-from simple_medication_selection.application import services
+from med_sharing_system.adapters.api import SwaggerSettings
+from med_sharing_system.adapters.api.app import create_app
+from med_sharing_system.application import services
 
 
 @pytest.fixture(scope='function')

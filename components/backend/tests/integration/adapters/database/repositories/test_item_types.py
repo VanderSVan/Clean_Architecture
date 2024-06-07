@@ -1,9 +1,8 @@
 import pytest
-
 from sqlalchemy import select, func
 
-from simple_medication_selection.adapters.database import repositories
-from simple_medication_selection.application import entities
+from med_sharing_system.adapters.database import repositories
+from med_sharing_system.application import entities
 from .. import test_data
 
 
@@ -95,4 +94,3 @@ class TestRemove:
         # Assert
         assert before_count - 1 == after_count
         assert isinstance(result, entities.ItemType)
-        

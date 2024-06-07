@@ -2,8 +2,8 @@ import pytest
 from sqlalchemy import select, func
 from sqlalchemy.orm import joinedload
 
-from simple_medication_selection.adapters.database import repositories
-from simple_medication_selection.application import entities, schemas
+from med_sharing_system.adapters.database import repositories
+from med_sharing_system.application import entities, schemas
 from .. import test_data
 
 
@@ -752,7 +752,7 @@ class TestFetchByHelpedStatus:
         # Setup
         filter_params = schemas.FindItemReviews(is_helped=True,
                                                 sort_field='usage_period',
-                                                sort_direction='desc',)
+                                                sort_direction='desc', )
 
         # Call
         result = repo.fetch_by_helped_status(filter_params)

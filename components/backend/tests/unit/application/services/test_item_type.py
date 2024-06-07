@@ -1,7 +1,8 @@
 from unittest.mock import Mock, call
 
 import pytest
-from simple_medication_selection.application import (
+
+from med_sharing_system.application import (
     dtos, entities, errors, interfaces, services, schemas
 )
 

@@ -1,6 +1,6 @@
 from unittest.mock import call
 
-from simple_medication_selection.application import dtos, schemas
+from med_sharing_system.application import dtos, schemas
 
 # ---------------------------------------------------------------------------------------
 # SETUP
