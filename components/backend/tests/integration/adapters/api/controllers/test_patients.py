@@ -1,24 +1,23 @@
-from dataclasses import asdict
 from unittest.mock import call
 
-from simple_medication_selection.application import entities, dtos, schemas
+from simple_medication_selection.application import dtos, schemas
 
 # ---------------------------------------------------------------------------------------
 # SETUP
 # ---------------------------------------------------------------------------------------
-PATIENT_1 = entities.Patient(
+PATIENT_1 = dict(
     id=1, nickname='test_patient_1', gender='male', age=30, skin_type='сухая',
     about='test_about_1', phone='1234567890'
 )
-PATIENT_2 = entities.Patient(
+PATIENT_2 = dict(
     id=2, nickname='test_patient_2', gender='female', age=40, skin_type='жирная',
     about='test_about_2', phone='0987654321'
 )
-PATIENT_3 = entities.Patient(
+PATIENT_3 = dict(
     id=3, nickname='test_patient_3', gender='male', age=50, skin_type='нормальная',
     about='test_about_3', phone='1111111111'
 )
-PATIENT_LIST: list[entities.Patient] = [PATIENT_1, PATIENT_2, PATIENT_3]
+PATIENT_LIST: list[dict] = [PATIENT_1, PATIENT_2, PATIENT_3]
 
 
 # ---------------------------------------------------------------------------------------
@@ -27,7 +26,7 @@ PATIENT_LIST: list[entities.Patient] = [PATIENT_1, PATIENT_2, PATIENT_3]
 class TestOnGetById:
     def test__on_get_by_id(self, patient_service, client):
         # Setup
-        returned_patient = dtos.Patient(**asdict(PATIENT_1))
+        returned_patient = dtos.Patient(**PATIENT_1)
         patient_id = returned_patient.id
         patient_service.get.return_value = returned_patient
 
@@ -44,7 +43,7 @@ class TestOnGetById:
 class TestOnGet:
     def test__on_get(self, patient_service, client):
         # Setup
-        service_output = [dtos.Patient(**asdict(patient)) for patient in PATIENT_LIST]
+        service_output = [dtos.Patient(**patient) for patient in PATIENT_LIST]
         patient_service.find.return_value = service_output
         filter_params = schemas.FindPatients(
             gender='male',
@@ -81,7 +80,7 @@ class TestOnGet:
 
     def test__on_get_default(self, patient_service, client):
         # Setup
-        returned_patients = [dtos.Patient(**asdict(patient)) for patient in PATIENT_LIST]
+        returned_patients = [dtos.Patient(**patient) for patient in PATIENT_LIST]
         patient_service.find.return_value = returned_patients
         filter_params = schemas.FindPatients()
 
@@ -118,7 +117,7 @@ class TestOnPostNew:
 class TestOnPutById:
     def test__on_put_by_id(self, patient_service, client):
         # Setup
-        updated_patient_info = dtos.UpdatedPatientInfo(**asdict(PATIENT_1))
+        updated_patient_info = dtos.UpdatedPatientInfo(**PATIENT_1)
         service_output = dtos.Patient(**updated_patient_info.dict())
         patient_service.change.return_value = service_output
 
@@ -135,7 +134,7 @@ class TestOnPutById:
 class TestOnDeleteById:
     def test__on_delete_by_id(self, patient_service, client):
         # Setup
-        service_output = dtos.Patient(**asdict(PATIENT_1))
+        service_output = dtos.Patient(**PATIENT_1)
         patient_service.delete.return_value = service_output
 
         # Call

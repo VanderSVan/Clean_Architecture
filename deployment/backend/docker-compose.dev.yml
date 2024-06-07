@@ -1,0 +1,144 @@
+version: '3.9'
+
+services:
+  backend:
+    container_name: "dev-backend"
+    restart: unless-stopped
+    build:
+      context: ../..
+      dockerfile: deployment/backend/Dockerfile
+      target: development
+    depends_on:
+      db:
+        condition: service_healthy
+      backend_for_tests:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_HOST: "db"
+      DATABASE_PORT: ${DATABASE_PORT}
+      RABBITMQ_HOST: "rabbitmq"
+    entrypoint: ["entrypoint_api.sh"]
+    ports:
+      - ${API_PORT}:${API_PORT}
+    networks:
+      - backend_dev_network
+    env_file:
+      - ../../components/backend/.env
+
+  db:
+    container_name: "dev-db"
+    restart: unless-stopped
+    image: postgres:15
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    environment:
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_NAME}
+    volumes:
+      - db-dev:/var/lib/postgresql/data
+    expose:
+      - ${DATABASE_PORT}
+    networks:
+      - backend_dev_network
+    env_file:
+      - ../../components/backend/.env
+
+  backend_for_tests:
+    container_name: "dev-backend-tests"
+    build:
+      context: ../..
+      dockerfile: deployment/backend/Dockerfile
+      target: tests
+    depends_on:
+      db_for_tests:
+        condition: service_healthy
+    environment:
+      TEST_DATABASE_HOST: "db_for_tests"
+      TEST_DATABASE_PORT: ${DATABASE_PORT}
+      API_ENV: development
+    entrypoint: ["entrypoint_tests.sh"]
+    networks:
+      - backend_dev_network
+    env_file:
+      - ../../components/backend/.env
+
+  db_for_tests:
+    container_name: "dev-test_db"
+    restart: unless-stopped
+    image: postgres:15
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    environment:
+      POSTGRES_USER: ${TEST_DATABASE_USER}
+      POSTGRES_PASSWORD: ${TEST_DATABASE_PASSWORD}
+      POSTGRES_DB: ${TEST_DATABASE_NAME}
+    expose:
+      - ${DATABASE_PORT}
+    networks:
+      - backend_dev_network
+    env_file:
+      - ../../components/backend/.env
+
+  pgadmin:
+    container_name: "dev-pgadmin4"
+    image: dpage/pgadmin4
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+    ports:
+      - '5050:80'
+    volumes:
+      - dev-pgadmin-data:/var/lib/pgadmin
+    networks:
+      - backend_dev_network
+    depends_on:
+      db:
+        condition: service_healthy
+
+  rabbitmq:
+    container_name: "dev-rabbitmq"
+    image: rabbitmq:management
+    hostname: rabbitmq-dev
+    restart: unless-stopped
+    ports:
+      - "5672:5672"   # Порт для AMQP
+      - "15672:15672" # Порт для веб-интерфейса управления RabbitMQ
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: -rabbit log_levels [{connection,info},{default,error}] disk_free_limit 2147483648 # Ограничение свободного места на диске до 2 гигабит
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - backend_dev_network
+
+  nginx:
+    container_name: "dev-nginx"
+    restart: always
+    image: nginx:1.26-alpine
+    depends_on:
+      - db
+      - backend
+    volumes:
+      - ./nginx_config/default.dev.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - '8080:80'
+    networks:
+      - backend_dev_network
+
+volumes:
+  db-dev:
+  dev-pgadmin-data:
+  rabbitmq_data:
+
+networks:
+  backend_dev_network:
+    driver: bridge

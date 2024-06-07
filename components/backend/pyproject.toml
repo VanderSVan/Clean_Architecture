@@ -19,6 +19,7 @@ falcon-swagger-ui = "^1.2.2"
 gunicorn = "^21.2.0"
 gevent = "^24.2.1"
 gevent-websocket = "^0.10.1"
+kombu = "^5.3.7"
 
 [tool.poetry.scripts]
 simple_medication_selection = "simple_medication_selection.entrypoints.healing_api:main"

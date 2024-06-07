@@ -1,7 +1,6 @@
-from dataclasses import asdict
 from unittest.mock import call
 
-from simple_medication_selection.application import entities, dtos, schemas
+from simple_medication_selection.application import dtos, schemas
 
 # ---------------------------------------------------------------------------------------
 # SETUP

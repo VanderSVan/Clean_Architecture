@@ -30,3 +30,7 @@ from .symptom import (
     Symptom,
     decorated_function_registry as symptom_decorated_function_registry
 )
+from .matching_system import (
+    PatientMatching,
+    decorated_function_registry as patient_matching_decorated_function_registry
+)

@@ -45,6 +45,6 @@ class FindItemReviews(BaseSchema):
                 raise errors.ItemReviewExcludeAllFields(
                     excluded_columns=list(unique_values)
                 )
-            return set(value)
+            return list(unique_values)
 
         return value

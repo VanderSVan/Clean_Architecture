@@ -1,53 +1,52 @@
-from dataclasses import asdict
 from unittest.mock import call
 
 from simple_medication_selection.adapters.api import schemas as api_schemas
-from simple_medication_selection.application import entities, dtos
+from simple_medication_selection.application import dtos
 
 # ---------------------------------------------------------------------------------------
 # SETUP
 # ---------------------------------------------------------------------------------------
-MEDICAL_BOOK_1 = entities.MedicalBook(
+MEDICAL_BOOK_1 = dict(
     id=1,
     title_history='История моей болезни 1',
     history='Анамнез болезни 1',
     patient_id=1,
     diagnosis_id=1,
-    symptoms=[entities.Symptom(id=1, name='Симптом 1'),
-              entities.Symptom(id=2, name='Симптом 2')],
+    symptoms=[dict(id=1, name='Симптом 1'),
+              dict(id=2, name='Симптом 2')],
     item_reviews=[
-        entities.ItemReview(id=1,
-                            item_id=1,
-                            is_helped=True,
-                            item_rating=9.5,
-                            item_count=5,
-                            usage_period=7776000),
-        entities.ItemReview(id=2,
-                            item_id=2,
-                            is_helped=False,
-                            item_rating=3.5,
-                            item_count=1,
-                            usage_period=5184000)
+        dict(id=1,
+             item_id=1,
+             is_helped=True,
+             item_rating=9.5,
+             item_count=5,
+             usage_period=7776000),
+        dict(id=2,
+             item_id=2,
+             is_helped=False,
+             item_rating=3.5,
+             item_count=1,
+             usage_period=5184000)
     ]
 )
-MEDICAL_BOOK_2 = entities.MedicalBook(
+MEDICAL_BOOK_2 = dict(
     id=2,
     title_history='История моей болезни 2',
     history='Анамнез болезни 2',
     patient_id=2,
     diagnosis_id=2,
-    symptoms=[entities.Symptom(id=3, name='Симптом 3'),
-              entities.Symptom(id=4, name='Симптом 4')],
+    symptoms=[dict(id=3, name='Симптом 3'),
+              dict(id=4, name='Симптом 4')],
     item_reviews=[
-        entities.ItemReview(id=3,
-                            item_id=3,
-                            is_helped=True,
-                            item_rating=7.5,
-                            item_count=3,
-                            usage_period=7776000),
+        dict(id=3,
+             item_id=3,
+             is_helped=True,
+             item_rating=7.5,
+             item_count=3,
+             usage_period=7776000),
     ]
 )
-MEDICAL_BOOK_LIST: list[entities.MedicalBook] = [MEDICAL_BOOK_1, MEDICAL_BOOK_2]
+MEDICAL_BOOK_LIST: list[dict] = [MEDICAL_BOOK_1, MEDICAL_BOOK_2]
 DEFAULT_FILTER_PARAMS = api_schemas.SearchMedicalBooks(exclude_med_book_fields=None)
 DEFAULT_FILTER_PARAMS_WITH_SYMPTOMS_EXCLUSION = (
     api_schemas.SearchMedicalBooksWithSymptoms(exclude_med_book_fields=None,
@@ -125,25 +124,6 @@ FILTER_PARAMS_WITH_SYMPTOMS_AND_REVIEWS_EXCLUSION = (
 )
 
 
-# TEST_URL = (
-#     '{path}?'
-#     f'patient_id={FILTER_PARAMS.patient_id}&'
-#     f'item_ids={FILTER_PARAMS.item_ids[0]}&'
-#     f'item_ids={FILTER_PARAMS.item_ids[1]}&'
-#     f'is_helped={FILTER_PARAMS.is_helped}&'
-#     f'diagnosis_id={FILTER_PARAMS.diagnosis_id}&'
-#     f'symptom_ids={FILTER_PARAMS.symptom_ids[0]}&'
-#     f'symptom_ids={FILTER_PARAMS.symptom_ids[1]}&'
-#     f'match_all_symptoms={FILTER_PARAMS.match_all_symptoms}&'
-#     f'exclude_med_book_fields={FILTER_PARAMS.exclude_med_book_fields[0]}&'
-#     f'exclude_med_book_fields={FILTER_PARAMS.exclude_med_book_fields[1]}&'
-#     f'sort_field={FILTER_PARAMS.sort_field}&'
-#     f'sort_direction={FILTER_PARAMS.sort_direction}&'
-#     f'limit={FILTER_PARAMS.limit}&'
-#     f'offset={FILTER_PARAMS.offset}'
-# )
-
-
 def generate_url(filter_params, path) -> str:
     url = f'{path}?'
     for key, value in filter_params.dict().items():
@@ -161,8 +141,9 @@ def generate_url(filter_params, path) -> str:
 class TestOnGet:
     def test__on_get(self, medical_book_service, client):
         # Setup
-        returned_med_books = [dtos.MedicalBook(**med_book.__dict__)
-                              for med_book in MEDICAL_BOOK_LIST]
+        returned_med_books = [
+            dtos.MedicalBook(**med_book) for med_book in MEDICAL_BOOK_LIST
+        ]
         test_url: str = generate_url(FILTER_PARAMS, '{path}')
 
         # Тестовый вывод `find_med_books` может отличаться от реального вывода
@@ -181,8 +162,9 @@ class TestOnGet:
 
     def test__on_get_without_filters(self, medical_book_service, client):
         # Setup
-        returned_med_books = [dtos.MedicalBook(**med_book.__dict__)
-                              for med_book in MEDICAL_BOOK_LIST]
+        returned_med_books = [
+            dtos.MedicalBook(**med_book) for med_book in MEDICAL_BOOK_LIST
+        ]
 
         # Тестовый вывод `find_med_books` может отличаться от реального вывода
         medical_book_service.find_med_books.return_value = returned_med_books
@@ -203,8 +185,9 @@ class TestOnGet:
 class TestOnGetWithSymptoms:
     def test__on_get_with_symptoms(self, medical_book_service, client):
         # Setup
-        returned_med_books = [dtos.MedicalBookWithSymptoms(**med_book.__dict__)
-                              for med_book in MEDICAL_BOOK_LIST]
+        returned_med_books = [
+            dtos.MedicalBookWithSymptoms(**med_book) for med_book in MEDICAL_BOOK_LIST
+        ]
         test_url: str = generate_url(FILTER_PARAMS_WITH_SYMPTOMS_EXCLUSION,
                                      '/medical_books/symptoms')
 
@@ -233,8 +216,9 @@ class TestOnGetWithSymptoms:
 
     def test__on_get_with_symptoms_without_filters(self, medical_book_service, client):
         # Setup
-        returned_med_books = [dtos.MedicalBookWithSymptoms(**med_book.__dict__)
-                              for med_book in MEDICAL_BOOK_LIST]
+        returned_med_books = [
+            dtos.MedicalBookWithSymptoms(**med_book) for med_book in MEDICAL_BOOK_LIST
+        ]
 
         # Тестовый вывод `find_med_books` может отличаться от реального вывода
         medical_book_service.find_med_books_with_symptoms.return_value = (
@@ -257,8 +241,9 @@ class TestOnGetWithSymptoms:
 class TestOnGetWithReviews:
     def test__on_get_with_reviews(self, medical_book_service, client):
         # Setup
-        returned_med_books = [dtos.MedicalBookWithItemReviews(**med_book.__dict__)
-                              for med_book in MEDICAL_BOOK_LIST]
+        returned_med_books = [
+            dtos.MedicalBookWithItemReviews(**med_book) for med_book in MEDICAL_BOOK_LIST
+        ]
         test_url: str = generate_url(FILTER_PARAMS_WITH_REVIEWS_EXCLUSION,
                                      '/medical_books/reviews')
 
@@ -285,8 +270,9 @@ class TestOnGetWithReviews:
 
     def test__on_get_with_reviews_without_filters(self, medical_book_service, client):
         # Setup
-        returned_med_books = [dtos.MedicalBookWithItemReviews(**med_book.__dict__)
-                              for med_book in MEDICAL_BOOK_LIST]
+        returned_med_books = [
+            dtos.MedicalBookWithItemReviews(**med_book) for med_book in MEDICAL_BOOK_LIST
+        ]
 
         # Тестовый вывод `find_med_books` может отличаться от реального вывода
         medical_book_service.find_med_books_with_reviews.return_value = returned_med_books
@@ -307,7 +293,7 @@ class TestOnGetWithSymptomsAndReviews:
     def test__on_get_with_symptoms_and_reviews(self, medical_book_service, client):
         # Setup
         returned_med_books = [
-            dtos.MedicalBookWithSymptomsAndItemReviews(**med_book.__dict__)
+            dtos.MedicalBookWithSymptomsAndItemReviews(**med_book)
             for med_book in MEDICAL_BOOK_LIST
         ]
         test_url: str = generate_url(
@@ -357,7 +343,7 @@ class TestOnGetWithSymptomsAndReviews:
         # Setup
         # Тестовый вывод может отличаться от реального вывода
         returned_med_books = [
-            dtos.MedicalBookWithSymptomsAndItemReviews(**med_book.__dict__)
+            dtos.MedicalBookWithSymptomsAndItemReviews(**med_book)
             for med_book in MEDICAL_BOOK_LIST
         ]
         medical_book_service.find_med_books_with_symptoms_and_reviews.return_value = (
@@ -370,7 +356,7 @@ class TestOnGetWithSymptomsAndReviews:
         # Assert
         assert response.status_code == 200
         assert len(response.json) == len(MEDICAL_BOOK_LIST)
-        assert response.json == [asdict(med_book) for med_book in MEDICAL_BOOK_LIST]
+        assert response.json == [med_book for med_book in MEDICAL_BOOK_LIST]
         assert medical_book_service.method_calls == [
             call.find_med_books_with_symptoms_and_reviews(
                 DEFAULT_FILTER_PARAMS_WITH_SYMPTOMS_AND_REVIEWS_EXCLUSION
@@ -380,7 +366,7 @@ class TestOnGetWithSymptomsAndReviews:
     def test__on_get_with_reviews_and_symptoms(self, medical_book_service, client):
         # Setup
         returned_med_books = [
-            dtos.MedicalBookWithSymptomsAndItemReviews(**med_book.__dict__)
+            dtos.MedicalBookWithSymptomsAndItemReviews(**med_book)
             for med_book in MEDICAL_BOOK_LIST
         ]
         # Тестовый вывод может отличаться от реального вывода
@@ -429,7 +415,7 @@ class TestOnGetWithSymptomsAndReviews:
                                                                client):
         # Setup
         returned_med_books = [
-            dtos.MedicalBookWithSymptomsAndItemReviews(**med_book.__dict__)
+            dtos.MedicalBookWithSymptomsAndItemReviews(**med_book)
             for med_book in MEDICAL_BOOK_LIST
         ]
         # Тестовый вывод может отличаться от реального вывода
@@ -442,7 +428,7 @@ class TestOnGetWithSymptomsAndReviews:
 
         # Assert
         assert response.status_code == 200
-        assert response.json == [asdict(med_book) for med_book in MEDICAL_BOOK_LIST]
+        assert response.json == [med_book for med_book in MEDICAL_BOOK_LIST]
         assert medical_book_service.method_calls == [
             call.find_med_books_with_symptoms_and_reviews(
                 DEFAULT_FILTER_PARAMS_WITH_SYMPTOMS_AND_REVIEWS_EXCLUSION
@@ -453,7 +439,7 @@ class TestOnGetWithSymptomsAndReviews:
 class TestOnGetById:
     def test__on_get_by_id(self, medical_book_service, client):
         # Setup
-        returned_med_book = dtos.MedicalBook(**MEDICAL_BOOK_1.__dict__)
+        returned_med_book = dtos.MedicalBook(**MEDICAL_BOOK_1)
         med_book_id = returned_med_book.id
         # Тестовый вывод `get_med_book` может отличаться от реального вывода
         medical_book_service.get_med_book.return_value = returned_med_book
@@ -470,7 +456,7 @@ class TestOnGetById:
 class TestOnGetByIdWithSymptoms:
     def test__on_get_by_id_with_symptoms(self, medical_book_service, client):
         # Setup
-        returned_med_book = dtos.MedicalBookWithSymptoms(**MEDICAL_BOOK_1.__dict__)
+        returned_med_book = dtos.MedicalBookWithSymptoms(**MEDICAL_BOOK_1)
         med_book_id = returned_med_book.id
         # Тестовый вывод `get_med_book_with_symptoms` может отличаться от реального вывода
         medical_book_service.get_med_book_with_symptoms.return_value = returned_med_book
@@ -489,7 +475,7 @@ class TestOnGetByIdWithSymptoms:
 class TestOnGetByIdWithReviews:
     def test__on_get_by_id_with_reviews(self, medical_book_service, client):
         # Setup
-        returned_med_book = dtos.MedicalBookWithItemReviews(**MEDICAL_BOOK_1.__dict__)
+        returned_med_book = dtos.MedicalBookWithItemReviews(**MEDICAL_BOOK_1)
         med_book_id = returned_med_book.id
         # Тестовый вывод `get_med_book_with_reviews` может отличаться от реального вывода
         medical_book_service.get_med_book_with_reviews.return_value = returned_med_book
@@ -508,9 +494,9 @@ class TestOnGetByIdWithReviews:
 class TestOnGetByIdWithSymptomsAndReviews:
     def test__on_get_by_id_with_symptoms_and_reviews(self, medical_book_service, client):
         # Setup
-        med_book_id = MEDICAL_BOOK_1.id
+        med_book_id = MEDICAL_BOOK_1['id']
         returned_med_book = dtos.MedicalBookWithSymptomsAndItemReviews(
-            **MEDICAL_BOOK_1.__dict__
+            **MEDICAL_BOOK_1
         )
         # Тестовый вывод `get_med_book_with_symptoms_and_reviews` может отличаться от
         # реального вывода
@@ -523,16 +509,16 @@ class TestOnGetByIdWithSymptomsAndReviews:
 
         # Assert
         assert response.status_code == 200
-        assert response.json == asdict(MEDICAL_BOOK_1)
+        assert response.json == MEDICAL_BOOK_1
         assert medical_book_service.method_calls == [
             call.get_med_book_with_symptoms_and_reviews(str(med_book_id))
         ]
 
     def test__on_get_by_id_with_reviews_and_symptoms(self, medical_book_service, client):
         # Setup
-        med_book_id = MEDICAL_BOOK_1.id
+        med_book_id = MEDICAL_BOOK_1['id']
         returned_med_book = dtos.MedicalBookWithSymptomsAndItemReviews(
-            **MEDICAL_BOOK_1.__dict__
+            **MEDICAL_BOOK_1
         )
         # Тестовый вывод `get_med_book_with_symptoms_and_reviews` может отличаться от
         # реального вывода
@@ -545,7 +531,7 @@ class TestOnGetByIdWithSymptomsAndReviews:
 
         # Assert
         assert response.status_code == 200
-        assert response.json == asdict(MEDICAL_BOOK_1)
+        assert response.json == MEDICAL_BOOK_1
         assert medical_book_service.method_calls == [
             call.get_med_book_with_symptoms_and_reviews(str(med_book_id))
         ]
@@ -555,9 +541,9 @@ class TestOnPostNew:
     def test__on_post_new(self, medical_book_service, client):
         # Setup
         medical_book_service.add.return_value = (
-            dtos.MedicalBookWithSymptomsAndItemReviews(**asdict(MEDICAL_BOOK_1))
+            dtos.MedicalBookWithSymptomsAndItemReviews(**MEDICAL_BOOK_1)
         )
-        data_to_post = dtos.NewMedicalBookInfo(**asdict(MEDICAL_BOOK_1))
+        data_to_post = dtos.NewMedicalBookInfo(**MEDICAL_BOOK_1)
 
         # Call
         response = client.simulate_post('/medical_books/new',
@@ -565,7 +551,7 @@ class TestOnPostNew:
 
         # Assert
         assert response.status_code == 201
-        assert response.json == asdict(MEDICAL_BOOK_1)
+        assert response.json == MEDICAL_BOOK_1
         assert medical_book_service.method_calls == [
             call.add(dtos.NewMedicalBookInfo(**data_to_post.dict()))
         ]
@@ -575,20 +561,20 @@ class TestOnPutById:
     def test__on_put_by_id(self, medical_book_service, client):
         # Setup
         medical_book_service.change.return_value = (
-            dtos.MedicalBookWithSymptomsAndItemReviews(**asdict(MEDICAL_BOOK_1))
+            dtos.MedicalBookWithSymptomsAndItemReviews(**MEDICAL_BOOK_1)
         )
 
-        med_book_id = MEDICAL_BOOK_1.id
+        med_book_id = MEDICAL_BOOK_1['id']
 
         # Call
         response = client.simulate_put(f'/medical_books/{med_book_id}',
-                                       json=asdict(MEDICAL_BOOK_1))
+                                       json=MEDICAL_BOOK_1)
 
         # Assert
         assert response.status_code == 200
-        assert response.json == asdict(MEDICAL_BOOK_1)
+        assert response.json == MEDICAL_BOOK_1
         assert medical_book_service.method_calls == [
-            call.change(dtos.UpdatedMedicalBookInfo(**asdict(MEDICAL_BOOK_1)))
+            call.change(dtos.UpdatedMedicalBookInfo(**MEDICAL_BOOK_1))
         ]
 
 
@@ -596,32 +582,32 @@ class TestOnPatchById:
     def test__on_patch_by_id(self, medical_book_service, client):
         # Setup
         medical_book_service.change.return_value = (
-            dtos.MedicalBookWithSymptomsAndItemReviews(**asdict(MEDICAL_BOOK_1))
+            dtos.MedicalBookWithSymptomsAndItemReviews(**MEDICAL_BOOK_1)
         )
 
-        med_book_id = MEDICAL_BOOK_1.id
+        med_book_id = MEDICAL_BOOK_1['id']
 
         # Call
         response = client.simulate_patch(f'/medical_books/{med_book_id}',
-                                         json=asdict(MEDICAL_BOOK_1))
+                                         json=MEDICAL_BOOK_1)
 
         # Assert
         assert response.status_code == 200
-        assert response.json == asdict(MEDICAL_BOOK_1)
+        assert response.json == MEDICAL_BOOK_1
         assert medical_book_service.method_calls == [
-            call.change(dtos.MedicalBookInfoToUpdate(**asdict(MEDICAL_BOOK_1)))
+            call.change(dtos.MedicalBookInfoToUpdate(**MEDICAL_BOOK_1))
         ]
 
 
 class TestOnDeleteById:
     def test__on_delete_by_id(self, medical_book_service, client):
         # Setup
-        medical_book_info: dict = asdict(MEDICAL_BOOK_1)
+        medical_book_info: dict = MEDICAL_BOOK_1
         del medical_book_info["symptoms"]
         del medical_book_info["item_reviews"]
         medical_book_service.delete.return_value = dtos.MedicalBook(**medical_book_info)
 
-        med_book_id = MEDICAL_BOOK_1.id
+        med_book_id = MEDICAL_BOOK_1['id']
 
         # Call
         response = client.simulate_delete(f'/medical_books/{med_book_id}')

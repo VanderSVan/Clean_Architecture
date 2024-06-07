@@ -1,112 +1,69 @@
-from decimal import Decimal
 from unittest.mock import call
 
-from simple_medication_selection.application import entities, dtos, schemas
+from simple_medication_selection.application import dtos, schemas
 
 # ---------------------------------------------------------------------------------------
 # SETUP
 # ---------------------------------------------------------------------------------------
-ITEM_1 = entities.TreatmentItem(
+ITEM_1 = dict(
     id=1,
     title='Продукт 1',
-    price=Decimal(1000.5),
+    price=1000.5,
     description='Описание 1',
     category_id=1,
     type_id=1,
     avg_rating=7.75,
     reviews=[
-        entities.ItemReview(
-            id=1,
-            item_id=1,
-            is_helped=True,
-            item_rating=9.5,
-            item_count=5,
-            usage_period=7776000
-        ),
-        entities.ItemReview(
-            id=2,
-            item_id=1,
-            is_helped=False,
-            item_rating=6,
-            item_count=3,
-            usage_period=2592000
-        )
+        dict(id=1, item_id=1, is_helped=True, item_rating=9.5, item_count=5,
+             usage_period=7776000),
+        dict(id=2, item_id=1, is_helped=False, item_rating=6, item_count=3,
+             usage_period=2592000)
     ]
 )
-ITEM_2 = entities.TreatmentItem(
+ITEM_2 = dict(
     id=2,
     title='Продукт 2',
-    price=Decimal(2000.5),
+    price=2000.5,
     description='Описание 2',
     category_id=2,
     type_id=2,
     avg_rating=5,
     reviews=[
-        entities.ItemReview(
-            id=3,
-            item_id=2,
-            is_helped=False,
-            item_rating=2,
-            item_count=3,
-            usage_period=5184000
-        ),
-        entities.ItemReview(
-            id=4,
-            item_id=2,
-            is_helped=True,
-            item_rating=8,
-            item_count=4,
-            usage_period=2592000
-        )
+        dict(id=3, item_id=2, is_helped=False, item_rating=2, item_count=3,
+             usage_period=5184000),
+        dict(id=4, item_id=2, is_helped=True, item_rating=8, item_count=4,
+             usage_period=2592000)
     ]
 )
-ITEM_3 = entities.TreatmentItem(
+ITEM_3 = dict(
     id=3,
     title='Продукт 3',
-    price=Decimal(5000),
+    price=5000,
     description='Описание 3',
     category_id=3,
     type_id=3,
     avg_rating=8.5,
     reviews=[
-        entities.ItemReview(
-            id=5,
-            item_id=3,
-            is_helped=True,
-            item_rating=8,
-            item_count=4,
-            usage_period=2592000
-        ),
-        entities.ItemReview(
-            id=6,
-            item_id=3,
-            is_helped=True,
-            item_rating=9,
-            item_count=5,
-            usage_period=None
-        )
+        dict(id=5, item_id=3, is_helped=True, item_rating=8, item_count=4,
+             usage_period=2592000),
+        dict(id=6, item_id=3, is_helped=True, item_rating=9, item_count=5,
+             usage_period=None)
     ]
 )
-ITEM_4 = entities.TreatmentItem(
+ITEM_4 = dict(
     id=4,
     title='Процедура 1',
-    price=Decimal(2000),
+    price=2000,
     description=None,
     category_id=1,
     type_id=1,
     avg_rating=7.5,
     reviews=[
-        entities.ItemReview(
-            id=7,
-            item_id=4,
-            is_helped=True,
-            item_rating=7.5,
-            item_count=2,
-            usage_period=2592000
-        )
+        dict(id=7, item_id=4, is_helped=True, item_rating=7.5, item_count=2,
+             usage_period=2592000)
     ]
 )
-ITEM_LIST: list[entities.TreatmentItem] = [ITEM_1, ITEM_2, ITEM_3, ITEM_4]
+ITEM_LIST: list[dict] = [ITEM_1, ITEM_2, ITEM_3, ITEM_4]
 
 
 # ---------------------------------------------------------------------------------------
@@ -115,7 +72,7 @@ ITEM_LIST: list[entities.TreatmentItem] = [ITEM_1, ITEM_2, ITEM_3, ITEM_4]
 class TestOnGetById:
     def test__on_get_by_id(self, catalog_service, client):
         # Setup
-        returned_item_info = ITEM_1.to_dict()
+        returned_item_info = ITEM_1.copy()
         if returned_item_info.get("reviews"):
             del returned_item_info["reviews"]
 
@@ -135,9 +92,9 @@ class TestOnGetById:
 class TestOnGetByIdWithReviews:
     def test__on_get_by_id_with_reviews(self, catalog_service, client):
         # Setup
-        item_id = ITEM_2.id
+        item_id = ITEM_2['id']
         catalog_service.get_item_with_reviews.return_value = (
-            dtos.TreatmentItemWithReviews(**ITEM_2.to_dict())
+            dtos.TreatmentItemWithReviews(**ITEM_2)
         )
         filter_params = schemas.GetTreatmentItemWithReviews(
             item_id=item_id,
@@ -148,7 +105,7 @@ class TestOnGetByIdWithReviews:
 
         # Assert
         assert response.status_code == 200
-        assert response.json == ITEM_2.to_dict()
+        assert response.json == ITEM_2
         assert catalog_service.method_calls == [call.get_item_with_reviews(filter_params)]
 
 
@@ -158,7 +115,7 @@ class TestOnGet:
         keywords = 'Продукт'
         returned_items = []
         for item in ITEM_LIST:
-            returned_item = item.to_dict()
+            returned_item = item.copy()
             if returned_item.get("reviews"):
                 del returned_item["reviews"]
 
@@ -217,13 +174,20 @@ class TestOnGet:
             item.dict(decode=True, exclude_none=True, exclude_unset=True)
             for item in returned_items if item is not None
         ]
-        assert catalog_service.method_calls == [call.find_items(filter_params)]
+        called_filter_params = catalog_service.method_calls[0][1][0]
+        assert (
+            called_filter_params.dict(exclude={'exclude_item_fields'}) ==
+            filter_params.dict(exclude={'exclude_item_fields'})
+        )
+        assert set(called_filter_params.exclude_item_fields) == set(
+            filter_params.exclude_item_fields
+        )
 
     def test_on_get_default(self, catalog_service, client):
         # Setup
         returned_items = []
         for item in ITEM_LIST:
-            returned_item = item.to_dict()
+            returned_item = item.copy()
             if returned_item.get("reviews"):
                 del returned_item["reviews"]
 
@@ -243,8 +207,9 @@ class TestOnGet:
 class TestOnGetWithReviews:
     def test__on_get_with_reviews(self, catalog_service, client):
         # Setup
-        returned_items = [dtos.TreatmentItemWithReviews(**item.to_dict())
-                          for item in ITEM_LIST]
+        returned_items = [
+            dtos.TreatmentItemWithReviews(**item) for item in ITEM_LIST
+        ]
 
         catalog_service.find_items_with_reviews.return_value = returned_items
         filter_params = schemas.FindTreatmentItemsWithReviews(
@@ -307,14 +272,25 @@ class TestOnGetWithReviews:
             item.dict(decode=True, exclude_none=True, exclude_unset=True)
             for item in returned_items if item is not None
         ]
-        assert catalog_service.method_calls == [
-            call.find_items_with_reviews(filter_params)
-        ]
+        called_filter_params = catalog_service.method_calls[0][1][0]
+        assert (
+            called_filter_params.dict(exclude={'exclude_review_fields',
+                                               'exclude_item_fields'}) ==
+            filter_params.dict(exclude={'exclude_review_fields',
+                                        'exclude_item_fields'})
+        )
+        assert set(called_filter_params.exclude_review_fields) == set(
+            filter_params.exclude_review_fields
+        )
+        assert set(called_filter_params.exclude_item_fields) == set(
+            filter_params.exclude_item_fields
+        )
 
     def test_on_get_with_reviews_default(self, catalog_service, client):
         # Setup
-        returned_items = [dtos.TreatmentItemWithReviews(**item.to_dict())
-                          for item in ITEM_LIST]
+        returned_items = [
+            dtos.TreatmentItemWithReviews(**item) for item in ITEM_LIST
+        ]
 
         catalog_service.find_items_with_reviews.return_value = returned_items
         filter_params = schemas.FindTreatmentItemsWithReviews(exclude_item_fields=[],
@@ -337,14 +313,13 @@ class TestOnGetWithReviews:
 class TestOnPostNew:
     def test__on_post(self, catalog_service, client):
         # Setup
-        item_info_to_create = ITEM_2.to_dict()
-        item_info_to_create["reviews"] = []
+        ITEM_2["reviews"] = []
 
-        returned_item = dtos.TreatmentItemWithReviews(**item_info_to_create)
+        returned_item = dtos.TreatmentItemWithReviews(**ITEM_2)
         catalog_service.add_item.return_value = returned_item
 
         # Call
-        response = client.simulate_post('/items/new', json=item_info_to_create)
+        response = client.simulate_post('/items/new', json=ITEM_2)
 
         # Assert
         assert response.status_code == 201
@@ -352,22 +327,21 @@ class TestOnPostNew:
             decode=True, exclude_none=True, exclude_unset=True
         )
         assert catalog_service.method_calls == [
-            call.add_item(dtos.NewTreatmentItemInfo(**item_info_to_create))
+            call.add_item(dtos.NewTreatmentItemInfo(**ITEM_2))
         ]
 
 
 class TestOnPutById:
     def test__on_put_by_id(self, catalog_service, client):
         # Setup
-        updated_item_info = ITEM_3.to_dict()
-        updated_item_info["reviews"] = []
+        ITEM_3["reviews"] = []
 
-        returned_item = dtos.TreatmentItemWithReviews(**updated_item_info)
+        returned_item = dtos.TreatmentItemWithReviews(**ITEM_3)
         item_id = returned_item.id
         catalog_service.change_item.return_value = returned_item
 
         # Call
-        response = client.simulate_put(f'/items/{item_id}', json=updated_item_info)
+        response = client.simulate_put(f'/items/{item_id}', json=ITEM_3)
 
         # Assert
         assert response.status_code == 200
@@ -375,14 +349,14 @@ class TestOnPutById:
             decode=True, exclude_none=True, exclude_unset=True
         )
         assert catalog_service.method_calls == [
-            call.change_item(dtos.UpdatedTreatmentItemInfo(**updated_item_info))
+            call.change_item(dtos.UpdatedTreatmentItemInfo(**ITEM_3))
         ]
 
 
 class TestOnDeleteById:
     def test__on_delete_by_id(self, catalog_service, client):
         # Setup
-        returned_item = dtos.TreatmentItemWithReviews(**ITEM_1.to_dict())
+        returned_item = dtos.TreatmentItemWithReviews(**ITEM_1)
         item_id = returned_item.id
         catalog_service.delete_item.return_value = returned_item
 

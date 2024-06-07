@@ -4,5 +4,6 @@ from .item_categories import ItemCategories
 from .item_reviews import ItemReviews
 from .item_types import ItemTypes
 from .medical_books import MedicalBooks
+from .patient_matching import PatientMatching
 from .patients import Patients
 from .symptoms import Symptoms
