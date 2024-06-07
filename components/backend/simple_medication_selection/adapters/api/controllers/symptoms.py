@@ -1,12 +1,8 @@
-from dataclasses import asdict
-from typing import Sequence
-
 from falcon import status_codes
-
 from spectree import Response
-from ..spec import spectree
 
-from simple_medication_selection.application import services, entities, dtos, schemas
+from simple_medication_selection.application import services, dtos, schemas
+from ..spec import spectree
 
 
 class Symptoms:
@@ -96,4 +92,3 @@ class Symptoms:
 
         resp.media = removed_symptom.dict(exclude_none=True, exclude_unset=True)
         resp.status = status_codes.HTTP_200
-        
