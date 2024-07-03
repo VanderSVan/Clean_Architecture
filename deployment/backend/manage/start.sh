@@ -13,7 +13,7 @@ case "$1" in
 --dev)
   export COMPOSE_PROJECT_NAME=clean-architecture-dev
   echo "The development containers are running ..."
-  docker compose -f docker-compose.dev.yml up --build
+  docker compose -f docker-compose.dev.yml up --build --scale match_worker=2
   pwd
   ;;
 *)

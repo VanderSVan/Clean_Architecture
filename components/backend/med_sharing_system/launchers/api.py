@@ -1,13 +1,13 @@
 from sqlalchemy import create_engine
 
-from med_sharing_system.adapters import api, database, log
+from med_sharing_system.adapters import med_sharing_api, database, log
 from med_sharing_system.adapters.database import TransactionContext
 from med_sharing_system.application import services
 
 
 class Settings:
     db = database.Settings()
-    api = api.Settings()
+    api = med_sharing_api.Settings()
 
 
 class Logger:
@@ -64,17 +64,17 @@ class Decorators:
     services.symptom_decorated_function_registry.apply_decorators(DB.context)
 
 
-app = api.create_app(swagger_settings=Settings.api.SWAGGER,
-                     allow_origins=Settings.api.ALLOW_ORIGINS,
-                     api_prefix=Settings.api.API_PREFIX,
-                     diagnosis=Application.diagnosis,
-                     patient=Application.patient,
-                     symptom=Application.symptom,
-                     item_review=Application.item_review,
-                     catalog=Application.item_catalog,
-                     item_category=Application.item_category,
-                     item_type=Application.item_type,
-                     medical_book=Application.medical_book)
+app = med_sharing_api.create_app(swagger_settings=Settings.api.SWAGGER,
+                                 allow_origins=Settings.api.ALLOW_ORIGINS,
+                                 api_prefix=Settings.api.API_PREFIX,
+                                 diagnosis=Application.diagnosis,
+                                 patient=Application.patient,
+                                 symptom=Application.symptom,
+                                 item_review=Application.item_review,
+                                 catalog=Application.item_catalog,
+                                 item_category=Application.item_category,
+                                 item_type=Application.item_type,
+                                 medical_book=Application.medical_book)
 
 if __name__ == '__main__':
     import logging

@@ -5,13 +5,15 @@ from typing import Any, Callable, Dict, Optional
 from kombu import Connection
 from kombu.pools import producers
 
-from med_sharing_system.application.interfaces.messaging import (
-    Message,
+from med_sharing_system.application.interfaces.messaging_queues import (
+    QueueMessage,
     Publisher
 )
 from .scheme import BrokerScheme
 
+# Словарь параметров для продюсера, таких как exchange, routing_key и др.
 ProducerParams = Dict[str, Any]
+# Функция, которая возвращает параметры для конкретного таргета (очереди или обмена)
 ProducerParamsStrategy = Callable[[str], ProducerParams]
 
 
@@ -59,7 +61,7 @@ class KombuPublisher(Publisher):
     def on_finish(self):
         self.thread_safe_publisher.release_current()
 
-    def publish(self, *messages: Message):
+    def publish(self, *messages: QueueMessage):
         for message in messages:
             self.thread_safe_publisher.publish(
                 message.body, **self.params_for_target(message.target)

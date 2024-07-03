@@ -11,15 +11,81 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      backend_for_tests:
-        condition: service_completed_successfully
+    #      backend_for_tests:
+    #        condition: service_completed_successfully
     environment:
       DATABASE_HOST: "db"
       DATABASE_PORT: ${DATABASE_PORT}
       RABBITMQ_HOST: "rabbitmq"
-    entrypoint: ["entrypoint_api.sh"]
+    entrypoint: [ "entrypoint_api.sh" ]
     ports:
       - ${API_PORT}:${API_PORT}
+    networks:
+      - backend_dev_network
+    env_file:
+      - ../../components/backend/.env
+
+  notification_worker:
+    restart: unless-stopped
+    build:
+      context: ../..
+      dockerfile: deployment/backend/Dockerfile
+      target: development
+    depends_on:
+      db:
+        condition: service_healthy
+    #      backend_for_tests:
+    #        condition: service_completed_successfully
+    environment:
+      DATABASE_HOST: "db"
+      DATABASE_PORT: ${DATABASE_PORT}
+      RABBITMQ_HOST: "rabbitmq"
+    entrypoint: [ "entrypoint_notification_worker.sh" ]
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+    networks:
+      - backend_dev_network
+    env_file:
+      - ../../components/backend/.env
+
+  match_worker:
+    restart: unless-stopped
+    build:
+      context: ../..
+      dockerfile: deployment/backend/Dockerfile
+      target: development
+    depends_on:
+      db:
+        condition: service_healthy
+    #      backend_for_tests:
+    #        condition: service_completed_successfully
+    environment:
+      DATABASE_HOST: "db"
+      DATABASE_PORT: ${DATABASE_PORT}
+      RABBITMQ_HOST: "rabbitmq"
+    entrypoint: [ "entrypoint_match_worker.sh" ]
+    networks:
+      - backend_dev_network
+    env_file:
+      - ../../components/backend/.env
+
+  delivery_consumer:
+    restart: unless-stopped
+    build:
+      context: ../..
+      dockerfile: deployment/backend/Dockerfile
+      target: development
+    depends_on:
+      db:
+        condition: service_healthy
+    #      backend_for_tests:
+    #        condition: service_completed_successfully
+    environment:
+      DATABASE_HOST: "db"
+      DATABASE_PORT: ${DATABASE_PORT}
+      RABBITMQ_HOST: "rabbitmq"
+    entrypoint: [ "entrypoint_delivery_consumer.sh" ]
     networks:
       - backend_dev_network
     env_file:
@@ -30,7 +96,7 @@ services:
     restart: unless-stopped
     image: postgres:15
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      test: [ "CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -47,31 +113,31 @@ services:
     env_file:
       - ../../components/backend/.env
 
-  backend_for_tests:
-    container_name: "dev-backend-tests"
-    build:
-      context: ../..
-      dockerfile: deployment/backend/Dockerfile
-      target: tests
-    depends_on:
-      db_for_tests:
-        condition: service_healthy
-    environment:
-      TEST_DATABASE_HOST: "db_for_tests"
-      TEST_DATABASE_PORT: ${DATABASE_PORT}
-      API_ENV: development
-    entrypoint: ["entrypoint_tests.sh"]
-    networks:
-      - backend_dev_network
-    env_file:
-      - ../../components/backend/.env
+  #  backend_for_tests:
+  #    container_name: "dev-backend-tests"
+  #    build:
+  #      context: ../..
+  #      dockerfile: deployment/backend/Dockerfile
+  #      target: tests
+  #    depends_on:
+  #      db_for_tests:
+  #        condition: service_healthy
+  #    environment:
+  #      TEST_DATABASE_HOST: "db_for_tests"
+  #      TEST_DATABASE_PORT: ${DATABASE_PORT}
+  #      API_ENV: development
+  #    entrypoint: ["entrypoint_tests.sh"]
+  #    networks:
+  #      - backend_dev_network
+  #    env_file:
+  #      - ../../components/backend/.env
 
   db_for_tests:
     container_name: "dev-test_db"
     restart: unless-stopped
     image: postgres:15
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      test: [ "CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}" ]
       interval: 5s
       timeout: 3s
       retries: 5

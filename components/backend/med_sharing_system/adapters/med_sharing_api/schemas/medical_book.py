@@ -3,8 +3,8 @@ from typing import Literal
 from pydantic import Field, validator, root_validator
 
 from med_sharing_system.application import schemas, dtos, errors
-from .symptom import SymptomOutput
 from .item_review import ItemReviewOutput
+from .symptom import SymptomOutput
 
 
 class SearchMedicalBooks(schemas.FindMedicalBooks):

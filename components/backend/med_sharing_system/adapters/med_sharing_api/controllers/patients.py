@@ -1,8 +1,8 @@
 from falcon import status_codes
 from spectree import Response
 
-from med_sharing_system.adapters.api import schemas as api_schemas
-from med_sharing_system.adapters.api.spec import spectree
+from med_sharing_system.adapters.med_sharing_api import schemas as api_schemas
+from med_sharing_system.adapters.med_sharing_api.spec import spectree
 from med_sharing_system.application import services, dtos, schemas
 
 

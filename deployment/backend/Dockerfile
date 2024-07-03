@@ -1,7 +1,3 @@
-# Установка аргументов
-ARG PYTHON_VERSION=3.10
-ARG PYTHON_VERSION_SUFFIX=slim
-
 # Создание базового образа с общими переменными среды
 FROM python:3.10-slim AS base
 

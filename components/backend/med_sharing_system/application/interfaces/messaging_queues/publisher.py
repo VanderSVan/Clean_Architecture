@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from contextlib import ContextDecorator
 from dataclasses import dataclass, field
 
-from .message import Message
+from .message import QueueMessage
 from .utils import LocalList, ThreadSafeCounter
 
 
@@ -18,10 +18,10 @@ class Publisher(ContextDecorator, ABC):
     calls: ThreadSafeCounter = field(init=False, default_factory=ThreadSafeCounter)
 
     @abstractmethod
-    def publish(self, *messages: Message):
+    def publish(self, *messages: QueueMessage):
         pass
 
-    def plan(self, *messages: Message):
+    def plan(self, *messages: QueueMessage):
         self.deferred.extend(messages)
 
     def flush(self):

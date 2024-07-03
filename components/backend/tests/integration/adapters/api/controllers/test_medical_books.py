@@ -1,6 +1,6 @@
 from unittest.mock import call
 
-from med_sharing_system.adapters.api import schemas as api_schemas
+from med_sharing_system.adapters.med_sharing_api import schemas as api_schemas
 from med_sharing_system.application import dtos
 
 # ---------------------------------------------------------------------------------------

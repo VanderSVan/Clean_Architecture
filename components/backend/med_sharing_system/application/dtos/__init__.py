@@ -31,6 +31,9 @@ from .medical_book import (
     UpdatedMedicalBookInfo,
     MedicalBookInfoToUpdate,
 )
+from .message import (
+    Message
+)
 from .patient import (
     NewPatientInfo,
     Patient,

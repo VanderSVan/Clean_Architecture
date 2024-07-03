@@ -17,3 +17,4 @@ from .medical_book import (
 )
 from .patient import InputUpdatedPatientInfo
 from .symptom import SymptomOutput
+from .client import ClientId

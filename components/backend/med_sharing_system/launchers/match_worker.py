@@ -1,14 +1,14 @@
 from kombu import Connection
 from sqlalchemy import create_engine
 
-from med_sharing_system.adapters.database import TransactionContext
-
 from med_sharing_system.adapters import (
     database,
     log,
     message_bus,
     settings
 )
+from med_sharing_system.adapters.database import TransactionContext
+from med_sharing_system.adapters.message_bus.messaging_kombu import KombuPublisher
 from med_sharing_system.application import services
 
 
@@ -44,7 +44,12 @@ class Decorators:
 
 class MessageBus:
     connection = Connection(Settings.message_bus.RABBITMQ_URL)
-    consumer = message_bus.create_consumer(connection, Application.patient_matching)
+    message_bus.broker_scheme.declare(connection)
+    publisher = KombuPublisher(connection=connection, scheme=message_bus.broker_scheme)
+    Application.patient_matching.publisher = publisher
+    match_worker = message_bus.create_match_worker(
+        connection, Application.patient_matching
+    )
 
     @staticmethod
     def declare_scheme():
@@ -53,4 +58,4 @@ class MessageBus:
 
 if __name__ == '__main__':
     MessageBus.declare_scheme()
-    MessageBus.consumer.run()
+    MessageBus.match_worker.run()

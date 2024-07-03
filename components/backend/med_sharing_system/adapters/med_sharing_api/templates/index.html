@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WebSocket Notifications</title>
+</head>
+<body>
+    <h1>WebSocket Notifications</h1>
+
+<script type="text/javascript" charset="utf-8">
+    var client_id = 'client_1';  // This should be unique for each client in a real application
+    var serverIp = '0.0.0.0';  // Replace this with the actual server IP address
+
+    var socket = new WebSocket("ws://" + serverIp + ":8001/ws/" + client_id);
+
+    socket.onopen = function() {
+        console.log('Connected to WebSocket server');
+    };
+
+    socket.onmessage = function(event) {
+        console.log('New message received:', event.data);
+        var messageElement = document.createElement('p');
+        messageElement.innerText = event.data;
+        document.body.appendChild(messageElement);
+    };
+
+    socket.onclose = function(event) {
+        console.log('Disconnected from WebSocket server');
+    };
+
+    socket.onerror = function(error) {
+        console.error('WebSocket error:', error);
+    };
+</script>
+</body>
+</html>

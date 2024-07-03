@@ -1,4 +1,4 @@
-## Пакет `messaging`
+## Пакет `messaging_queues`
 
 Этот пакет предоставляет абстрактные классы для очередей сообщений.
 Пакет включает в себя инструменты для создания систем обмена сообщениями в Python с возможностью отложенной публикации. Он помогает структурировать сообщения, публиковать их и управлять процессом публикации в многопоточном окружении.
@@ -16,7 +16,7 @@
 #### 1. Структура сообщений
 
 ```python
-from messaging import Message
+from messaging_queues import Message
 
 message = Message(target="user1@example.com", body="Привет!")
 ```
@@ -28,7 +28,7 @@ message = Message(target="user1@example.com", body="Привет!")
 **Пример:**
 
 ```python
-from messaging import Publisher, Message
+from messaging_queues import Publisher, Message
 
 class EmailPublisher(Publisher):
   def publish(self, *messages):
@@ -47,7 +47,7 @@ publisher.publish(Message("user2@example.com", "Добро пожаловать!
 **Пример:**
 
 ```python
-from messaging import Publisher, Message
+from messaging_queues import Publisher, Message
 
 with Publisher() as publisher:
   publisher.plan(Message("user1@example.com", "Привет!"))

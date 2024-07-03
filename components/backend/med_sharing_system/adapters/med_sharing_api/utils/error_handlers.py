@@ -1,8 +1,8 @@
 from typing import Any
 
-from pydantic import ValidationError
 from falcon import Request, Response
 from falcon import status_codes
+from pydantic import ValidationError
 
 from med_sharing_system.application.errors import (
     Error, ErrorsList

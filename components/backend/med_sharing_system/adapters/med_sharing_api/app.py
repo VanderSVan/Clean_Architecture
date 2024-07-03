@@ -51,11 +51,6 @@ def create_app(swagger_settings: SwaggerSettings,
                   controllers.Patients(patient=patient),
                   suffix='by_id')
 
-    # Patient Matching
-    if patient_matching is not None:
-        app.add_route(f'{api_prefix}/patients/match',
-                      controllers.PatientMatching(patient_matching=patient_matching))
-
     # Symptoms
     app.add_route(f'{api_prefix}/symptoms',
                   controllers.Symptoms(symptom=symptom))
@@ -145,6 +140,12 @@ def create_app(swagger_settings: SwaggerSettings,
     app.add_route(f'{api_prefix}/medical_books/reviews/symptoms',
                   controllers.MedicalBooks(medical_book=medical_book),
                   suffix='with_symptoms_and_reviews')
+
+    # # Patient Matching
+    if patient_matching is not None:
+        app.add_route(f'{api_prefix}/', controllers.Index())
+        app.add_route(f'{api_prefix}/patients/match',
+                      controllers.PatientMatching(patient_matching=patient_matching))
 
     if swagger_settings.ON:
         setup_spectree(

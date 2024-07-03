@@ -3,6 +3,6 @@ from typing import Any
 
 
 @dataclass
-class Message:
+class QueueMessage:
     target: str
     body: Any

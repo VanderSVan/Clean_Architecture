@@ -1,4 +1,5 @@
 from .diagnoses import Diagnoses
+from .index import Index
 from .item_catalog import Catalog
 from .item_categories import ItemCategories
 from .item_reviews import ItemReviews

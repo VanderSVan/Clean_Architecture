@@ -3,8 +3,8 @@ from unittest.mock import Mock
 import pytest
 from falcon import testing
 
-from med_sharing_system.adapters.api import SwaggerSettings
-from med_sharing_system.adapters.api.app import create_app
+from med_sharing_system.adapters.med_sharing_api import SwaggerSettings
+from med_sharing_system.adapters.med_sharing_api.app import create_app
 from med_sharing_system.application import services
 
 

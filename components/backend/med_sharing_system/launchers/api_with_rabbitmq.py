@@ -1,7 +1,7 @@
 from kombu import Connection
 from sqlalchemy import create_engine
 
-from med_sharing_system.adapters import api, database, log, message_bus
+from med_sharing_system.adapters import med_sharing_api, database, log, message_bus
 from med_sharing_system.adapters.database import TransactionContext
 from med_sharing_system.adapters.message_bus.messaging_kombu import (
     KombuPublisher
@@ -11,7 +11,7 @@ from med_sharing_system.application import services
 
 class Settings:
     db = database.Settings()
-    api = api.Settings()
+    api = med_sharing_api.Settings()
     message_bus = message_bus.Settings()
 
 
@@ -83,15 +83,15 @@ class Decorators:
     services.patient_matching_decorated_function_registry.apply_decorators(DB.context)
 
 
-app = api.create_app(swagger_settings=Settings.api.SWAGGER,
-                     allow_origins=Settings.api.ALLOW_ORIGINS,
-                     api_prefix=Settings.api.API_PREFIX,
-                     diagnosis=Application.diagnosis,
-                     patient_matching=Application.patient_matching,
-                     patient=Application.patient,
-                     symptom=Application.symptom,
-                     item_review=Application.item_review,
-                     catalog=Application.item_catalog,
-                     item_category=Application.item_category,
-                     item_type=Application.item_type,
-                     medical_book=Application.medical_book)
+app = med_sharing_api.create_app(swagger_settings=Settings.api.SWAGGER,
+                                 allow_origins=Settings.api.ALLOW_ORIGINS,
+                                 api_prefix=Settings.api.API_PREFIX,
+                                 diagnosis=Application.diagnosis,
+                                 patient_matching=Application.patient_matching,
+                                 patient=Application.patient,
+                                 symptom=Application.symptom,
+                                 item_review=Application.item_review,
+                                 catalog=Application.item_catalog,
+                                 item_category=Application.item_category,
+                                 item_type=Application.item_type,
+                                 medical_book=Application.medical_book)
