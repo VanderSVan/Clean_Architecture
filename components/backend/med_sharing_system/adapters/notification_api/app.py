@@ -29,7 +29,7 @@ class WebSocketApplication(BaseWebSocketApplication):
                     print(f"Client {client_id} has no more WebSockets, key removed")
             except ValueError:
                 print(f"WebSocket not found in client {client_id}'s list")
-        print(f"Client {client_id} disconnected")
+        print(f"Client {client_id} disconnected: {reason}")
 
     @classmethod
     def on_message(cls, message, *args, **kwargs):
@@ -37,14 +37,16 @@ class WebSocketApplication(BaseWebSocketApplication):
         if client_id is None:
             raise falcon.HTTPBadRequest
 
-        client_copies: list[WebSocket | None] = cls.clients.get(client_id, [])
+        print(f"Sending message to client {client_id}: {message}")
+        client_copies: list[WebSocket | None] = cls.clients.get(client_id, []).copy()
         for ws in client_copies:
             try:
                 ws.send(message)
-            except WebSocketError:
-                client_copies.remove(ws)
-        if not client_copies:
-            del cls.clients[client_id]
+            except WebSocketError as e:
+                print(f"Error sending message to {client_id}: {e}")
+                cls.clients[client_id].remove(ws)
+                if not cls.clients[client_id]:
+                    del cls.clients[client_id]
 
 
 def create_app(api_prefix: str) -> falcon.App:
