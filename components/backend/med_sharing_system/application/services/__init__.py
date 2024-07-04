@@ -26,11 +26,11 @@ from .patient import (
     Patient,
     decorated_function_registry as patient_decorated_function_registry
 )
+from .patient_matching import (
+    PatientMatcher,
+    decorated_function_registry as patient_matching_decorated_function_registry
+)
 from .symptom import (
     Symptom,
     decorated_function_registry as symptom_decorated_function_registry
-)
-from .matching_system import (
-    PatientMatching,
-    decorated_function_registry as patient_matching_decorated_function_registry
 )

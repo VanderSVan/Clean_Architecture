@@ -4,5 +4,5 @@ from typing import Any
 
 @dataclass
 class QueueMessage:
-    target: str
+    target: str  # В RabbitMQ это Exchange
     body: Any

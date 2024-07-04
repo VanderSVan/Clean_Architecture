@@ -41,7 +41,7 @@ class MessageSending:
 
 
 class Application:
-    patient_matching = services.PatientMatching(message_deliverer=MessageSending.notifier)
+    patient_matcher = services.PatientMatcher(message_deliverer=MessageSending.notifier)
 
 
 class Decorators:
@@ -52,7 +52,7 @@ class MessageBus:
     connection = Connection(Settings.message_bus.RABBITMQ_URL)
 
     delivery_consumer = message_bus.create_delivery_consumer(
-        connection, Application.patient_matching
+        connection, Application.patient_matcher
     )
 
     @staticmethod

@@ -39,11 +39,9 @@ class DB:
 class MessageBus:
     connection = Connection(Settings.message_bus.RABBITMQ_URL)
     message_bus.broker_scheme.declare(connection)
+    exchange_to_publish = message_bus.EXCHANGE_TO_MATCHING
 
-    publisher = KombuPublisher(
-        connection=connection,
-        scheme=message_bus.broker_scheme,
-    )
+    publisher = KombuPublisher(connection=connection, scheme=message_bus.broker_scheme)
 
 
 class Application:
@@ -68,7 +66,10 @@ class Application:
     patient = services.Patient(patients_repo=DB.patients_repo,
                                medical_books_repo=DB.medical_books_repo)
     symptom = services.Symptom(symptoms_repo=DB.symptoms_repo)
-    patient_matching = services.PatientMatching(publisher=MessageBus.publisher)
+    patient_matcher = services.PatientMatcher(
+        publisher=MessageBus.publisher,
+        targets={'publish_request_for_search_patients': MessageBus.exchange_to_publish}
+    )
 
 
 class Decorators:
@@ -87,7 +88,7 @@ app = med_sharing_api.create_app(swagger_settings=Settings.api.SWAGGER,
                                  allow_origins=Settings.api.ALLOW_ORIGINS,
                                  api_prefix=Settings.api.API_PREFIX,
                                  diagnosis=Application.diagnosis,
-                                 patient_matching=Application.patient_matching,
+                                 patient_matcher=Application.patient_matcher,
                                  patient=Application.patient,
                                  symptom=Application.symptom,
                                  item_review=Application.item_review,

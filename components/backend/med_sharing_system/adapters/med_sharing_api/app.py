@@ -20,7 +20,7 @@ def create_app(swagger_settings: SwaggerSettings,
                medical_book: services.MedicalBook,
                patient: services.Patient,
                symptom: services.Symptom,
-               patient_matching: services.PatientMatching | None = None,
+               patient_matcher: services.PatientMatcher | None = None,
                ) -> falcon.App:
     cors_middleware = falcon.CORSMiddleware(allow_origins=allow_origins)
     middleware = [cors_middleware]
@@ -142,10 +142,10 @@ def create_app(swagger_settings: SwaggerSettings,
                   suffix='with_symptoms_and_reviews')
 
     # # Patient Matching
-    if patient_matching is not None:
+    if patient_matcher is not None:
         app.add_route(f'{api_prefix}/', controllers.Index())
         app.add_route(f'{api_prefix}/patients/match',
-                      controllers.PatientMatching(patient_matching=patient_matching))
+                      controllers.PatientMatching(patient_matcher=patient_matcher))
 
     if swagger_settings.ON:
         setup_spectree(

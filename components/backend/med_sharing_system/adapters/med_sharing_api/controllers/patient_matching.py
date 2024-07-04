@@ -6,8 +6,8 @@ from ..spec import spectree
 
 
 class PatientMatching:
-    def __init__(self, patient_matching: services.PatientMatching):
-        self.patient_matching = patient_matching
+    def __init__(self, patient_matcher: services.PatientMatcher):
+        self.patient_matcher = patient_matcher
 
     @spectree.validate(
         json=api_schemas.ClientId,
@@ -16,7 +16,7 @@ class PatientMatching:
     def on_post(self, req, resp):
         client_id = req.media.get('client_id')
         if client_id:
-            self.patient_matching.publish_request_for_search_patients(client_id)
+            self.patient_matcher.publish_request_for_search_patients(client_id)
             resp.media = "Request accepted for processing"
             resp.status = status_codes.HTTP_202
         else:

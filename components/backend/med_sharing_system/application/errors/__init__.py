@@ -36,6 +36,10 @@ from .patient import (
     PatientCannotBeDeleted
 
 )
+from .patient_matching import (
+    PublisherError,
+    TargetNamesError
+)
 from .symptom import (
     SymptomNotFound,
     SymptomAlreadyExists,

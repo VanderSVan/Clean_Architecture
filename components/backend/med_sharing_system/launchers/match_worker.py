@@ -35,7 +35,7 @@ class DB:
 
 
 class Application:
-    patient_matching = services.PatientMatching()
+    patient_matcher = services.PatientMatcher()
 
 
 class Decorators:
@@ -46,9 +46,15 @@ class MessageBus:
     connection = Connection(Settings.message_bus.RABBITMQ_URL)
     message_bus.broker_scheme.declare(connection)
     publisher = KombuPublisher(connection=connection, scheme=message_bus.broker_scheme)
-    Application.patient_matching.publisher = publisher
+    exchange_to_publishing = message_bus.EXCHANGE_TO_DELIVERY
+
+    Application.patient_matcher.publisher = publisher
+    Application.patient_matcher.targets = {
+        'find_matching_patient': exchange_to_publishing
+    }
+
     match_worker = message_bus.create_match_worker(
-        connection, Application.patient_matching
+        connection, Application.patient_matcher
     )
 
     @staticmethod

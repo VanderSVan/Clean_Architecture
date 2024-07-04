@@ -25,7 +25,7 @@ def patient_service() -> Mock:
 
 @pytest.fixture(scope='function')
 def patient_matching_service() -> Mock:
-    return Mock(services.PatientMatching)
+    return Mock(services.PatientMatcher)
 
 
 @pytest.fixture(scope='function')
@@ -71,7 +71,7 @@ def client(diagnosis_service,
                      api_prefix='',
                      diagnosis=diagnosis_service,
                      patient=patient_service,
-                     patient_matching=patient_matching_service,
+                     patient_matcher=patient_matching_service,
                      symptom=symptom_service,
                      catalog=catalog_service,
                      item_review=item_review_service,

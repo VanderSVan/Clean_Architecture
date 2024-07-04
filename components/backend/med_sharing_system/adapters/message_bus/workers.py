@@ -6,7 +6,7 @@ from .scheme import broker_scheme
 
 
 def create_match_worker(connection: Connection,
-                        patient_matcher: services.PatientMatching
+                        patient_matcher: services.PatientMatcher
                         ) -> KombuConsumer:
     worker = KombuConsumer(connection=connection, scheme=broker_scheme)
 

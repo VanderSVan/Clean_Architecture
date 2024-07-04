@@ -6,14 +6,14 @@ from .scheme import broker_scheme
 
 
 def create_delivery_consumer(connection: Connection,
-                             patient_matcher: services.PatientMatching
+                             patient_matcher: services.PatientMatcher
                              ) -> KombuConsumer:
     consumer = KombuConsumer(connection=connection,
                              scheme=broker_scheme,
                              prefetch_count=1)
 
     consumer.register_function(
-        patient_matcher.send_found_patients,
+        patient_matcher.send_message_to_client,
         'PatientsDeliveryQueue',
     )
 
