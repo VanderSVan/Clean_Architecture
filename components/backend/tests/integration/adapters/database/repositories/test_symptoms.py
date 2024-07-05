@@ -1,9 +1,8 @@
 import pytest
-
 from sqlalchemy import exc
 
-from simple_medication_selection.adapters.database import tables, repositories
-from simple_medication_selection.application import entities, schemas
+from med_sharing_system.adapters.database import tables, repositories
+from med_sharing_system.application import entities, schemas
 from .. import test_data
 
 

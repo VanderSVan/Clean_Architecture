@@ -19,4 +19,4 @@ timeout 30 bash -c \
 
 echo
 echo "Starting alembic migrations..."
-python -m simple_medication_selection.launchers.alembic_runner upgrade head
+python -m med_sharing_system.launchers.alembic_runner upgrade head

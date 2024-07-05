@@ -1,9 +1,8 @@
 import pytest
-
 from sqlalchemy import select, func
 
-from simple_medication_selection.adapters.database import repositories
-from simple_medication_selection.application import entities, schemas
+from med_sharing_system.adapters.database import repositories
+from med_sharing_system.application import entities, schemas
 from .. import test_data
 
 
@@ -48,12 +47,12 @@ class TestFetchByName:
         # Assert
         assert isinstance(result, entities.ItemCategory)
         assert result.name == category.name
-        
+
 
 class TestFetchAll:
     def test__fetch_all(self, repo):
         filter_params = schemas.FindItemCategories(sort_field='name',
-                                              sort_direction='asc')
+                                                   sort_direction='asc')
         result = repo.fetch_all(filter_params)
 
         assert len(result) == len(test_data.CATEGORIES_DATA)
@@ -62,16 +61,16 @@ class TestFetchAll:
 
     def test__with_limit(self, repo):
         filter_params = schemas.FindItemCategories(sort_field='name',
-                                              sort_direction='asc',
-                                              limit=1)
+                                                   sort_direction='asc',
+                                                   limit=1)
         result = repo.fetch_all(filter_params)
 
         assert len(result) == filter_params.limit
 
     def test__with_offset(self, repo):
         filter_params = schemas.FindItemCategories(sort_field='name',
-                                              sort_direction='asc',
-                                              offset=1)
+                                                   sort_direction='asc',
+                                                   offset=1)
         result = repo.fetch_all(filter_params)
 
         assert len(result) == len(test_data.CATEGORIES_DATA) - filter_params.offset

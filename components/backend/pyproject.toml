@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "simple_medication_selection"
+name = "med_sharing_system"
 version = "0.1.0"
 description = ""
 authors = ["Ivan Shikhanov"]
@@ -20,9 +20,10 @@ gunicorn = "^21.2.0"
 gevent = "^24.2.1"
 gevent-websocket = "^0.10.1"
 kombu = "^5.3.7"
+requests = "^2.32.3"
 
 [tool.poetry.scripts]
-simple_medication_selection = "simple_medication_selection.entrypoints.healing_api:main"
+med_sharing_system = "med_sharing_system.entrypoints.healing_api:main"
 
 
 [tool.poetry.group.dev.dependencies]

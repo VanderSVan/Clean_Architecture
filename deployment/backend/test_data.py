@@ -2,8 +2,8 @@ from itertools import cycle
 
 from sqlalchemy import insert, select, func, update, Select
 
-from simple_medication_selection.adapters.database import tables
-from simple_medication_selection.application import entities
+from med_sharing_system.adapters.database import tables
+from med_sharing_system.application import entities
 
 PATIENTS_DATA = [
     {'nickname': 'Иван Иванов', 'gender': 'мужской', 'age': 35, 'skin_type': 'нормальная',
@@ -235,8 +235,8 @@ if __name__ == '__main__':
     print("test_data.py script started")
     import logging
     from sqlalchemy import create_engine
-    from simple_medication_selection.adapters import database
-    from simple_medication_selection.adapters.database import TransactionContext
+    from med_sharing_system.adapters import database
+    from med_sharing_system.adapters.database import TransactionContext
 
     logger = logging.getLogger('sqlalchemy')
 
