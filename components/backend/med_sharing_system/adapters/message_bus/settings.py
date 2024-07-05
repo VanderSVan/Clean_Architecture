@@ -5,7 +5,7 @@ from pydantic import BaseSettings, Field
 
 class Settings(BaseSettings):
     RABBITMQ_HOST: str = Field(..., env='RABBITMQ_HOST')
-    RABBITMQ_PORT: int = Field(..., env='RABBITMQ_PORT')
+    RABBITMQ_AMQP_PORT: int = Field(..., env='RABBITMQ_AMQP_PORT')
     RABBITMQ_USER: str = Field(..., env='RABBITMQ_USER')
     RABBITMQ_PASSWORD: str = Field(..., env='RABBITMQ_PASSWORD')
     RABBITMQ_VHOST: str = '/'
@@ -22,7 +22,7 @@ class Settings(BaseSettings):
             user=self.RABBITMQ_USER,
             password=self.RABBITMQ_PASSWORD,
             host=self.RABBITMQ_HOST,
-            port=self.RABBITMQ_PORT,
+            port=self.RABBITMQ_AMQP_PORT,
             vhost=self.RABBITMQ_VHOST,
         )
 

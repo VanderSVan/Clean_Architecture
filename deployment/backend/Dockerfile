@@ -126,6 +126,9 @@ USER $USERNAME
 COPY ./deployment/backend/entrypoints/entrypoint_*.sh /usr/bin/
 RUN chmod +x /usr/bin/entrypoint_*.sh
 
+# Скопировать настройки gevent
+COPY ./components/backend/med_sharing_system/launchers/gevent_settings/ /med_sharing_system/launchers/gevent_settings
+
 # Копирование собранного пакета проекта из builder стадии
 COPY --from=builder $PYSETUP_PATH/dist /app/dist
 

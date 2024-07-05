@@ -14,7 +14,7 @@
     var socket;
 
     function connect() {
-        socket = new WebSocket("ws://" + serverIp + ":8001/ws/" + client_id);
+        socket = new WebSocket("ws://" + serverIp + ":8080/ws/" + client_id);
 
         socket.onopen = function() {
             console.log('Connected to WebSocket server');

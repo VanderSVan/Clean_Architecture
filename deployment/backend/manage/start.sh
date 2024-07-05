@@ -19,6 +19,6 @@ case "$1" in
 *)
   export COMPOSE_PROJECT_NAME=clean-architecture
   echo "The production containers are running ..."
-  docker compose -f docker-compose.prod.yml up --build -d
+  docker compose -f docker-compose.prod.yml up -d --build --scale match_worker=4
   ;;
 esac

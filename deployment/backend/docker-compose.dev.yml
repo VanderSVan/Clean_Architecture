@@ -11,15 +11,13 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    #      backend_for_tests:
-    #        condition: service_completed_successfully
     environment:
       DATABASE_HOST: "db"
       DATABASE_PORT: ${DATABASE_PORT}
       RABBITMQ_HOST: "rabbitmq"
     entrypoint: [ "entrypoint_api.sh" ]
     ports:
-      - ${API_PORT}:${API_PORT}
+      - ${MED_API_PORT}:${MED_API_PORT}
     networks:
       - backend_dev_network
     env_file:
@@ -32,18 +30,16 @@ services:
       dockerfile: deployment/backend/Dockerfile
       target: development
     depends_on:
-      db:
-        condition: service_healthy
-    #      backend_for_tests:
-    #        condition: service_completed_successfully
+      - backend
+      - rabbitmq
     environment:
       DATABASE_HOST: "db"
       DATABASE_PORT: ${DATABASE_PORT}
       RABBITMQ_HOST: "rabbitmq"
     entrypoint: [ "entrypoint_notification_worker.sh" ]
     ports:
-      - "8000:8000"
-      - "8001:8001"
+      - ${NOTIFICATION_API_PORT}:${NOTIFICATION_API_PORT}
+      - ${WS_NOTIFICATION_API_PORT}:${WS_NOTIFICATION_API_PORT}
     networks:
       - backend_dev_network
     env_file:
@@ -56,10 +52,8 @@ services:
       dockerfile: deployment/backend/Dockerfile
       target: development
     depends_on:
-      db:
-        condition: service_healthy
-    #      backend_for_tests:
-    #        condition: service_completed_successfully
+      - backend
+      - rabbitmq
     environment:
       DATABASE_HOST: "db"
       DATABASE_PORT: ${DATABASE_PORT}
@@ -77,10 +71,8 @@ services:
       dockerfile: deployment/backend/Dockerfile
       target: development
     depends_on:
-      db:
-        condition: service_healthy
-    #      backend_for_tests:
-    #        condition: service_completed_successfully
+      - backend
+      - rabbitmq
     environment:
       DATABASE_HOST: "db"
       DATABASE_PORT: ${DATABASE_PORT}
@@ -113,24 +105,24 @@ services:
     env_file:
       - ../../components/backend/.env
 
-  #  backend_for_tests:
-  #    container_name: "dev-backend-tests"
-  #    build:
-  #      context: ../..
-  #      dockerfile: deployment/backend/Dockerfile
-  #      target: tests
-  #    depends_on:
-  #      db_for_tests:
-  #        condition: service_healthy
-  #    environment:
-  #      TEST_DATABASE_HOST: "db_for_tests"
-  #      TEST_DATABASE_PORT: ${DATABASE_PORT}
-  #      API_ENV: development
-  #    entrypoint: ["entrypoint_tests.sh"]
-  #    networks:
-  #      - backend_dev_network
-  #    env_file:
-  #      - ../../components/backend/.env
+  backend_for_tests:
+    container_name: "dev-backend-tests"
+    build:
+      context: ../..
+      dockerfile: deployment/backend/Dockerfile
+      target: tests
+    depends_on:
+      db_for_tests:
+        condition: service_healthy
+    environment:
+      TEST_DATABASE_HOST: "db_for_tests"
+      TEST_DATABASE_PORT: ${DATABASE_PORT}
+      API_ENV: development
+    entrypoint: ["entrypoint_tests.sh"]
+    networks:
+      - backend_dev_network
+    env_file:
+      - ../../components/backend/.env
 
   db_for_tests:
     container_name: "dev-test_db"
@@ -152,6 +144,23 @@ services:
     env_file:
       - ../../components/backend/.env
 
+  rabbitmq:
+    container_name: "dev-rabbitmq"
+    image: rabbitmq:management
+    hostname: dev-rabbitmq
+    restart: unless-stopped
+    ports:
+      - ${RABBITMQ_AMQP_PORT}:${RABBITMQ_AMQP_PORT}
+      - ${RABBITMQ_WEB_PORT}:${RABBITMQ_WEB_PORT}
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: -rabbit log_levels [{connection,info},{default,error}] disk_free_limit 2147483648 # Ограничение свободного места на диске до 2 гигабит
+    volumes:
+      - dev-rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - backend_dev_network
+
   pgadmin:
     container_name: "dev-pgadmin4"
     image: dpage/pgadmin4
@@ -169,23 +178,6 @@ services:
       db:
         condition: service_healthy
 
-  rabbitmq:
-    container_name: "dev-rabbitmq"
-    image: rabbitmq:management
-    hostname: rabbitmq-dev
-    restart: unless-stopped
-    ports:
-      - "5672:5672"   # Порт для AMQP
-      - "15672:15672" # Порт для веб-интерфейса управления RabbitMQ
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
-      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: -rabbit log_levels [{connection,info},{default,error}] disk_free_limit 2147483648 # Ограничение свободного места на диске до 2 гигабит
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
-    networks:
-      - backend_dev_network
-
   nginx:
     container_name: "dev-nginx"
     restart: always
@@ -193,6 +185,10 @@ services:
     depends_on:
       - db
       - backend
+      - notification_worker
+      - match_worker
+      - delivery_consumer
+      - pgadmin
     volumes:
       - ./nginx_config/default.dev.conf:/etc/nginx/conf.d/default.conf
     ports:
@@ -203,7 +199,7 @@ services:
 volumes:
   db-dev:
   dev-pgadmin-data:
-  rabbitmq_data:
+  dev-rabbitmq-data:
 
 networks:
   backend_dev_network:
