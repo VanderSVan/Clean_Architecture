@@ -1,1 +1,3 @@
-# clean_architecture_dev
+# clean_architecture
+
+Описание проекта скоро появится
