@@ -11,14 +11,73 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      backend_for_tests:
-        condition: service_completed_successfully
     environment:
       DATABASE_HOST: "db"
       DATABASE_PORT: ${DATABASE_PORT}
-    entrypoint: ["entrypoint_api.sh"]
+      RABBITMQ_HOST: "rabbitmq"
+    entrypoint: [ "entrypoint_api.sh" ]
     ports:
-      - ${API_PORT}:${API_PORT}
+      - ${MED_API_PORT}:${MED_API_PORT}
+    networks:
+      - backend_dev_network
+    env_file:
+      - ../../components/backend/.env
+
+  notification_worker:
+    restart: unless-stopped
+    build:
+      context: ../..
+      dockerfile: deployment/backend/Dockerfile
+      target: development
+    depends_on:
+      - backend
+      - rabbitmq
+    environment:
+      DATABASE_HOST: "db"
+      DATABASE_PORT: ${DATABASE_PORT}
+      RABBITMQ_HOST: "rabbitmq"
+    entrypoint: [ "entrypoint_notification_worker.sh" ]
+    ports:
+      - ${NOTIFICATION_API_PORT}:${NOTIFICATION_API_PORT}
+      - ${WS_NOTIFICATION_API_PORT}:${WS_NOTIFICATION_API_PORT}
+    networks:
+      - backend_dev_network
+    env_file:
+      - ../../components/backend/.env
+
+  match_worker:
+    restart: unless-stopped
+    build:
+      context: ../..
+      dockerfile: deployment/backend/Dockerfile
+      target: development
+    depends_on:
+      - backend
+      - rabbitmq
+    environment:
+      DATABASE_HOST: "db"
+      DATABASE_PORT: ${DATABASE_PORT}
+      RABBITMQ_HOST: "rabbitmq"
+    entrypoint: [ "entrypoint_match_worker.sh" ]
+    networks:
+      - backend_dev_network
+    env_file:
+      - ../../components/backend/.env
+
+  delivery_consumer:
+    restart: unless-stopped
+    build:
+      context: ../..
+      dockerfile: deployment/backend/Dockerfile
+      target: development
+    depends_on:
+      - backend
+      - rabbitmq
+    environment:
+      DATABASE_HOST: "db"
+      DATABASE_PORT: ${DATABASE_PORT}
+      RABBITMQ_HOST: "rabbitmq"
+    entrypoint: [ "entrypoint_delivery_consumer.sh" ]
     networks:
       - backend_dev_network
     env_file:
@@ -29,7 +88,7 @@ services:
     restart: unless-stopped
     image: postgres:15
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      test: [ "CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -70,7 +129,7 @@ services:
     restart: unless-stopped
     image: postgres:15
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      test: [ "CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}" ]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -84,6 +143,23 @@ services:
       - backend_dev_network
     env_file:
       - ../../components/backend/.env
+
+  rabbitmq:
+    container_name: "dev-rabbitmq"
+    image: rabbitmq:management
+    hostname: dev-rabbitmq
+    restart: unless-stopped
+    ports:
+      - ${RABBITMQ_AMQP_PORT}:${RABBITMQ_AMQP_PORT}
+      - ${RABBITMQ_WEB_PORT}:${RABBITMQ_WEB_PORT}
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: -rabbit log_levels [{connection,info},{default,error}] disk_free_limit 2147483648 # Ограничение свободного места на диске до 2 гигабит
+    volumes:
+      - dev-rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - backend_dev_network
 
   pgadmin:
     container_name: "dev-pgadmin4"
@@ -109,6 +185,10 @@ services:
     depends_on:
       - db
       - backend
+      - notification_worker
+      - match_worker
+      - delivery_consumer
+      - pgadmin
     volumes:
       - ./nginx_config/default.dev.conf:/etc/nginx/conf.d/default.conf
     ports:
@@ -119,6 +199,7 @@ services:
 volumes:
   db-dev:
   dev-pgadmin-data:
+  dev-rabbitmq-data:
 
 networks:
   backend_dev_network:

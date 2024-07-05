@@ -3,8 +3,8 @@ from itertools import product
 import pytest
 from sqlalchemy import select, func
 
-from simple_medication_selection.adapters.database import repositories
-from simple_medication_selection.application import entities, schemas
+from med_sharing_system.adapters.database import repositories
+from med_sharing_system.application import entities, schemas
 from .. import test_data
 from ..conftest import session
 
@@ -139,19 +139,19 @@ class _BaseMixin:
     MIXIN_KWARGS: dict[str, list[dict]] = dict(
         test__order_is_asc=[
             dict(filter_params=schemas.FindTreatmentItems(sort_field='title',
-                                                             sort_direction='asc')),
+                                                          sort_direction='asc')),
             dict(filter_params=schemas.FindTreatmentItems(sort_field='price',
-                                                             sort_direction='asc')),
+                                                          sort_direction='asc')),
             dict(filter_params=schemas.FindTreatmentItems(sort_field='avg_rating',
-                                                             sort_direction='asc'))
+                                                          sort_direction='asc'))
         ],
         test__order_is_desc=[
             dict(filter_params=schemas.FindTreatmentItems(sort_field='title',
-                                                             sort_direction='desc')),
+                                                          sort_direction='desc')),
             dict(filter_params=schemas.FindTreatmentItems(sort_field='price',
-                                                             sort_direction='desc')),
+                                                          sort_direction='desc')),
             dict(filter_params=schemas.FindTreatmentItems(sort_field='avg_rating',
-                                                             sort_direction='desc'))
+                                                          sort_direction='desc'))
         ],
         test__with_limit=[dict(filter_params=schemas.FindTreatmentItems(limit=1))],
         test__with_offset=[dict(filter_params=schemas.FindTreatmentItems(offset=1))],

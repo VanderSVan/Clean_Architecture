@@ -2,8 +2,8 @@ from itertools import cycle
 
 from sqlalchemy import insert, select, func, update
 
-from simple_medication_selection.adapters.database import tables
-from simple_medication_selection.application import entities
+from med_sharing_system.adapters.database import tables
+from med_sharing_system.application import entities
 
 PATIENTS_DATA = [
     {'nickname': 'Пациент 1', 'gender': 'male', 'age': 20, 'skin_type': 'нормальная',

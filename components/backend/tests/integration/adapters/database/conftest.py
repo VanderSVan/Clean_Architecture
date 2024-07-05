@@ -3,7 +3,7 @@
 import pytest
 from sqlalchemy import create_engine
 
-from simple_medication_selection.adapters.database import (
+from med_sharing_system.adapters.database import (
     Settings,
     metadata,
     TransactionContext,

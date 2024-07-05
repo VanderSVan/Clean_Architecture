@@ -3,9 +3,9 @@ from unittest.mock import Mock
 import pytest
 from falcon import testing
 
-from simple_medication_selection.adapters.api import SwaggerSettings
-from simple_medication_selection.adapters.api.app import create_app
-from simple_medication_selection.application import services
+from med_sharing_system.adapters.med_sharing_api import SwaggerSettings
+from med_sharing_system.adapters.med_sharing_api.app import create_app
+from med_sharing_system.application import services
 
 
 @pytest.fixture(scope='function')
@@ -21,6 +21,11 @@ def diagnosis_service() -> Mock:
 @pytest.fixture(scope='function')
 def patient_service() -> Mock:
     return Mock(services.Patient)
+
+
+@pytest.fixture(scope='function')
+def patient_matching_service() -> Mock:
+    return Mock(services.PatientMatcher)
 
 
 @pytest.fixture(scope='function')
@@ -51,6 +56,7 @@ def medical_book_service() -> Mock:
 @pytest.fixture(scope='function')
 def client(diagnosis_service,
            patient_service,
+           patient_matching_service,
            symptom_service,
            catalog_service,
            item_review_service,
@@ -65,6 +71,7 @@ def client(diagnosis_service,
                      api_prefix='',
                      diagnosis=diagnosis_service,
                      patient=patient_service,
+                     patient_matcher=patient_matching_service,
                      symptom=symptom_service,
                      catalog=catalog_service,
                      item_review=item_review_service,
