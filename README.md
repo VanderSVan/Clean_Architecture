@@ -4,6 +4,25 @@
 "Clean architecture", "SOLID", "DDD" и др. на практике.
 
 ---
+## Project stack:
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+![Falcon](https://img.shields.io/badge/Falcon-505050?style=for-the-badge&logo=falcon)
+![Gevent](https://img.shields.io/badge/Gevent-228B22?style=for-the-badge&logo=gevent)
+![Websockets](https://img.shields.io/badge/Websockets-1E5945.svg?style=for-the-badge&logo=websockets)
+![Pydantic](https://img.shields.io/badge/Pydantic-ff43a1.svg?style=for-the-badge&logo=pydantic)
+![SQLAlchemy](https://img.shields.io/badge/sqlalchemy-7a1b0c.svg?style=for-the-badge&logo=sqlalchemy&logoColor=white)
+![Alembic](https://img.shields.io/badge/alembic-1E5945.svg?style=for-the-badge&logo=alembic)
+![Swagger](https://img.shields.io/badge/-Swagger-%23Clojure?style=for-the-badge&logo=swagger&logoColor=white)
+![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white)
+![Kombu](https://img.shields.io/badge/Kombu-4B0082?style=for-the-badge&logo=kombu)
+![RabbitMQ](https://img.shields.io/badge/RabbitMQ-%23FF6347.svg?style=for-the-badge&logo=rabbitMQ&logoColor=white)
+![Redis](https://img.shields.io/badge/redis-%23990024.svg?style=for-the-badge&logo=redis&logoColor=white)
+![Pytest](https://img.shields.io/badge/pytest-003153.svg?style=for-the-badge&logo=pytest&logoColor=gray)
+![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
+![Docker-compose](https://img.shields.io/badge/docker--compose-6495ED.svg?style=for-the-badge&logo=docker&logoColor=white)
+![Nginx](https://img.shields.io/badge/nginx-%23009639.svg?style=for-the-badge&logo=nginx&logoColor=white)
+
+---
 ## Запуск проекта
 
 1) Создайте и заполните файл `components/backend/.env` релевантными данными
@@ -58,7 +77,7 @@
 
 ---
 ## Доступные ресурсы проекта:
-Следующие ресурсы доступны при использовании портов указанных в
+Следующие ресурсы доступны при использовании портов по умолчанию, указанных в
 `components/backend/.env.example`.
 <details>
 <summary>Production ресурсы:</summary>
