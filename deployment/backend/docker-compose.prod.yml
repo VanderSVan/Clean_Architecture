@@ -191,7 +191,7 @@ services:
     volumes:
       - ./nginx_config/default.prod.conf:/etc/nginx/conf.d/default.conf
     ports:
-      - '8080:80'
+      - ${NGINX_EXTERNAL_PORT}:${NGINX_INTERNAL_PORT}
     networks:
       - backend_network
 
