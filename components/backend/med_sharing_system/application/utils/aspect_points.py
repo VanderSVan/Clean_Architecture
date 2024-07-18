@@ -44,14 +44,18 @@ class DecoratedFunction:
 class DecoratedFunctionRegistry:
     """
     Представляет реестр декорированных функций и предоставляет методы для их управления.
-    Этот класс может использоваться для централизованного управления декораторами, применяемыми к
-    нескольким функциям. Он позволяет регистрировать новые функции и применять декораторы ко всем
-    зарегистрированным функциям или к определенному подмножеству.
+    Этот класс может использоваться для централизованного управления декораторами,
+    применяемыми к нескольким функциям. Он позволяет регистрировать новые функции и
+    применять декораторы ко всем зарегистрированным функциям или к определенному
+    подмножеству.
     """
     def __init__(self):
         self._registry: List[DecoratedFunction] = []
 
-    def apply_decorators(self, *decorators: Decorator, exclude: List[DecoratedFunction] = None):
+    def apply_decorators(self,
+                         *decorators: Decorator,
+                         exclude: List[DecoratedFunction] = None
+                         ) -> None:
         """
         Применяет декораторы ко всем зарегистрированным функциям.
         """
@@ -62,7 +66,8 @@ class DecoratedFunctionRegistry:
 
     def register_function(self, function: AnyFunction) -> DecoratedFunction:
         """
-        Регистрирует новую функцию и возвращает соответствующий ей экземпляр `DecoratedFunction`.
+        Регистрирует новую функцию и возвращает
+        соответствующий ей экземпляр `DecoratedFunction`.
         """
         decorated_function = DecoratedFunction.wrap(function)
         self._registry.append(decorated_function)
