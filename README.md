@@ -23,10 +23,27 @@
 ![Nginx](https://img.shields.io/badge/nginx-%23009639.svg?style=for-the-badge&logo=nginx&logoColor=white)
 
 ---
+## Архитектура
+#### В данном проекте используется "Гексагональная" архитектура.
+![hexogonal_architecture.png](docs/images/hexogonal_architecture.png)
+
+
+#### Для текущего проекта "Гексагональная" архитектура использована в адаптированном варианте.
+- Например, **Domain слой** представлен только одним python модулем - 
+[entities.py](components/backend/med_sharing_system/application/entities.py)
+- **Primary** и **Secondary** адаптеры объединены в один.
+
+![components.png](docs/uml_diagrams/images/components.png)
+
+---
+## Навигация по проекту
+Скоро будет
+
+---
 ## Запуск проекта
 
 1) Создайте и заполните файл `components/backend/.env` релевантными данными
-(пример оформления лежит по пути `components/backend/.env.example`).
+(пример оформления лежит по пути [`components/backend/.env.example`](components/backend/.env.example)).
 
 2) Для удобства в терминале переместитесь в папку `deployment/backend/`.
 
@@ -78,7 +95,7 @@
 ---
 ## Доступные ресурсы проекта:
 Следующие ресурсы доступны при использовании портов по умолчанию, указанных в
-`components/backend/.env.example`.
+[`components/backend/.env.example`](components/backend/.env.example).
 <details>
 <summary>Production ресурсы:</summary>
 

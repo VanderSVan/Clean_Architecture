@@ -2,13 +2,12 @@
 
 title Упрощенная диаграмма компонентов
 
-rectangle "Interfaces (External Adapters)" {
+rectangle "User Interfaces (Primary Adapters)" {
   rectangle "Notification" {
-    [Websocket APP] as websocket_api
+    [Websocket API] as websocket_api
     [Notification API] as notification_api
   }
   [MedSystem API] as med_system_api
-  [Rabbitmq workers] as rabbitmq_workers
   [Alembic (migrations)] as alembic
 }
 
@@ -19,9 +18,10 @@ rectangle "Application" {
   interface "MedSystem message delivery" as med_system_message_delivery
 }
 
-rectangle "Internal Adapters" {
+rectangle "Infrastructure (Secondary Adapters)" {
   [Database] as database
-  [Publisher] as publisher
+  [Publishers] as publishers
+  [Consumers] as consumers
   [Message notifier] as websocket_message_notifier
 }
 
@@ -32,27 +32,34 @@ rectangle "Internal Adapters" {
 () "HTTP" as http_3
 () "WS" as ws
 () "CLI" as cli
+() "TCP/IP" as tcp
 
-rabbitmq_workers -u-( amqp
-med_system_api -u-( http
+consumers -d-( amqp
+consumers ..> med_system
+
 websocket_api -u-( ws
+websocket_api <.. notification_api
+
 notification_api -u-( http_2
 notification_api ..> med_system
-websocket_api <.. notification_api
-med_system_api ..> med_system
-rabbitmq_workers ..> med_system
+
 alembic -u-( cli
+
+med_system_api -u-( http
+med_system_api ..> med_system
 
 med_system --( med_system_repositories
 med_system --( med_system_publisher
 med_system --( med_system_message_delivery
 
 websocket_message_notifier -u- med_system_message_delivery
-websocket_message_notifier -d- http_3
+websocket_message_notifier -d-( http_3
 
-publisher -u- med_system_publisher
-publisher -d-( amqp_2
+publishers -u- med_system_publisher
+publishers -d-( amqp_2
+
 database -u- med_system_repositories
 database -u- alembic
+database -d-( tcp
 
 @enduml
