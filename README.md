@@ -1,7 +1,6 @@
 # Clean Architecture
 
-Данный проект предназначен для демонстрации использования таких понятий как 
-"Clean architecture", "SOLID", "DDD" и др. на практике.
+### Данный проект предназначен для демонстрации использования таких понятий как "Clean architecture", "SOLID", "DDD" и др. на практике.
 
 ---
 ## Project stack:
@@ -23,24 +22,37 @@
 ![Nginx](https://img.shields.io/badge/nginx-%23009639.svg?style=for-the-badge&logo=nginx&logoColor=white)
 
 ---
+## Навигация по проекту
+- [Оформление проекта](#оформление-проекта)
+- [Архитектура проекта](#архитектура), ([более подробно](components/backend/README.md#архитектура))
+- [Развертывание проекта](#развертывание-проекта)
+- [Доступные ресурсы проекта](#доступные-ресурсы-проекта)
+
+---
+## Оформление проекта
+Используется **МОНОРЕПОЗИТОРИЙ**:
+- в корне расположены [`.gitignore`](.gitignore) и [`.editorconfig`](.editorconfig);
+- [deployment](deployment) содержит файлы для CI/CD;
+- в [docs](docs) хранится тех. документация:
+  - [схема сущностей `Domain` слоя](docs/uml_diagrams/images/entities.png),
+  - [схема базы данных](docs/uml_diagrams/images/db_schema.png),
+  - [схема компонентов](docs/uml_diagrams/images/components.png),
+- внутри расположен каталог [components](components), необходим для разделения фронта и бека;
+- в [components](components) расположен каталог [backend](components/backend), это корневой каталог для бека, этот же каталог является корневым для python модулей проекта, например в IDE можно его пометить как **sources_root** (в случае запуска из консоли, нужно определить PYTHONPATH и сослать на этот каталог);
+- каталог [backend](components/backend) оформляется в виде стандартного **python пакета**, используя [poetry](https://python-poetry.org/);
+  - в **pyproject.toml** дополнительно описываются различные конфиги сборщиков, автоформаттеров и тд. и тп.
+
+[К навигации](#навигация-по-проекту)
+
+---
 ## Архитектура
 #### В данном проекте используется "Гексагональная" архитектура.
 ![hexogonal_architecture.png](docs/images/hexogonal_architecture.png)
 
-
-#### Для текущего проекта "Гексагональная" архитектура использована в адаптированном варианте.
-- Например, **Domain слой** представлен только одним python модулем - 
-[entities.py](components/backend/med_sharing_system/application/entities.py)
-- **Primary** и **Secondary** адаптеры объединены в один.
-
-![components.png](docs/uml_diagrams/images/components.png)
+[К навигации](#навигация-по-проекту)
 
 ---
-## Навигация по проекту
-Скоро будет
-
----
-## Запуск проекта
+## Развертывание проекта
 
 1) Создайте и заполните файл `components/backend/.env` релевантными данными
 (пример оформления лежит по пути [`components/backend/.env.example`](components/backend/.env.example)).
@@ -90,7 +102,9 @@
     ```
     </details>
     
-    Подробнее в [директории управление проектом](deployment/backend/manage/README.md).
+    Подробнее в [директории управления проектом](deployment/backend/manage/README.md).
+
+[К навигации](#навигация-по-проекту)
 
 ---
 ## Доступные ресурсы проекта:
@@ -129,3 +143,5 @@ http://0.0.0.0:8080/pgadmin4/ - через nginx
 6) Web rabbitmq:  
 http://0.0.0.0:15672/ - напрямую
 </details>
+
+[К навигации](#навигация-по-проекту)
