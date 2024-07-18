@@ -321,6 +321,5 @@ cython_debug/
 #.idea/
 
 gg.py
-/docs/
 /populating/
 /sql_init/

@@ -1,0 +1,98 @@
+@startuml
+
+title Схема БД
+
+hide circle
+skinparam linetype ortho
+
+entity patients {
+  * id: integer
+  --
+  * nickname: varchar
+  --
+  * gender: varchar
+  --
+  * age: integer
+  --
+  * skin_type: varchar
+  --
+  * about: text
+  --
+  * phone: varchar
+}
+
+entity symptoms {
+  * id: integer
+  --
+  * name: varchar
+}
+
+entity diagnoses {
+  * id: integer
+  --
+  * name: varchar
+}
+
+entity item_categories {
+  * id: integer
+  --
+  * name: varchar
+}
+
+entity item_types {
+  * id: integer
+  --
+  * name: varchar
+}
+
+entity treatment_items {
+  * id: integer
+  --
+  * title: varchar
+  --
+  * price: numeric
+  --
+  * description: varchar
+  --
+  * type_id: integer
+  --
+  * category_id: integer
+  --
+  * avg_rating: double precision
+}
+
+entity item_reviews {
+  * id: integer
+  --
+  * item_id: integer
+  --
+  * is_helped: boolean
+  --
+  * item_rating: double precision
+  --
+  * item_count: integer
+  --
+  * usage_period: integer
+}
+
+entity medical_books {
+  * id: integer
+  --
+  * title_history: varchar
+  --
+  * history: text
+  --
+  * patient_id: integer
+  --
+  * diagnosis_id: integer
+}
+
+medical_books "*" }o--|| "1" patients
+medical_books "*" }o--|| "1" diagnoses
+medical_books "*" }o--o{ "*" item_reviews
+medical_books "*" }o--o{ "*" symptoms
+treatment_items "*" }o--|| "1" item_categories
+treatment_items "*" }o--|| "1" item_types
+treatment_items "1" ||--o{ "*" item_reviews
+
+@enduml
