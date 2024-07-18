@@ -3,7 +3,7 @@ import time
 from typing import TypedDict
 
 from med_sharing_system.application import interfaces, dtos, errors
-from med_sharing_system.application.interfaces.messaging_queues import QueueMessage
+from med_sharing_system.application.interfaces.message_publishing import QueueMessage
 from med_sharing_system.application.utils import DecoratedFunctionRegistry
 
 decorated_function_registry = DecoratedFunctionRegistry()

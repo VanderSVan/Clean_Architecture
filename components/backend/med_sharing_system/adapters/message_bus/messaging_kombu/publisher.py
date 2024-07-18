@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, Optional
 from kombu import Connection
 from kombu.pools import producers
 
-from med_sharing_system.application.interfaces.messaging_queues import (
+from med_sharing_system.application.interfaces.message_publishing import (
     QueueMessage,
     Publisher
 )

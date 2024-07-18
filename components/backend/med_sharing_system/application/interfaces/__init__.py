@@ -5,6 +5,6 @@ from .item_types import ItemTypesRepo
 from .items import TreatmentItemsRepo
 from .medical_books import MedicalBooksRepo
 from .message_delivery import MessageSender
-from .messaging_queues import Publisher
+from .message_publishing import Publisher
 from .patients import PatientsRepo
 from .symptoms import SymptomsRepo
