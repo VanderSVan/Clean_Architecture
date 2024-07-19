@@ -11,6 +11,7 @@
 - [Data Transfer Objects (DTO)](#data-transfer-objects)
 - [Schemas](#schemas)
 - [Errors](#errors)
+- [Навигация по backend](../../README.md#навигация-по-backend)
 
 ---
 ## Частые вопросы:
