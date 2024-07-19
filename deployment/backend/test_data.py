@@ -3,15 +3,18 @@ from itertools import cycle
 from sqlalchemy import insert, select, func, update, Select
 
 from med_sharing_system.adapters.database import tables
-from med_sharing_system.application import entities
+from med_sharing_system.application import entities, dtos
 
 PATIENTS_DATA = [
-    {'nickname': 'Иван Иванов', 'gender': 'мужской', 'age': 35, 'skin_type': 'нормальная',
-     'about': 'Об Иване Иванове', 'phone': '1234567890'},
-    {'nickname': 'Мария Петрова', 'gender': 'женский', 'age': 28, 'skin_type': 'жирная',
-     'about': 'О Марии Петровой', 'phone': '0987654321'},
-    {'nickname': 'Алексей Сидоров', 'gender': 'мужской', 'age': 42, 'skin_type': 'сухая',
-     'about': 'О Алексее Сидорове', 'phone': '5556667777'},
+    {'nickname': 'Иван Иванов', 'gender': dtos.GenderEnum.MALE, 'age': 35,
+     'skin_type': dtos.SkinTypeEnum.DRY, 'about': 'Об Иване Иванове',
+     'phone': '1234567890'},
+    {'nickname': 'Мария Петрова', 'gender': dtos.GenderEnum.FEMALE, 'age': 28,
+     'skin_type': dtos.SkinTypeEnum.OILY, 'about': 'О Марии Петровой',
+     'phone': '0987654321'},
+    {'nickname': 'Алексей Сидоров', 'gender': dtos.GenderEnum.MALE, 'age': 42,
+     'skin_type': dtos.SkinTypeEnum.NORMAL, 'about': 'О Алексее Сидорове',
+     'phone': '5556667777'},
 ]
 
 DIAGNOSES_DATA = [
@@ -243,26 +246,26 @@ if __name__ == '__main__':
     engine = create_engine(database.Settings().DATABASE_URL)
     transaction_context = TransactionContext(bind=engine, expire_on_commit=False)
 
-    with transaction_context.current_session as session:
+    with transaction_context.current_session as session_:
         query: Select = select(tables.medical_books.c.id).limit(1)
-        medical_book_exists = bool(session.execute(query).scalars().all())
+        medical_book_exists = bool(session_.execute(query).scalars().all())
 
         if not medical_book_exists:
             logger.info('Inserting test data...')
-            patient_ids: list[int] = insert_patients(session)
-            diagnosis_ids: list[int] = insert_diagnoses(session)
-            symptom_ids: list[int] = insert_symptoms(session)
-            category_ids: list[int] = insert_categories(session)
-            type_ids: list[int] = insert_types(session)
-            item_ids: list[int] = insert_items(type_ids, category_ids, session)
-            review_ids: list[int] = insert_reviews(item_ids, session)
-            med_book_ids: list[int] = insert_medical_books(patient_ids,
-                                                           diagnosis_ids,
-                                                           session)
-            insert_avg_rating(session)
-            insert_medical_book_reviews(med_book_ids, review_ids, session)
-            insert_medical_book_symptoms(med_book_ids, symptom_ids, session)
-            session.commit()
+            patient_ids_: list[int] = insert_patients(session_)
+            diagnosis_ids_: list[int] = insert_diagnoses(session_)
+            symptom_ids_: list[int] = insert_symptoms(session_)
+            category_ids_: list[int] = insert_categories(session_)
+            type_ids_: list[int] = insert_types(session_)
+            item_ids_: list[int] = insert_items(type_ids_, category_ids_, session_)
+            review_ids_: list[int] = insert_reviews(item_ids_, session_)
+            med_book_ids_: list[int] = insert_medical_books(patient_ids_,
+                                                            diagnosis_ids_,
+                                                            session_)
+            insert_avg_rating(session_)
+            insert_medical_book_reviews(med_book_ids_, review_ids_, session_)
+            insert_medical_book_symptoms(med_book_ids_, symptom_ids_, session_)
+            session_.commit()
             logger.info('Test data inserted.')
 
     print("test_data.py script finished")

@@ -1,0 +1,65 @@
+@startuml
+
+title Упрощенная диаграмма компонентов
+
+rectangle "User Interfaces (Primary Adapters)" {
+  rectangle "Notification" {
+    [Websocket API] as websocket_api
+    [Notification API] as notification_api
+  }
+  [MedSystem API] as med_system_api
+  [Alembic (migrations)] as alembic
+}
+
+rectangle "Application" {
+  [MedSystem] as med_system
+  interface "MedSystem repositories" as med_system_repositories
+  interface "MedSystem publisher" as med_system_publisher
+  interface "MedSystem message delivery" as med_system_message_delivery
+}
+
+rectangle "Infrastructure (Secondary Adapters)" {
+  [Database] as database
+  [Publishers] as publishers
+  [Consumers] as consumers
+  [Message notifier] as websocket_message_notifier
+}
+
+() "AMQP" as amqp
+() "AMQP" as amqp_2
+() "HTTP" as http
+() "HTTP" as http_2
+() "HTTP" as http_3
+() "WS" as ws
+() "CLI" as cli
+() "TCP/IP" as tcp
+
+consumers -d-( amqp
+consumers ..> med_system
+
+websocket_api -u-( ws
+websocket_api <.. notification_api
+
+notification_api -u-( http_2
+notification_api ..> med_system
+
+alembic -u-( cli
+
+med_system_api -u-( http
+med_system_api ..> med_system
+
+med_system --( med_system_repositories
+med_system --( med_system_publisher
+med_system --( med_system_message_delivery
+
+websocket_message_notifier -u- med_system_message_delivery
+websocket_message_notifier -d-( http_3
+
+publishers -u- med_system_publisher
+publishers -d-( amqp_2
+
+database -u- med_system_repositories
+database -u- alembic
+database -d-( tcp
+
+@enduml

@@ -88,7 +88,7 @@ COPY --from=dependency-installer $PYSETUP_PATH $PYSETUP_PATH
 
 # Быстрая установка dev зависимостей, так как не dev уже установлены
 # Запуск юнит тестов
-RUN poetry install --no-ansi && rm -rf $POETRY_CACHE_DIR/* && pytest -q ./tests/unit
+RUN poetry install --no-ansi && rm -rf $POETRY_CACHE_DIR/* && pytest -q ./tests/med_sharing_system/unit
 
 
 # ====================================================

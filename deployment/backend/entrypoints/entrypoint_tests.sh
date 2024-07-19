@@ -19,9 +19,9 @@ echo
 
 echo "Running integration tests..."
 if [[ $API_ENV == 'development' ]]; then
-  pytest -q ./tests/integration || true
+  pytest -q ./tests/med_sharing_system/integration || true
 else
-  pytest -qq ./tests/integration
+  pytest -qq ./tests/med_sharing_system/integration
 fi
 integration_test_status=$?
 

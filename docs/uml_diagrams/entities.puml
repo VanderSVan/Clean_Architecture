@@ -1,0 +1,112 @@
+@startuml
+
+title Диаграмма сущностей
+
+class Patient {
+  +id: int
+  ..
+  +nickname: str
+  ..
+  +gender: str
+  ..
+  +age: int
+  ..
+  +skin_type: str
+  ..
+  +about: str | None
+  ..
+  +phone: str | None
+}
+
+class Symptom {
+  +id: int
+  ..
+  +name: str
+}
+
+class Diagnosis {
+  +id: int
+  ..
+  +name: str
+}
+
+class ItemCategory {
+  +id: int
+  ..
+  +name: str
+}
+
+class ItemType {
+  +id: int
+  ..
+  +name: str
+}
+
+class ItemReview {
+  +id: int
+  ..
+  +item_id: int
+  ..
+  +is_helped: bool
+  ..
+  +item_rating: float
+  ..
+  +item_count: int
+  ..
+  +usage_period: int | None
+}
+
+class TreatmentItem {
+  +id: int
+  ..
+  +title: str
+  ..
+  +price: Decimal | None
+  ..
+  +description: str | None
+  ..
+  +category_id: int
+  ..
+  +type_id: int
+  ..
+  +reviews: list[ItemReview] = []
+  ..
+  +avg_rating: float | None
+  --
+  {method} +get_avg_rating(): float | None
+}
+
+class MedicalBook {
+  +id: int
+  ..
+  +title_history: str
+  ..
+  +history: str | None
+  ..
+  +patient_id: int
+  ..
+  +diagnosis_id: int
+  ..
+  +symptoms: list[Symptom] = []
+  ..
+  +item_reviews: list[ItemReview] = []
+  --
+  {method} +add_symptoms(symptoms: Iterable[Symptom])
+  ..
+  {method} +remove_symptoms(symptoms: Iterable[Symptom])
+  ..
+  {method} +add_item_reviews(item_reviews: Iterable[ItemReview])
+  ..
+  {method} +remove_item_reviews(item_reviews: Iterable[ItemReview])
+}
+
+Patient "1" <.. "0..*" MedicalBook : зависит от
+Diagnosis "1" <.. "0..*" MedicalBook : зависит от
+Symptom "0..*" <-- "0..*" MedicalBook : ассоциирован с
+ItemReview "0..*" <-- "0..*" MedicalBook : ассоциирован с
+ItemReview "0..*" ..> "1" TreatmentItem : зависит от
+ItemReview "0..*" <-- "1" TreatmentItem : ассоциирован с
+ItemCategory "1" <.. "0..*" TreatmentItem : зависит от
+ItemType "1" <.. "0..*" TreatmentItem : зависит от
+
+@enduml
