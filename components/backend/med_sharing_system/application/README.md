@@ -69,7 +69,7 @@
 - В системе управления проектами: `Project`, `Task`, `Employee`
 
 ### Сущности данного проекта представлены на следующей диаграмме
-![entities.png](../../docs/uml_diagrams/images/entities.png)
+![entities.png](../../../../docs/uml_diagrams/images/entities.png)
 
 [К навигации по слою](#навигация-по-слою)
 
