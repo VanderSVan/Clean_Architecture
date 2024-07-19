@@ -4,9 +4,9 @@
 ## Навигация по backend
 - [Архитектура backend](#архитектура)
 - [Слой Application](#слой-application)
-- [Слой adapters](#слой-adapters)
-- [Слой launchers](#слой-launchers)
-- [Навигация по проекту](../../README.md#навигация-по-проекту)
+- [Слой Adapters](#слой-adapters)
+- [Слой Launchers](#слой-launchers)
+- [Навигация по проекту](../../README.md#погружение-в-проект)
 
 ---
 ## Архитектура
